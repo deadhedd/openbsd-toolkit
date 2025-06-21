@@ -1,47 +1,68 @@
-# OpenBSD Server Setup Test Script
+# test_openbsd_setup.sh
 
-This script verifies that an OpenBSD server has been correctly configured to host a Git-synced Obsidian vault. It performs 19 POSIX-compliant checks across user accounts, shell configuration, networking, Git setup, and login shell profiles.
+A self-contained TAP-compatible test script that verifies whether an OpenBSD server has been correctly configured to host a Git-backed Obsidian vault.
 
-## Features
+This script is safe to run repeatedly. It performs **non-destructive**, **read-only checks** covering:
 
-- 🔒 Verifies safe user shells and doas permissions
-- 🌐 Confirms correct network and DNS configuration
-- 🔐 Checks SSHD security settings
-- 🧠 Ensures Git repos and working clones are correctly owned and configured
-- 📦 Fully POSIX-compliant — runs under `/bin/sh`
-- ✅ TAP-like output for potential CI integration
+- User account setup and shell assignment
+- File permissions and `doas` policy
+- Static network configuration and DNS
+- SSH hardening settings
+- Git install and push access
+- Bare repo structure and safe directory flags
 
-## Requirements
+> ⚠️ Currently versioned as `v0.1` — an early public release. Contributions, issues, and suggestions are welcome.
 
-- OpenBSD (tested with 7.x)
-- Git installed via `pkg_add git`
+---
 
-## Usage
+## 🔧 Usage
 
 ```sh
 sh test_openbsd_setup.sh
-```
+````
 
-You can override default values using environment variables:
+### Optional: Override defaults via environment variables
 
 ```sh
-REG_USER=myuser GIT_USER=mygit VAULT=myvault sh test_openbsd_setup.sh
+REG_USER=obsidian \
+GIT_USER=git \
+VAULT=myvault \
+INTERFACE=em0 \
+STATIC_IP=192.0.2.10 \
+sh test_openbsd_setup.sh
 ```
 
-## Environment Variables
+---
 
-|Variable|Default|Description|
-|---|---|---|
-|`REG_USER`|`obsidian`|Regular user who owns the working copy|
-|`GIT_USER`|`git`|Git-only user who owns the bare repo|
-|`VAULT`|`Main`|Vault name|
-|`INTERFACE`|`em0`|Network interface|
-|`STATIC_IP`|`192.0.2.10`|Expected IP address (RFC 5737 test range)|
-|`NETMASK`|`255.255.255.0`|Netmask|
-|`GATEWAY`|`192.0.2.1`|Default gateway|
-|`DNS1`|`1.1.1.1`|Primary DNS|
-|`DNS2`|`8.8.8.8`|Secondary DNS|
+## 📋 Output Format
 
-## License
+This script uses the [TAP](https://testanything.org/) (Test Anything Protocol) format, making it easy to use in pipelines or automated test harnesses.
 
-MIT — see `LICENSE` file.
+Sample output:
+
+```
+ok 1 - user 'obsidian' exists with ksh shell
+ok 2 - user 'git' exists with git-shell
+...
+not ok 14 - sshd_config allows only obsidian,git
+...
+1..27
+2 of 27 tests failed.
+```
+
+---
+
+## 📁 Directory Structure Expectations
+
+- Bare repo: `/home/git/vaults/vault.git`
+    
+- Working clone: `/home/obsidian/vaults/vault`
+    
+- Setup script lives at: `/root/openbsd-server/`
+    
+
+---
+
+## 🪪 License
+
+MIT OR 0BSD — see LICENSE
