@@ -54,7 +54,7 @@ assert_user_shell "$REG_USER" "/bin/ksh" "user '$REG_USER' exists with ksh shell
 assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "user '$GIT_USER' exists with git-shell"
 
 # 6: doas permissions
-assert_file_perm /etc/doas.conf 0440 "/etc/doas.conf not world-readable"
+assert_file_perm /etc/doas.conf 440 "/etc/doas.conf not world-readable"
 
 # 7-10: Static network config
 run_test "grep -q \"inet ${STATIC_IP}.*netmask ${NETMASK}\" \"/etc/hostname.${INTERFACE}\"" "IP/netmask set on ${INTERFACE}"
@@ -64,7 +64,7 @@ run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf" "DNS2 ${DNS2} in reso
 
 # 11-13: Live network & DNS
 run_test "ifconfig \"${INTERFACE}\" | grep -q 'status: active'" "${INTERFACE} is up"
-run_test "ping -c1 -W1 \"${GATEWAY}\"" "gateway ${GATEWAY} reachable"
+run_test "ping -c3 ${GATEWAY} >/dev/null" "gateway ${GATEWAY} reachable"
 run_test "host github.com >/dev/null 2>&1" "DNS can resolve github.com"
 
 # 14-16: SSH hardening
