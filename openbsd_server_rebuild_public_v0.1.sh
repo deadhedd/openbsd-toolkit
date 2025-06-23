@@ -2,7 +2,7 @@
 #
 # setup.sh - Configure OpenBSD server to pass test_openbsd_setup.sh
 # Requires a GitHub deploy key file next to this script (deploy_key)
-# Author: ChatGPT
+# Author: deadhedd
 # License: MIT or 0BSD
 
 set -e

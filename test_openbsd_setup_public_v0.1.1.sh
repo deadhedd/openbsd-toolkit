@@ -6,7 +6,7 @@
 #–––– Configuration ––––
 REG_USER=${REG_USER:-obsidian}
 GIT_USER=${GIT_USER:-git}
-VAULT=${VAULT:-vault}            # ← align with setup.sh!
+VAULT=${VAULT:-vault}
 INTERFACE=${INTERFACE:-em0}
 STATIC_IP=${STATIC_IP:-192.0.2.101}
 NETMASK=${NETMASK:-255.255.255.0}
