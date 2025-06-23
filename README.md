@@ -1,68 +1,78 @@
-# test_openbsd_setup.sh
+# openbsd-server
 
-A self-contained TAP-compatible test script that verifies whether an OpenBSD server has been correctly configured to host a Git-backed Obsidian vault.
-
-This script is safe to run repeatedly. It performs **non-destructive**, **read-only checks** covering:
-
-- User account setup and shell assignment
-- File permissions and `doas` policy
-- Static network configuration and DNS
-- SSH hardening settings
-- Git install and push access
-- Bare repo structure and safe directory flags
-
-> ⚠️ Currently versioned as `v0.1` — an early public release. Contributions, issues, and suggestions are welcome.
+A collection of scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault.
 
 ---
 
-## 🔧 Usage
+## Scripts
+
+### v0.1
+
+- **openbsd_server_rebuild_public_v0.1.sh**  
+  Automates setup of a fresh OpenBSD server so that it passes our validation tests.
+
+- **test_openbsd_setup_public_v0.1.sh**  
+  A self-contained TAP-compatible test suite that checks:
+  - User account setup & shells  
+  - File permissions & doas policy  
+  - Static network config & DNS  
+  - SSH hardening  
+  - Git installation & push access  
+  - Bare-repo structure & safe directory flags  
+
+### v0.1.1 (test enhancements)
+
+- **test_openbsd_setup_public_v0.1.1.sh**  
+  Prep for next iteration—adds additional checks and refactors existing tests.
+
+---
+
+## Usage
+
+### Run the tests
 
 ```sh
-sh test_openbsd_setup.sh
-````
+sh test_openbsd_setup_public_v0.1.sh
+```
 
-### Optional: Override defaults via environment variables
+Or (for the upcoming iteration):
 
 ```sh
+sh test_openbsd_setup_public_v0.1.1.sh
+```
+
+You can override any default via environment variables:
+
+```
 REG_USER=obsidian \
 GIT_USER=git \
 VAULT=myvault \
 INTERFACE=em0 \
 STATIC_IP=192.0.2.10 \
-sh test_openbsd_setup.sh
+sh test_openbsd_setup_public_v0.1.sh
 ```
 
----
-
-## 📋 Output Format
-
-This script uses the [TAP](https://testanything.org/) (Test Anything Protocol) format, making it easy to use in pipelines or automated test harnesses.
-
-Sample output:
+Run the setup
 
 ```
-ok 1 - user 'obsidian' exists with ksh shell
-ok 2 - user 'git' exists with git-shell
-...
-not ok 14 - sshd_config allows only obsidian,git
-...
-1..27
-2 of 27 tests failed.
+sh openbsd_server_rebuild_public_v0.1.sh
 ```
 
----
+Releases & Tags
 
-## 📁 Directory Structure Expectations
+I tag each public version so you can grab a ZIP directly:
 
-- Bare repo: `/home/git/vaults/vault.git`
-    
-- Working clone: `/home/obsidian/vaults/vault`
-    
-- Setup script lives at: `/root/openbsd-server/`
-    
+    v0.1 – passing setup and test suite
 
----
+    v0.1.1 – next-iteration test enhancements
 
-## 🪪 License
+If you haven’t already:
 
-MIT OR 0BSD — see LICENSE
+```sh
+git push origin --tags
+```
+
+And you can see our formal Releases page on GitHub.
+License
+
+MIT OR 0BSD — see the LICENSE file.
