@@ -6,7 +6,7 @@
 #–––– Configuration ––––
 REG_USER=${REG_USER:-obsidian}
 GIT_USER=${GIT_USER:-git}
-VAULT=${VAULT:-vault}
+VAULT=${VAULT:-vault}            # ← align with setup.sh!
 INTERFACE=${INTERFACE:-em0}
 STATIC_IP=${STATIC_IP:-192.0.2.101}
 NETMASK=${NETMASK:-255.255.255.0}
@@ -66,8 +66,8 @@ run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\" /etc/doas.co
 
 #–– 11–13: Network interface & config file ––
 run_test "[ -f /etc/hostname.${INTERFACE} ]" "interface config file exists"
-run_test "grep -q \"inet ${STATIC_IP}.*netmask ${NETMASK}\" /etc/hostname.${INTERFACE}" "hostname.${INTERFACE} has IP/netmask"
-run_test "grep -q \"!route add default ${GATEWAY}\" /etc/hostname.${INTERFACE}" "hostname.${INTERFACE} has gateway"
+run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}" "hostname.${INTERFACE} has correct 'inet IP MASK' line"
+run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}" "hostname.${INTERFACE} has correct default route line"
 
 #–– 14: Default route in kernel table ––
 run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'" "default route via ${GATEWAY} present"
