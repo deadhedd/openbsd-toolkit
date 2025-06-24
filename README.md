@@ -6,24 +6,22 @@ A collection of scripts to configure and validate an OpenBSD server for hosting 
 
 ## Scripts
 
-### v0.1
+* **openbsd\_server\_rebuild\_public\_v0.1.1.sh**
+  Automates setup of a fresh OpenBSD server with the revised hostname file format to ensure persistent network configuration across reboots.
 
-- **openbsd_server_rebuild_public_v0.1.sh**  
-  Automates setup of a fresh OpenBSD server so that it passes our validation tests.
-
-- **test_openbsd_setup_public_v0.1.sh**  
+* **test\_openbsd\_setup\_public\_v0.1.1.sh**
   A self-contained TAP-compatible test suite that checks:
-  - User account setup & shells  
-  - File permissions & doas policy  
-  - Static network config & DNS  
-  - SSH hardening  
-  - Git installation & push access  
-  - Bare-repo structure & safe directory flags  
 
-### v0.1.1 (test enhancements)
+  * User account setup & shells
+  * File permissions & doas policy
+  * Static network config & DNS, with strict format validation:
 
-- **test_openbsd_setup_public_v0.1.1.sh**  
-  Prep for next iteration—adds additional checks and refactors existing tests.
+    * Asserts `hostname.${INTERFACE}` first line is exactly `inet <IP> <NETMASK>`
+    * Asserts second line is exactly `!route add default <GATEWAY>`
+    * Anchored regex checks to prevent forbidden keywords
+  * SSH hardening
+  * Git installation & push access
+  * Bare-repo structure & safe-directory flags
 
 ---
 
@@ -32,47 +30,55 @@ A collection of scripts to configure and validate an OpenBSD server for hosting 
 ### Run the tests
 
 ```sh
-sh test_openbsd_setup_public_v0.1.sh
-```
-
-Or (for the upcoming iteration):
-
-```sh
 sh test_openbsd_setup_public_v0.1.1.sh
 ```
 
-You can override any default via environment variables:
+You can override defaults via environment variables:
 
-```
+```sh
 REG_USER=obsidian \
 GIT_USER=git \
 VAULT=myvault \
 INTERFACE=em0 \
 STATIC_IP=192.0.2.10 \
-sh test_openbsd_setup_public_v0.1.sh
+NETMASK=255.255.255.0 \
+GATEWAY=192.0.2.1 \
+sh test_openbsd_setup_public_v0.1.1.sh
 ```
 
-Run the setup
+### Run the setup
 
+```sh
+sh openbsd_server_rebuild_public_v0.1.1.sh
 ```
-sh openbsd_server_rebuild_public_v0.1.sh
-```
 
-Releases & Tags
+### Releases & Tags
 
-I tag each public version so you can grab a ZIP directly:
-
-    v0.1 – passing setup and test suite
-
-    v0.1.1 – next-iteration test enhancements
-
-If you haven’t already:
+Tags are used for versioned snapshots:
 
 ```sh
 git push origin --tags
 ```
 
-And you can see our formal Releases page on GitHub.
-License
+Visit the Releases page on GitHub to download.
+
+---
+
+## Changelog
+
+### v0.1 – Initial release
+
+* Setup and validation suite for OpenBSD server configuration (network, users, SSH, Git, etc.)
+
+### v0.1.1 – Test enhancements (2025-06-23)
+
+* Obsoletes v0.1
+* Added strict format validation for `inet <IP> <NETMASK>` and `!route add default <GATEWAY>` lines in `hostname.${INTERFACE}`
+* Anchored regex checks to prevent use of the old `netmask` keyword
+* Retained all core validation tests from v0.1
+
+---
+
+## License
 
 MIT OR 0BSD — see the LICENSE file.
