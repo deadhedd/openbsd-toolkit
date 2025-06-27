@@ -76,6 +76,11 @@ run_tests() {
     run_test "su - ${REG_USER:-obsidian} -c \"git config --global --get-all safe.directory | grep -q '^$repo\$'\"" "$desc"
   }
 
+  assert_user_shell() {
+    user=$1; shell=$2; desc=$3
+    run_test "grep -q \"^$user:.*:$shell\$\" /etc/passwd" "$desc"
+  }
+
   #––– Begin Test Plan –––
   echo "1..7"
 
@@ -84,13 +89,25 @@ run_tests() {
   GIT_USER=${GIT_USER:-git}
   VAULT=${VAULT:-vault}
 
+  run_test "id $REG_USER" "user '$REG_USER' exists"
+  assert_user_shell "$REG_USER" "/bin/ksh"                  "shell for '$REG_USER' is /bin/ksh"
+  run_test "id $GIT_USER" "user '$GIT_USER' exists"
+  assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
+  run_test "command -v git"  "git is installed"
   run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]"                               "bare repo exists"
   run_test "stat -f '%Su' /home/${GIT_USER}/vaults/${VAULT}.git | grep -q '^${GIT_USER}\$'" "bare repo is owned by '${GIT_USER}'"
   run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]"               "post-receive hook is executable"
   run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive | grep -q '^${GIT_USER}:${GIT_USER}\$'" "post-receive hook owned by ${GIT_USER}"
   run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]"                              "bare repo HEAD exists"
   run_test "[ -d /home/${REG_USER}/vaults/${VAULT}/.git ]"                                  "working clone exists for '${REG_USER}'"
-  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                       "safe.directory configured for working clone"
+  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                      "safe.directory configured for working clone"
+  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${REG_USER}/.profile"    "${REG_USER} .profile sets HISTFILE"
+  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${GIT_USER}/.profile"    "${GIT_USER} .profile sets HISTFILE"
+  run_test "[ -d /home/${REG_USER} ]"                              "home directory for ${REG_USER} exists"
+  run_test "stat -f '%Su' /home/${REG_USER} | grep -q '^${REG_USER}\$'" "${REG_USER} owns their home"
+  run_test "[ -d /home/${GIT_USER} ]"                              "home directory for ${GIT_USER} exists"
+  run_test "stat -f '%Su' /home/${GIT_USER} | grep -q '^${GIT_USER}\$'"   "${GIT_USER} owns their home"
+  run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
 
   #––– Summary –––
   echo ""

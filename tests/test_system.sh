@@ -81,22 +81,15 @@ run_tests() {
     run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
   }
 
-  assert_user_shell() {
-    user=$1; shell=$2; desc=$3
-    run_test "grep -q \"^$user:.*:$shell\$\" /etc/passwd" "$desc"
-  }
+
 
   #––– Begin Test Plan –––
   echo "1..27"
 
   # 1–4: User & Shell
-  run_test "id $REG_USER" "user '$REG_USER' exists"
-  assert_user_shell "$REG_USER" "/bin/ksh"                  "shell for '$REG_USER' is /bin/ksh"
-  run_test "id $GIT_USER" "user '$GIT_USER' exists"
-  assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
+
 
   # 5–6: Package Installation
-  run_test "command -v git"  "git is installed"
   run_test "command -v doas" "doas is installed"
 
   # 7–10: doas.conf perms, ownership & rules
@@ -122,18 +115,13 @@ run_tests() {
 
   # 19–21: SSH daemon & config
   run_test "rcctl check sshd"                                      "sshd service is running"
-  run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
   run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                     "sshd_config disallows root login"
 
   # 22–23: Shell history config
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${REG_USER}/.profile"    "${REG_USER} .profile sets HISTFILE"
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${GIT_USER}/.profile"    "${GIT_USER} .profile sets HISTFILE"
+  # need to setup for root
 
   # 24–27: Home directory existence & ownership
-  run_test "[ -d /home/${REG_USER} ]"                              "home directory for ${REG_USER} exists"
-  run_test "stat -f '%Su' /home/${REG_USER} | grep -q '^${REG_USER}\$'" "${REG_USER} owns their home"
-  run_test "[ -d /home/${GIT_USER} ]"                              "home directory for ${GIT_USER} exists"
-  run_test "stat -f '%Su' /home/${GIT_USER} | grep -q '^${GIT_USER}\$'"   "${GIT_USER} owns their home"
+
 
   #––– Summary –––
   echo ""
