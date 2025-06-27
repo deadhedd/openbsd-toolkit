@@ -1,39 +1,40 @@
 # openbsd-server
 
-A collection of scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault.
+A collection of modular scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault, with support for GitHub deploy key integration.
 
 ---
 
-## Scripts
+## Scripts Overview
 
-* **openbsd\_server\_rebuild\_public\_v0.1.1.sh**
-  Automates setup of a fresh OpenBSD server with the revised hostname file format to ensure persistent network configuration across reboots.
+### Setup Scripts
 
-* **test\_openbsd\_setup\_public\_v0.1.1.sh**
-  A self-contained TAP-compatible test suite that checks:
+| Script                      | Purpose                                              |
+|-----------------------------|------------------------------------------------------|
+| `setup_system.sh`           | Installs packages, creates users, sets up networking and doas, hardens SSH, configures user profiles. |
+| `setup_obsidian_git.sh`     | Initializes the Git bare repo and working copy for Obsidian vault syncing. |
+| `setup_github.sh`           | Installs deploy key and bootstraps the GitHub repo clone for ongoing configuration management. |
+| `setup_all.sh`              | Runs all of the above in sequence. |
 
-  * User account setup & shells
-  * File permissions & doas policy
-  * Static network config & DNS, with strict format validation:
+### Test Suites
 
-    * Asserts `hostname.${INTERFACE}` first line is exactly `inet <IP> <NETMASK>`
-    * Asserts second line is exactly `!route add default <GATEWAY>`
-    * Anchored regex checks to prevent forbidden keywords
-  * SSH hardening
-  * Git installation & push access
-  * Bare-repo structure & safe-directory flags
+| Script                      | Validates                                             |
+|-----------------------------|-------------------------------------------------------|
+| `test_system.sh`            | User setup, file permissions, doas, network, DNS, SSH security. |
+| `test_obsidian_git.sh`      | Git bare repo structure, safe.directory flags, post-receive hook. |
+| `test_github.sh`            | Deploy key presence and permission, GitHub in known_hosts. |
+| `test_all.sh`               | Runs all of the above in sequence. |
 
 ---
 
 ## Usage
 
-### Run the tests
+### Run all setup steps
 
 ```sh
-sh test_openbsd_setup_public_v0.1.1.sh
+sh setup_all.sh
 ```
 
-You can override defaults via environment variables:
+Override defaults using environment variables:
 
 ```sh
 REG_USER=obsidian \
@@ -43,42 +44,66 @@ INTERFACE=em0 \
 STATIC_IP=192.0.2.10 \
 NETMASK=255.255.255.0 \
 GATEWAY=192.0.2.1 \
-sh test_openbsd_setup_public_v0.1.1.sh
+sh setup_all.sh
 ```
 
-### Run the setup
+Or run individual setup phases:
 
 ```sh
-sh openbsd_server_rebuild_public_v0.1.1.sh
+sh setup_system.sh
+sh setup_obsidian_git.sh
+sh setup_github.sh
 ```
 
-### Releases & Tags
-
-Tags are used for versioned snapshots:
+### Run all test suites
 
 ```sh
+sh test_all.sh
+```
+
+Same environment variables apply.
+
+---
+
+## Releases & Tags
+
+Use version tags to snapshot working configurations:
+
+```sh
+git tag -a v0.2.0 -m "Modular setup and test scripts"
 git push origin --tags
 ```
-
-Visit the Releases page on GitHub to download.
 
 ---
 
 ## Changelog
 
-### v0.1 – Initial release
+### v0.2.0 – Modularization (2025-06-26)
 
-* Setup and validation suite for OpenBSD server configuration (network, users, SSH, Git, etc.)
+* **Split monolithic setup/test scripts** into:
 
-### v0.1.1 – Test enhancements (2025-06-23)
+  * `setup_system.sh`
+  * `setup_obsidian_git.sh`
+  * `setup_github.sh`
+  * `test_system.sh`
+  * `test_obsidian_git.sh`
+  * `test_github.sh`
+* Added `setup_all.sh` and `test_all.sh` for convenience
 
-* Obsoletes v0.1
-* Added strict format validation for `inet <IP> <NETMASK>` and `!route add default <GATEWAY>` lines in `hostname.${INTERFACE}`
-* Anchored regex checks to prevent use of the old `netmask` keyword
-* Retained all core validation tests from v0.1
+### v0.1.1 – Test Enhancements (2025-06-23)
+
+* Added strict validation for network config files
+* Anchored regex to prevent deprecated `netmask` lines
+* Retained all core tests from v0.1
+
+### v0.1 – Initial Release
+
+* Setup and validation for OpenBSD server configuration (users, SSH, network, Git)
 
 ---
 
 ## License
 
 MIT OR 0BSD — see the LICENSE file.
+
+```
