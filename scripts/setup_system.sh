@@ -18,11 +18,48 @@ DNS2=${DNS2:-9.9.9.9}
 pkg_add -v git doas
 
 # 2. Create users with correct shells
+# Function to remove password for a user on OpenBSD
+remove_password() {
+  user="$1"
+  echo "Removing password for user '$user' (empty password field)"
+  # Safely rewrite master.passwd without using sed -i
+  tmpfile=$(mktemp)
+  $ESC sed -E "s/^${user}:[^:]*:/${user}::/" /etc/master.passwd > "$tmpfile"
+  $ESC mv "$tmpfile" /etc/master.passwd
+  # Rebuild password database
+  $ESC pwd_mkdb -p /etc/master.passwd
+}
+
+# --- Obsidian user creation ---
 if ! id "$REG_USER" >/dev/null 2>&1; then
-  useradd -m -s /bin/ksh "$REG_USER"
+  echo "Creating system user '$REG_USER'"
+  # TODO: Pull OBS_PASS from a secrets file instead of a default blank password
+  $ESC useradd -m -s /bin/ksh "$REG_USER"
+  if [ -n "${OBS_PASS}" ]; then
+    echo "Setting provided OBS_PASS for '$REG_USER'"
+    printf '%s\n' "$OBS_PASS" | $ESC passwd "$REG_USER"
+  else
+    # Remove password so no prompt on login
+    remove_password "$REG_USER"
+  fi
+else
+  echo "User '$REG_USER' already exists; skipping creation"
 fi
+
+# --- Git user creation ---
 if ! id "$GIT_USER" >/dev/null 2>&1; then
-  useradd -m -s /usr/local/bin/git-shell "$GIT_USER"
+  echo "Creating system user '$GIT_USER'"
+  # TODO: Pull GIT_PASS from a secrets file if shell access is ever required
+  $ESC useradd -m -s /usr/local/bin/git-shell "$GIT_USER"
+  if [ -n "${GIT_PASS}" ]; then
+    echo "Setting provided GIT_PASS for '$GIT_USER'"
+    printf '%s\n' "$GIT_PASS" | $ESC passwd "$GIT_USER"
+  else
+    # Remove password so no prompt on git-shell
+    remove_password "$GIT_USER"
+  fi
+else
+  echo "User '$GIT_USER' already exists; skipping creation"
 fi
 
 # 3. Configure doas
