@@ -1,3 +1,11 @@
-# Modularization in Progress
-- [ ] Split setup script
-- [ ] Split test suite
+- [ ] Dump test results to a log file 
+- [ ] create the obsidian user
+- [ ] configure 5000 item history for all profiles 
+- [ ] Github user config
+- [ ] Add functional testing 
+- [ ] Create a secrets script for configuring environment variable defaults (later this can be expanded when other secrets become necessary)
+- [ ] Create teardown script for easier testing 
+- [ ] Better ux for choosing scripts to run 
+- [ ] Incorporate timeouts for network tests
+- [ ] Attempt blocked doas command to confirm denial 
+- [ ] Build a custom ISO
