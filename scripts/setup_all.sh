@@ -11,7 +11,7 @@ echo "👉 Running system setup…"
 sh "$SCRIPT_DIR/setup_system.sh"
 
 echo "👉 Running Obsidian-sync setup…"
-sh "$SCRIPT_DIR/setup_obsidian.sh"
+sh "$SCRIPT_DIR/setup_obsidian_git.sh"
 
 echo "👉 Running GitHub-config setup…"
 sh "$SCRIPT_DIR/setup_github.sh"
