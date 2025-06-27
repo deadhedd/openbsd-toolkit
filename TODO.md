@@ -3,7 +3,8 @@
 - [ ] configure 5000 item history for all profiles 
 - [ ] Github user config
 - [ ] Add functional testing 
-- [ ] Create a secrets script for configuring environment variable defaults (later this can be expanded when other secrets become necessary)
+- [ ] Create a secrets file for configuring environment variable defaults
+- [ ] add git and obsidian user passwords to secrets file
 - [ ] Create teardown script for easier testing 
 - [ ] Better ux for choosing scripts to run 
 - [ ] Incorporate timeouts for network tests
