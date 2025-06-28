@@ -1,12 +1,10 @@
 #!/bin/sh
 #
-# setup_system.sh - General system configuration for Obsidian-Git-Host
+# setup_system.sh - General system configuration for OpenBSD Server
 # Usage: ./setup_system.sh
 set -e
 
 #––– Config (override via env) –––
-REG_USER=${REG_USER:-obsidian}
-GIT_USER=${GIT_USER:-git}
 INTERFACE=${INTERFACE:-em0}
 STATIC_IP=${STATIC_IP:-192.0.2.10}
 NETMASK=${NETMASK:-255.255.255.0}
@@ -14,7 +12,7 @@ GATEWAY=${GATEWAY:-192.0.2.1}
 DNS1=${DNS1:-1.1.1.1}
 DNS2=${DNS2:-9.9.9.9}
 
-# 4. Static network
+# 1. Static network
 cat > "/etc/hostname.${INTERFACE}" <<-EOF
 inet ${STATIC_IP} ${NETMASK}
 !route add default ${GATEWAY}
@@ -26,12 +24,12 @@ EOF
 ifconfig "${INTERFACE}" inet "${STATIC_IP}" netmask "${NETMASK}" up
 route add default "${GATEWAY}"
 
-# 5. SSH hardening
+# 2. SSH hardening
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 rcctl restart sshd
 
-# 6. Configure HISTFILE in profiles
-# need one for root
+# 3. Configure HISTFILE
+# TODO (root)
 
 echo "✅ System configuration complete."

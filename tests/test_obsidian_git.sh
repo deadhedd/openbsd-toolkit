@@ -2,6 +2,8 @@
 #
 # test_obsidian_sync.sh – Verify git-backed Obsidian sync configuration (with optional logging)
 #
+# TODO: fix organizational comments
+# TODO: add tests for the setup actions that dont currently have tests
 
 # 1) Locate this script’s directory so logs always end up alongside it
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -89,25 +91,48 @@ run_tests() {
   GIT_USER=${GIT_USER:-git}
   VAULT=${VAULT:-vault}
 
+  # 1. Packages installed
+  run_test "command -v git"  "git is installed"
+  
+  # 2-5. Users and shells
   run_test "id $REG_USER" "user '$REG_USER' exists"
   assert_user_shell "$REG_USER" "/bin/ksh"                  "shell for '$REG_USER' is /bin/ksh"
   run_test "id $GIT_USER" "user '$GIT_USER' exists"
   assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
-  run_test "command -v git"  "git is installed"
-  run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]"                               "bare repo exists"
-  run_test "stat -f '%Su' /home/${GIT_USER}/vaults/${VAULT}.git | grep -q '^${GIT_USER}\$'" "bare repo is owned by '${GIT_USER}'"
-  run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]"               "post-receive hook is executable"
-  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive | grep -q '^${GIT_USER}:${GIT_USER}\$'" "post-receive hook owned by ${GIT_USER}"
-  run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]"                              "bare repo HEAD exists"
-  run_test "[ -d /home/${REG_USER}/vaults/${VAULT}/.git ]"                                  "working clone exists for '${REG_USER}'"
-  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                      "safe.directory configured for working clone"
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${REG_USER}/.profile"    "${REG_USER} .profile sets HISTFILE"
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${GIT_USER}/.profile"    "${GIT_USER} .profile sets HISTFILE"
+  
+  # 6-9. doas config
+  assert_file_perm "/etc/doas.conf" "440"                                      "/etc/doas.conf has correct permissions"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"         "doas.conf owned by root:wheel"
+  run_test "grep -q \"^permit persist ${REG_USER} as root\$\" /etc/doas.conf" "doas.conf allows persist ${REG_USER}"
+  run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\" /etc/doas.conf" \
+           "doas.conf allows nopass ${GIT_USER} for git commands"
+
+  # 10-14 SSH config
   run_test "[ -d /home/${REG_USER} ]"                              "home directory for ${REG_USER} exists"
   run_test "stat -f '%Su' /home/${REG_USER} | grep -q '^${REG_USER}\$'" "${REG_USER} owns their home"
   run_test "[ -d /home/${GIT_USER} ]"                              "home directory for ${GIT_USER} exists"
   run_test "stat -f '%Su' /home/${GIT_USER} | grep -q '^${GIT_USER}\$'"   "${GIT_USER} owns their home"
   run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
+
+  # 15-16 Bare repo config
+  run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]"                               "bare repo exists"
+  run_test "stat -f '%Su' /home/${GIT_USER}/vaults/${VAULT}.git | grep -q '^${GIT_USER}\$'" "bare repo is owned by '${GIT_USER}'"
+
+  #   Post-recieve hook config
+  run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]"               "post-receive hook is executable"
+  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive | grep -q '^${GIT_USER}:${GIT_USER}\$'" "post-receive hook owned by ${GIT_USER}"
+
+  # git
+  run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]"                              "bare repo HEAD exists"
+  run_test "[ -d /home/${REG_USER}/vaults/${VAULT}/.git ]"                                  "working clone exists for '${REG_USER}'"
+  
+  #   Safe directory config
+  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                      "safe.directory configured for working clone"
+
+  #   HISTFILES config
+  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${REG_USER}/.profile"    "${REG_USER} .profile sets HISTFILE"
+  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${GIT_USER}/.profile"    "${GIT_USER} .profile sets HISTFILE"
+
 
   #––– Summary –––
   echo ""

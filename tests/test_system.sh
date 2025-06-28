@@ -52,12 +52,10 @@ if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
 fi
 
 # 6) Configuration defaults (can be overridden via env)
-REG_USER=${REG_USER:-obsidian}
-GIT_USER=${GIT_USER:-git}
 INTERFACE=${INTERFACE:-em0}
-STATIC_IP=${STATIC_IP:-192.0.2.101}
+STATIC_IP=${STATIC_IP:-192.168.0.201}
 NETMASK=${NETMASK:-255.255.255.0}
-GATEWAY=${GATEWAY:-192.0.2.1}
+GATEWAY=${GATEWAY:-192.168.0.2}
 DNS1=${DNS1:-1.1.1.1}
 DNS2=${DNS2:-9.9.9.9}
 
@@ -81,47 +79,29 @@ run_tests() {
     run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
   }
 
-
-
   #––– Begin Test Plan –––
-  echo "1..27"
+  echo "1..11"
 
-  # 1–4: User & Shell
-
-
-  # 5–6: Package Installation
-  run_test "command -v doas" "doas is installed"
-
-  # 7–10: doas.conf perms, ownership & rules
-  assert_file_perm "/etc/doas.conf" "440"                                      "/etc/doas.conf has correct permissions"
-  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"         "doas.conf owned by root:wheel"
-  run_test "grep -q \"^permit persist ${REG_USER} as root\$\" /etc/doas.conf" "doas.conf allows persist ${REG_USER}"
-  run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\" /etc/doas.conf" \
-           "doas.conf allows nopass ${GIT_USER} for git commands"
-
-  # 11–13: Network interface & config file
+  # 1–3: Network interface & config file
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                                 "interface config file exists"
   run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
   run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"            "hostname.${INTERFACE} has correct default route"
 
-  # 14: Default route in kernel
+  # 4: Default route in kernel
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                            "default route via ${GATEWAY} present"
 
-  # 15–18: DNS & resolv.conf
+  # 5–9: DNS & resolv.conf
   run_test "[ -f /etc/resolv.conf ]"                             "resolv.conf exists"
   run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"     "resolv.conf contains DNS1"
   run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"     "resolv.conf contains DNS2"
   assert_file_perm "/etc/resolv.conf" "644"                     "resolv.conf mode is 644"
 
-  # 19–21: SSH daemon & config
+  # 10–11: SSH daemon & config
   run_test "rcctl check sshd"                                      "sshd service is running"
   run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                     "sshd_config disallows root login"
 
-  # 22–23: Shell history config
-  # need to setup for root
-
-  # 24–27: Home directory existence & ownership
-
+  # 12: Shell history config
+  # TODO (root)
 
   #––– Summary –––
   echo ""
