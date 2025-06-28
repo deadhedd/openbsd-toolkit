@@ -80,28 +80,34 @@ run_tests() {
   }
 
   #––– Begin Test Plan –––
-  echo "1..11"
+  echo "1..13"
 
   # 1–3: Network interface & config file
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                                 "interface config file exists"
   run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
-  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"            "hostname.${INTERFACE} has correct default route"
+  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct default route"
 
   # 4: Default route in kernel
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                            "default route via ${GATEWAY} present"
 
-  # 5–9: DNS & resolv.conf
-  run_test "[ -f /etc/resolv.conf ]"                             "resolv.conf exists"
-  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"     "resolv.conf contains DNS1"
-  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"     "resolv.conf contains DNS2"
-  assert_file_perm "/etc/resolv.conf" "644"                     "resolv.conf mode is 644"
+  # 5–8: DNS & resolv.conf
+  run_test "[ -f /etc/resolv.conf ]"                                                         "resolv.conf exists"
+  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                                 "resolv.conf contains DNS1"
+  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"                                 "resolv.conf contains DNS2"
+  assert_file_perm "/etc/resolv.conf" "644"                                                  "resolv.conf mode is 644"
 
-  # 10–11: SSH daemon & config
-  run_test "rcctl check sshd"                                      "sshd service is running"
-  run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                     "sshd_config disallows root login"
+  # 9–10: SSH daemon & config
+  run_test "rcctl check sshd"                                                                 "sshd service is running"
+  run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                             "sshd_config disallows root login"
 
-  # 12: Shell history config
-  # TODO (root)
+  # 11: Interface brought up
+  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${STATIC_IP}\""                            "interface ${INTERFACE} is up with IP ${STATIC_IP}"
+
+  # 12: Password authentication disabled
+  run_test "grep -q \"^PasswordAuthentication no\" /etc/ssh/sshd_config"                      "sshd_config disallows password authentication"
+
+  # 13: (Placeholder) Shell history config not implemented yet
+  # run_test "grep -q '^HISTFILE=' /root/.profile"                                             "HISTFILE is configured"
 
   #––– Summary –––
   echo ""
@@ -136,3 +142,4 @@ run_and_maybe_log() {
 
 #––– Execute –––
 run_and_maybe_log
+

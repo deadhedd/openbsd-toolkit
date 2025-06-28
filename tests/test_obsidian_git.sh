@@ -26,7 +26,7 @@ EOF
   exit 1
 }
 
-# 4) Parse command‑line flags
+# 4) Parse command-line flags
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)
@@ -82,55 +82,81 @@ run_tests() {
   }
 
   #––– Begin Test Plan –––
-  echo "1..7"
+  echo "1..32"
 
   # configuration defaults
   REG_USER=${REG_USER:-obsidian}
   GIT_USER=${GIT_USER:-git}
   VAULT=${VAULT:-vault}
 
-  # 1. Packages installed
-  run_test "command -v git"  "git is installed"
-  
-  # 2-5. Users and shells
-  run_test "id $REG_USER" "user '$REG_USER' exists"
-  assert_user_shell "$REG_USER" "/bin/ksh"                  "shell for '$REG_USER' is /bin/ksh"
-  run_test "id $GIT_USER" "user '$GIT_USER' exists"
-  assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
-  
-  # 6-9. doas config
-  assert_file_perm "/etc/doas.conf" "440"                                      "/etc/doas.conf has correct permissions"
-  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"         "doas.conf owned by root:wheel"
-  run_test "grep -q \"^permit persist ${REG_USER} as root\$\" /etc/doas.conf" "doas.conf allows persist ${REG_USER}"
+  #  1. Packages installed
+  run_test "command -v git"                                                          "git is installed"
+
+  #  2-5. Users and shells
+  run_test "id $REG_USER"                                                            "user '$REG_USER' exists"
+  assert_user_shell "$REG_USER" "/bin/ksh"                                           "shell for '$REG_USER' is /bin/ksh"
+  run_test "id $GIT_USER"                                                            "user '$GIT_USER' exists"
+  assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell"                           "shell for '$GIT_USER' is git-shell"
+
+  #  6-9. doas config
+  assert_file_perm "/etc/doas.conf" "440"                                             "/etc/doas.conf has correct permissions"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"               "doas.conf owned by root:wheel"
+  run_test "grep -q \"^permit persist ${REG_USER} as root\$\" /etc/doas.conf"        "doas.conf allows persist ${REG_USER}"
   run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\" /etc/doas.conf" \
            "doas.conf allows nopass ${GIT_USER} for git commands"
 
-  # 10-14 SSH config
-  run_test "[ -d /home/${REG_USER} ]"                              "home directory for ${REG_USER} exists"
-  run_test "stat -f '%Su' /home/${REG_USER} | grep -q '^${REG_USER}\$'" "${REG_USER} owns their home"
-  run_test "[ -d /home/${GIT_USER} ]"                              "home directory for ${GIT_USER} exists"
-  run_test "stat -f '%Su' /home/${GIT_USER} | grep -q '^${GIT_USER}\$'"   "${GIT_USER} owns their home"
-  run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
+  # 10-14 SSH config basics
+  run_test "[ -d /home/${REG_USER} ]"                                                 "home directory for ${REG_USER} exists"
+  run_test "stat -f '%Su' /home/${REG_USER} | grep -q '^${REG_USER}\$'"               "${REG_USER} owns their home"
+  run_test "[ -d /home/${GIT_USER} ]"                                                 "home directory for ${GIT_USER} exists"
+  run_test "stat -f '%Su' /home/${GIT_USER} | grep -q '^${GIT_USER}\$'"               "${GIT_USER} owns their home"
+  run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config"   "sshd_config has AllowUsers"
 
   # 15-16 Bare repo config
-  run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]"                               "bare repo exists"
-  run_test "stat -f '%Su' /home/${GIT_USER}/vaults/${VAULT}.git | grep -q '^${GIT_USER}\$'" "bare repo is owned by '${GIT_USER}'"
+  run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]"                              "bare repo exists"
+  run_test "stat -f '%Su' /home/${GIT_USER}/vaults/${VAULT}.git | grep -q '^${GIT_USER}\$'" \
+           "bare repo is owned by '${GIT_USER}'"
 
-  #   Post-recieve hook config
-  run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]"               "post-receive hook is executable"
-  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive | grep -q '^${GIT_USER}:${GIT_USER}\$'" "post-receive hook owned by ${GIT_USER}"
+  # 17-18 Post-receive hook config
+  run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]"            "post-receive hook is executable"
+  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
+           "post-receive hook owned by ${GIT_USER}"
 
-  # git
-  run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]"                              "bare repo HEAD exists"
-  run_test "[ -d /home/${REG_USER}/vaults/${VAULT}/.git ]"                                  "working clone exists for '${REG_USER}'"
-  
-  #   Safe directory config
-  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                      "safe.directory configured for working clone"
+  # 19. Bare repo HEAD
+  run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]"                         "bare repo HEAD exists"
 
-  #   HISTFILES config
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${REG_USER}/.profile"    "${REG_USER} .profile sets HISTFILE"
-  run_test "grep -q '^export HISTFILE=\\\$HOME/.histfile' /home/${GIT_USER}/.profile"    "${GIT_USER} .profile sets HISTFILE"
+  # 20. Working clone exists
+  run_test "[ -d /home/${REG_USER}/vaults/${VAULT}/.git ]"                             "working clone exists for '${REG_USER}'"
 
+  # 21. Safe.directory for working clone
+  assert_git_safe "/home/${REG_USER}/vaults/${VAULT}"                                  "safe.directory configured for working clone"
+
+  # 22-23 HISTFILE export
+  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${REG_USER}/.profile" "${REG_USER} .profile sets HISTFILE"
+  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${GIT_USER}/.profile" "${GIT_USER} .profile sets HISTFILE"
+
+  # — Newly added tests —
+
+  # 24-25 Password field removed
+  run_test "grep -q \"^${REG_USER}::\" /etc/master.passwd"                              "password removed for ${REG_USER}"
+  run_test "grep -q \"^${GIT_USER}::\" /etc/master.passwd"                              "password removed for ${GIT_USER}"
+
+  # 26-28 .ssh directory for git user
+  run_test "[ -d /home/${GIT_USER}/.ssh ]"                                              "ssh dir for ${GIT_USER} exists"
+  assert_file_perm "/home/${GIT_USER}/.ssh" "700"                                       "ssh dir perm for ${GIT_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
+           "ssh dir owner for ${GIT_USER}"
+
+  # 29 Safe.directory for bare repo path
+  assert_git_safe "/home/${GIT_USER}/vaults/${VAULT}.git"                               "safe.directory configured for bare repo"
+
+  # 30 Initial commit in working clone
+  run_test "su - ${REG_USER} -c \"git -C /home/${REG_USER}/vaults/${VAULT} rev-parse HEAD >/dev/null\"" \
+           "initial commit present in working clone"
+
+  # 31-32 touch $HISTFILE in profiles
+  run_test "grep -q '^touch \\\\\\$HISTFILE' /home/${REG_USER}/.profile"                "touch command in ${REG_USER} .profile"
+  run_test "grep -q '^touch \\\\\\$HISTFILE' /home/${GIT_USER}/.profile"                "touch command in ${GIT_USER} .profile"
 
   #––– Summary –––
   echo ""
@@ -165,3 +191,4 @@ run_and_maybe_log() {
 
 #––– Execute –––
 run_and_maybe_log
+
