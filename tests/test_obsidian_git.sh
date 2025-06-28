@@ -2,8 +2,6 @@
 #
 # test_obsidian_sync.sh – Verify git-backed Obsidian sync configuration (with optional logging)
 #
-# TODO: fix organizational comments
-# TODO: add tests for the setup actions that dont currently have tests
 
 # 1) Locate this script’s directory so logs always end up alongside it
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
