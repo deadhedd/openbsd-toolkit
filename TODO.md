@@ -1,5 +1,5 @@
 - [x] Dump test results to a log file 
-- [ ] create the obsidian user
+- [x] create the obsidian user
 - [ ] configure 5000 item history for all profiles 
 - [ ] Github user config
 - [ ] Add functional testing 
