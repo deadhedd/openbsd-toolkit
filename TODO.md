@@ -12,3 +12,4 @@
 - [ ] Incorporate timeouts for network tests
 - [ ] Attempt blocked doas command to confirm denial 
 - [ ] Build a custom ISO
+- [ ] recovery partition 
