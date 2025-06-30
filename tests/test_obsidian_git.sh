@@ -103,7 +103,7 @@ run_tests() {
   assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" \
            "shell for '$GIT_USER' is git-shell"
 
-  #  6-9. doas config
+  #  6-10. doas config
   # TEST: DOAS.CONF EXISTS
 
   run_test "grep -q \"^permit persist ${REG_USER} as root\$\" /etc/doas.conf" \
@@ -115,7 +115,7 @@ run_tests() {
   assert_file_perm "/etc/doas.conf" "440" \
            "/etc/doas.conf has correct permissions"
 
-  # 10-25 SSH config basics
+  # 11-26 SSH config basics
   run_test "grep -q \"^AllowUsers.*${REG_USER}.*${GIT_USER}\" /etc/ssh/sshd_config" \
            "sshd_config has AllowUsers"
   # TEST: SSHD RUNNING
@@ -155,7 +155,7 @@ run_tests() {
          "authorized_keys ownership for ${GIT_USER}"
 
 
-  # 26-29 Bare repo config
+  # 27-30 Bare repo config
   # TEST: /home/${GIT_USER}/vaults EXISTS
 
   run_test "[ -d /home/${GIT_USER}/vaults/${VAULT}.git ]" \
@@ -165,7 +165,7 @@ run_tests() {
   run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]" \
            "bare repo initialized (HEAD file present)"
 
-  # 30-31 safe.directory config
+  # 31-32 safe.directory config
   # Verify that obsidian (the REG_USER) has whitelisted the BARE repo path
   assert_git_safe "/home/${GIT_USER}/vaults/${VAULT}.git" \
            "safe.directory entry for bare repo '/home/${GIT_USER}/vaults/${VAULT}.git' in ${REG_USER}'s global Git config"
@@ -174,7 +174,7 @@ run_tests() {
   assert_git_safe "/home/${REG_USER}/vaults/${VAULT}" \
            "safe.directory entry for working clone '/home/${REG_USER}/vaults/${VAULT}' in ${REG_USER}'s global Git config"
 
-  # 32-35 Post-receive hook config
+  # 33-36 Post-receive hook config
   # TEST: POST-RECIEVE EXISTS
 
   # TEST: POST-RECIEVE CONTENT IS CORRECT
@@ -184,7 +184,7 @@ run_tests() {
   run_test "[ -x /home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive ]" \
            "post-receive hook is executable"
 
-  # 36-44. Working clone exists
+  # 37-45. Working clone exists
   # TEST /home/${REG_USER}/vaults EXISTS
 
   # TEST /home/${REG_USER}/vaults HAS CORRECT OWNERSHIP
@@ -206,7 +206,7 @@ run_tests() {
   run_test "[ -f /home/${GIT_USER}/vaults/${VAULT}.git/HEAD ]" \
            "bare repo initialized (HEAD file present)"
 
-  # 45-50 HISTFILE export
+  # 46-51 HISTFILE export
   run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${REG_USER}/.profile" \
            "${REG_USER} .profile sets HISTFILE"
   run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${GIT_USER}/.profile" \
@@ -219,7 +219,7 @@ run_tests() {
 
   # TEST: REG USER HISTORY LENGTH 5000
 
-  # 51-52 Password field handling (no $OBS_PASS/$GIT_PASS → empty; else → non‑empty hash)
+  # 52-53 Password field handling (no $OBS_PASS/$GIT_PASS → empty; else → non‑empty hash)
   if [ -z "${OBS_PASS:-}" ]; then
     run_test "grep -q \"^${REG_USER}::\" /etc/master.passwd" \
              "password removed for ${REG_USER}"

@@ -22,18 +22,18 @@ cat > /etc/resolv.conf <<-EOF                # TESTED (#4)
 nameserver ${DNS1}                           # TESTED (#5)
 nameserver ${DNS2}                           # TESTED (#6)
 EOF
-chmod 644 /etc/resolv.conf                    # TESTED (#7)
+chmod 644 /etc/resolv.conf                   # TESTED (#7)
 
 ifconfig "${INTERFACE}" inet "${STATIC_IP}" netmask "${NETMASK}" up  # TESTED (#8)
 route add default "${GATEWAY}"                                       # TESTED (#9)
 
 # 2. SSH hardening
-sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config      # TESTED (#10)
-sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config  # TESTED (#11)
-rcctl restart sshd                                                                 # TESTED (#12)
+sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config                 # TESTED (#10)
+sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config   # TESTED (#11)
+rcctl restart sshd                                                                        # TESTED (#12)
 
 # 3. Configure HISTFILE
-# TODO (root) — no implementation yet                                                     
+# TODO (root) — no implementation yet                                          # UNTESTED           
 
 echo "✅ System configuration complete."
 
