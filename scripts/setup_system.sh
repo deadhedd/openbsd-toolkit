@@ -30,7 +30,7 @@ route add default "${GATEWAY}"                                       # TESTED (#
 # 2. SSH hardening
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config      # TESTED (#10)
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config  # TESTED (#11)
-rcctl restart sshd                                                                 # TESTED (12)
+rcctl restart sshd                                                                 # TESTED (#12)
 
 # 3. Configure HISTFILE
 # TODO (root) — no implementation yet                                                     
