@@ -103,8 +103,13 @@ run_tests() {
   run_test "grep -q \"^PasswordAuthentication no\" /etc/ssh/sshd_config"                      "sshd_config disallows password authentication"
   run_test "rcctl check sshd"                                                                 "sshd service is running"
 
-  # 13: (Placeholder) Shell history config not implemented yet
-  # run_test "grep -q '^HISTFILE=' /root/.profile"                                             "HISTFILE is configured"
+  # 13-15: ROOT HISTFILE & HISTORY‐LENGTH
+  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /root/.profile" \
+           "root .profile sets HISTFILE"
+  run_test "grep -q '^touch \\\\\\$HISTFILE' /root/.profile" \
+           "touch command in root .profile"
+  run_test "grep -q '^export HISTSIZE=5000' /root/.profile" \
+           "HISTSIZE set to 5000 for root"                                           "HISTFILE is configured"
 
   #––– Summary –––
   echo ""
