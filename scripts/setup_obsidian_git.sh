@@ -93,7 +93,8 @@ cat > "$HOOK" << 'EOF'                   # TESTED (#33)
 #!/bin/sh
 # no-op post-receive hook
 exit 0
-EOF                                      # TESTED (#34)
+EOF
+                                         # TESTED (#34)
 chown ${GIT_USER}:${GIT_USER} "$HOOK"    # TESTED (#35)
 chmod +x "$HOOK"                         # TESTED (#36)
 
