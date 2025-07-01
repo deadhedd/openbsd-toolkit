@@ -11,4 +11,6 @@
 - [ ] Better ux for choosing scripts to run 
 - [ ] Incorporate timeouts for network tests
 - [ ] Attempt blocked doas command to confirm denial 
+- [ ] obsidian daily note scripts
 - [ ] Build a custom ISO
+- [ ] recovery partition 
