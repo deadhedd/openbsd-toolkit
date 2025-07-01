@@ -1,8 +1,8 @@
 - [x] Dump test results to a log file 
 - [x] create the obsidian user
 - [ ] configure 5000 item history for all profiles
-- [ ] fix organizational comments in test_obsidian_user
-- [ ] add tests for the setup actions that dont currently have tests in test_obsidian_user
+- [x] fix organizational comments in test_obsidian_user
+- [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
 - [ ] Github user config
 - [ ] Add functional testing 
 - [ ] Create a secrets file for configuring environment variable defaults
