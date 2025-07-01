@@ -1,6 +1,6 @@
 - [x] Dump test results to a log file 
 - [x] create the obsidian user
-- [ ] configure 5000 item history for all profiles
+- [ ] script configs for new failing tests
 - [x] fix organizational comments in test_obsidian_user
 - [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
 - [ ] Github user config
