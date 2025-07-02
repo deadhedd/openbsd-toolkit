@@ -69,13 +69,22 @@ done
 # 8) Run them all, buffer output, and decide whether to log
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
+  fail=0
 
-  if ! {
-       sh "${SCRIPT_DIR}/test_system.sh"       && \
-       sh "${SCRIPT_DIR}/test_obsidian_git.sh" && \
-       sh "${SCRIPT_DIR}/test_github.sh"
-     } >"$TMP" 2>&1; then
+  for script in "${SCRIPT_DIR}/test_system.sh" \
+                "${SCRIPT_DIR}/test_obsidian_git.sh" \
+                "${SCRIPT_DIR}/test_github.sh"; do
 
+    printf "⏳ Running %s …\n" "$(basename "$script")" >>"$TMP"
+    if ! sh "$script" >>"$TMP" 2>&1; then
+      printf "🛑 %s FAILED\n\n" "$(basename "$script")" >>"$TMP"
+      fail=1
+    else
+      printf "✅ %s passed\n\n" "$(basename "$script")" >>"$TMP"
+    fi
+  done
+
+  if [ "$fail" -ne 0 ]; then
     echo "🛑 Some tests FAILED — dumping full log to $LOGFILE"
     cat "$TMP" | tee "$LOGFILE"
     rm -f "$TMP"
@@ -88,6 +97,7 @@ run_and_maybe_log() {
       cat "$TMP"
     fi
     rm -f "$TMP"
+    echo "✅ All tests passed."
   fi
 }
 
