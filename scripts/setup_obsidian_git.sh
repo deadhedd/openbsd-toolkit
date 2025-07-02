@@ -91,9 +91,9 @@ su -s /bin/sh - ${REG_USER} -c "git config --global --add safe.directory \
 
 # 7. Post-receive hook
 HOOK=/home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive
-cat > "$HOOK" << 'EOF'                   # TESTED (#33)
+cat > "$HOOK" << EOF                   # TESTED (#33)
 #!/bin/sh
-# no-op post-receive hook
+git --work-tree=/home/${REG_USER}/vaults/${VAULT} --git-dir=/home/${GIT_USER}/vaults/${VAULT}.git checkout -f
 exit 0
 EOF
                                          # TESTED (#34)
