@@ -58,9 +58,11 @@ else
 fi
 
 # 3. Configure doas
+# TESTED REG_USER PERMIT PERSIST (#7)
+# TESTED GIT_USER PERMIT NOPASS (#8)
 cat > /etc/doas.conf <<-EOF                    # TESTED (#6)
-permit persist ${REG_USER} as root             # TESTED (#7)
-permit nopass ${GIT_USER} as root cmd git*     # TESTED (#8)
+permit persist ${REG_USER} as root
+permit nopass ${GIT_USER} as root cmd git*
 EOF
 chown root:wheel /etc/doas.conf                # TESTED (#9)
 chmod 0440       /etc/doas.conf                # TESTED (#10)
