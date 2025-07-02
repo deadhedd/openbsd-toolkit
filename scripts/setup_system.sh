@@ -13,9 +13,11 @@ DNS1=${DNS1:-1.1.1.1}
 DNS2=${DNS2:-9.9.9.9}
 
 # 1. Static network
+# TESTED PERSISTENT IP (#2)
+# TESTED DEFAULT ROUTE (#3)
 cat > "/etc/hostname.${INTERFACE}" <<-EOF    # TESTED (#1)
-inet ${STATIC_IP} ${NETMASK}                 # TESTED (#2)
-!route add default ${GATEWAY}                # TESTED (#3)
+inet ${STATIC_IP} ${NETMASK}
+!route add default ${GATEWAY}
 EOF
 
 cat > /etc/resolv.conf <<-EOF                # TESTED (#4)
