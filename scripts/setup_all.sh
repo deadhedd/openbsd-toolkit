@@ -10,10 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 echo "👉 Running system setup…"
 sh "$SCRIPT_DIR/setup_system.sh"
 
-echo "👉 Running Obsidian-sync setup…"
+echo "👉 Running Obsidian-git setup…"
 sh "$SCRIPT_DIR/setup_obsidian_git.sh"
 
-echo "👉 Running GitHub-config setup…"
+echo "👉 Running GitHub setup…"
 sh "$SCRIPT_DIR/setup_github.sh"
 
 echo ""

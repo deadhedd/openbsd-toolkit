@@ -1,8 +1,8 @@
 - [x] Dump test results to a log file 
 - [x] create the obsidian user
-- [ ] configure 5000 item history for all profiles
-- [ ] fix organizational comments in test_obsidian_user
-- [ ] add tests for the setup actions that dont currently have tests in test_obsidian_user
+- [ ] script configs for new failing tests
+- [x] fix organizational comments in test_obsidian_user
+- [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
 - [ ] Github user config
 - [ ] Add functional testing 
 - [ ] Create a secrets file for configuring environment variable defaults
@@ -11,5 +11,6 @@
 - [ ] Better ux for choosing scripts to run 
 - [ ] Incorporate timeouts for network tests
 - [ ] Attempt blocked doas command to confirm denial 
+- [ ] obsidian daily note scripts
 - [ ] Build a custom ISO
 - [ ] recovery partition 

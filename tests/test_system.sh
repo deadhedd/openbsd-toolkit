@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# test_system_config.sh – Verify general system configuration for Obsidian‑Git‑Host setup (with optional logging)
+# test_system.sh – Verify general system configuration for Obsidian‑Git‑Host setup (with optional logging)
 #
 
 # 1) Locate this script’s directory so logs always end up alongside it
@@ -53,9 +53,9 @@ fi
 
 # 6) Configuration defaults (can be overridden via env)
 INTERFACE=${INTERFACE:-em0}
-STATIC_IP=${STATIC_IP:-192.168.0.201}
+STATIC_IP=${STATIC_IP:-192.0.2.10}
 NETMASK=${NETMASK:-255.255.255.0}
-GATEWAY=${GATEWAY:-192.168.0.2}
+GATEWAY=${GATEWAY:-192.0.2.1}
 DNS1=${DNS1:-1.1.1.1}
 DNS2=${DNS2:-9.9.9.9}
 
@@ -80,28 +80,36 @@ run_tests() {
   }
 
   #––– Begin Test Plan –––
-  echo "1..11"
+  echo "1..12"
 
   # 1–3: Network interface & config file
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                                 "interface config file exists"
   run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
-  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"            "hostname.${INTERFACE} has correct default route"
+  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct default route"
+  
 
-  # 4: Default route in kernel
+  # 4–7: DNS & resolv.conf
+  run_test "[ -f /etc/resolv.conf ]"                                                         "resolv.conf exists"
+  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                                 "resolv.conf contains DNS1"
+  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"                                 "resolv.conf contains DNS2"
+  assert_file_perm "/etc/resolv.conf" "644"                                                  "resolv.conf mode is 644"
+  
+  # 8-9: Default route in kernel
+  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${STATIC_IP}\""                            "interface ${INTERFACE} is up with IP ${STATIC_IP}"
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                            "default route via ${GATEWAY} present"
 
-  # 5–9: DNS & resolv.conf
-  run_test "[ -f /etc/resolv.conf ]"                             "resolv.conf exists"
-  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"     "resolv.conf contains DNS1"
-  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"     "resolv.conf contains DNS2"
-  assert_file_perm "/etc/resolv.conf" "644"                     "resolv.conf mode is 644"
+  # 10–12: SSH daemon & config
+  run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                             "sshd_config disallows root login"
+  run_test "grep -q \"^PasswordAuthentication no\" /etc/ssh/sshd_config"                      "sshd_config disallows password authentication"
+  run_test "rcctl check sshd"                                                                 "sshd service is running"
 
-  # 10–11: SSH daemon & config
-  run_test "rcctl check sshd"                                      "sshd service is running"
-  run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                     "sshd_config disallows root login"
-
-  # 12: Shell history config
-  # TODO (root)
+  # 13-15: ROOT HISTFILE & HISTORY‐LENGTH
+  run_test "grep -q '^export HISTFILE=/root/\.ksh_history' /root/.profile" \
+           "root .profile sets HISTFILE to /root/.ksh_history"
+  run_test "grep -q '^export HISTSIZE=5000' /root/.profile" \
+           "root .profile sets HISTSIZE to 5000"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile" \
+           "root .profile sets HISTCONTROL to ignoredups"
 
   #––– Summary –––
   echo ""
@@ -136,3 +144,4 @@ run_and_maybe_log() {
 
 #––– Execute –––
 run_and_maybe_log
+

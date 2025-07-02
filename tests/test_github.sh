@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# test_github_config.sh – Verify GitHub SSH key & known_hosts for deploy (with optional logging)
+# test_github.sh – Verify GitHub SSH key & repo bootstrap (with optional logging)
 #
 
 # 1) Locate this script’s directory so logs always end up alongside it
@@ -53,6 +53,10 @@ fi
 
 #–––– Test Framework ––––
 run_tests() {
+  # optionally allow override, but default must match setup script
+  setup_dir=${SETUP_DIR:-/root/openbsd-server}
+  github_repo=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
+
   tests=0; fails=0
 
   run_test() {
@@ -72,12 +76,19 @@ run_tests() {
   }
 
   #––– Begin Test Plan –––
-  echo "1..4"
+  echo "1..7"
 
+
+  run_test "[ -d /root/.ssh ]"                                                "root .ssh directory exists"
   run_test "[ -f /root/.ssh/id_ed25519 ]"                                    "deploy key present"
   assert_file_perm "/root/.ssh/id_ed25519" "600"                              "deploy key mode is 600"
+
   run_test "[ -f /root/.ssh/known_hosts ]"                                    "root known_hosts exists"
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                 "known_hosts contains github.com"
+
+  run_test "[ -d \$setup_dir/.git ]"                                          "repository cloned into \$setup_dir"
+
+  run_test "grep -q \"url = \$github_repo\" \$setup_dir/.git/config"          "remote origin set to GITHUB_REPO"
 
   #––– Summary –––
   echo ""
@@ -112,3 +123,4 @@ run_and_maybe_log() {
 
 #––– Execute –––
 run_and_maybe_log
+
