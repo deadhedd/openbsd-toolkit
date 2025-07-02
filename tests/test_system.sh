@@ -104,12 +104,12 @@ run_tests() {
   run_test "rcctl check sshd"                                                                 "sshd service is running"
 
   # 13-15: ROOT HISTFILE & HISTORY‐LENGTH
-  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /root/.profile" \
-           "root .profile sets HISTFILE"
-  run_test "grep -q '^touch \\\\\\$HISTFILE' /root/.profile" \
-           "touch command in root .profile"
+  run_test "grep -q '^export HISTFILE=/root/\.ksh_history' /root/.profile" \
+           "root .profile sets HISTFILE to /root/.ksh_history"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile" \
-           "HISTSIZE set to 5000 for root"                                           "HISTFILE is configured"
+           "root .profile sets HISTSIZE to 5000"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile" \
+           "root .profile sets HISTCONTROL to ignoredups"
 
   #––– Summary –––
   echo ""

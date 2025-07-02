@@ -215,18 +215,18 @@ run_tests() {
            "bare repo initialized (HEAD file present)"
 
   # 49-54 HISTFILE export
-  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${REG_USER}/.profile" \
-           "${REG_USER} .profile sets HISTFILE"
-  run_test "grep -q '^export HISTFILE=\\\\\$HOME/.histfile' /home/${GIT_USER}/.profile" \
-           "${GIT_USER} .profile sets HISTFILE"
-  run_test "grep -q '^touch \\\\\\$HISTFILE' /home/${REG_USER}/.profile" \
-           "touch command in ${REG_USER} .profile"
-  run_test "grep -q '^touch \\\\\\$HISTFILE' /home/${GIT_USER}/.profile" \
-           "touch command in ${GIT_USER} .profile"
-  run_test "grep -q '^export HISTSIZE=5000' /home/${GIT_USER}/.profile" \
-           "HISTSIZE set to 5000 for ${GIT_USER}"
+  run_test "grep -q '^export HISTFILE=/home/${REG_USER}/\.ksh_history' /home/${REG_USER}/.profile" \
+          "${REG_USER} .profile sets HISTFILE to /home/${REG_USER}/.ksh_history"
+  run_test "grep -q '^export HISTFILE=/home/${GIT_USER}/\.ksh_history' /home/${GIT_USER}/.profile" \
+          "${GIT_USER} .profile sets HISTFILE to /home/${GIT_USER}/.ksh_history"
   run_test "grep -q '^export HISTSIZE=5000' /home/${REG_USER}/.profile" \
-           "HISTSIZE set to 5000 for ${REG_USER}"
+          "HISTSIZE set to 5000 for ${REG_USER}"
+  run_test "grep -q '^export HISTSIZE=5000' /home/${GIT_USER}/.profile" \
+          "HISTSIZE set to 5000 for ${GIT_USER}"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /home/${REG_USER}/.profile" \
+          "HISTCONTROL set to ignoredups for ${REG_USER}"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /home/${GIT_USER}/.profile" \
+          "HISTCONTROL set to ignoredups for ${GIT_USER}"
            
   # 55-56 Password field handling (no $OBS_PASS/$GIT_PASS → empty; else → non‑empty hash)
   if [ -z "${OBS_PASS:-}" ]; then

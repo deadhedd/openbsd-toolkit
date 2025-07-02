@@ -119,8 +119,14 @@ su -s /bin/sh - ${REG_USER} -c "
 # 10. Configure HISTFILES
 for u in "$REG_USER" "$GIT_USER"; do
   PROFILE="/home/${u}/.profile"
-  echo 'export HISTFILE=$HOME/.histfile' >> "$PROFILE"    # TESTED (#46 AND 47)
-  echo 'touch $HISTFILE'             >> "$PROFILE"        # TESTED (#48 AND 49)
+  # TESTED ${u} PROFILE SETS HISTFILE (#46/#47)
+  # TESTED ${u} PROFILE SETS HISTSIZE (#48/#49)
+  # TESTED ${u} PROFILE SETS HISTCONTROL (#50/#51)
+  cat <<EOF >> "$PROFILE"
+export HISTFILE=/home/${u}/.ksh_history
+export HISTSIZE=5000
+export HISTCONTROL=ignoredups
+EOF
 done
 
 echo "✅ Obsidian sync setup complete."

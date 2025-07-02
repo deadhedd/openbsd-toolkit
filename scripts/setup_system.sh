@@ -34,8 +34,15 @@ sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config       
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config   # TESTED (#11)
 rcctl restart sshd                                                                        # TESTED (#12)
 
-# 3. Configure HISTFILE
-# TODO (root) — no implementation yet                                          # UNTESTED           
+# TESTED ROOT PROFILE SETS HISTFILE (#13)
+# TESTED ROOT PROFILE SETS HISTSIZE (#15)
+# TESTED ROOT PROFILE SETS HISTCONTROL (#16)
+cat << 'EOF' >> /root/.profile
+export HISTFILE=/root/.ksh_history
+export HISTSIZE=5000
+export HISTCONTROL=ignoredups
+EOF
+. /root/.profile
 
 echo "✅ System configuration complete."
 
