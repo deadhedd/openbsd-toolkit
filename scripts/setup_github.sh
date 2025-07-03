@@ -5,7 +5,7 @@
 set -e
 
 #--- Load secrets ---
-. "$(dirname "$0")/load-secrets.sh"
+. "$(dirname "$0")/load_secrets.sh"
 
 #––– Determine script dir for deploy_key –––
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)

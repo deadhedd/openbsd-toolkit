@@ -13,7 +13,7 @@ FORCE_LOG=0
 LOGFILE=""
 
 #--- Load secrets ---
-. "$SCRIPT_DIR/../scripts/load-secrets.sh"
+. "$SCRIPT_DIR/../scripts/load_secrets.sh"
 
 # 3) Usage helper
 usage() {

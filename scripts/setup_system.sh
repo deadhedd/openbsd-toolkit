@@ -5,7 +5,7 @@
 set -e
 
 #--- Load secrets ---
-. "$(dirname "$0")/load-secrets.sh"
+. "$(dirname "$0")/load_secrets.sh"
 
 #––– Config (override via env) –––
 INTERFACE=${INTERFACE:-em0}

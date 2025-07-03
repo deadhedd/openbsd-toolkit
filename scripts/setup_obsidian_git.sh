@@ -5,7 +5,7 @@
 set -e
 
 #--- Load secrets ---
-. "$(dirname "$0")/load-secrets.sh"
+. "$(dirname "$0")/load_secrets.sh"
 
 #––– Config (override via env) –––
 REG_USER=${REG_USER:-obsidian}
