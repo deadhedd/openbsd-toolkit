@@ -4,7 +4,9 @@
 - [x] fix organizational comments in test_obsidian_user
 - [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
 - [ ] Create a secrets file for configuring environment variable defaults
-- [ ] add git and obsidian user passwords to secrets file
+- [ ] implement secrets retreival in setup and test scripts
+- [ ] add admin user setup to setup_system.sh
+- [ ] update REG_USER usages to OBS_USER
 - [ ] add support for hints in test suite
 - [ ] require valid git and reg user password and provide hint on failure 
 - [ ] Github user config
