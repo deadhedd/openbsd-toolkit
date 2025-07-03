@@ -4,6 +4,9 @@
 # Usage: ./setup_obsidian_git.sh
 set -e
 
+#--- Load secrets ---
+. "$(dirname "$0")/load-secrets.sh"
+
 #––– Config (override via env) –––
 REG_USER=${REG_USER:-obsidian}
 GIT_USER=${GIT_USER:-git}

@@ -4,6 +4,9 @@
 # Usage: ./setup_github.sh
 set -e
 
+#--- Load secrets ---
+. "$(dirname "$0")/load-secrets.sh"
+
 #––– Determine script dir for deploy_key –––
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 DEPLOY_KEY="$SCRIPT_DIR/deploy_key"
