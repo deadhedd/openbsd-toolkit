@@ -4,23 +4,48 @@ A collection of modular scripts to configure and validate an OpenBSD server for 
 
 ---
 
-## 🚀 v0.2.1 – Usability Improvements (2025-06-28)
+## 🚀 v0.3 – Configuration & Test Coverage Completion (2025-07-02)
 
-* **Logging Enhancements**
+* **Test runner reliability**
 
-  * `--log[=FILE]` / `-l`: force writing a full log on every run.
-  * Sensible defaults: logs written to `logs/` with timestamped filenames.
+  * `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
 
-* **Expanded User Setup**
+* **test_github additions**
 
-  * Configures **both** `git` and `obsidian` users (instead of only `git`).
-  * Blank initial passwords assigned for both users (can be pulled from a secrets file).
-  * Fixed the bug in `setup_obsidian_git.sh` that this change introduced.
+  * Verifies `/root/.ssh` exists.  
+  * Confirms the repository is cloned into `$setup_dir/.git`.  
+  * Checks `remote origin` in `$setup_dir/.git/config` matches `$GITHUB_REPO`.
 
-* **Refactor Sync Code**
+* **test_system enhancements**
 
-  * Moved missing code blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
-  * Mirrored those changes in the corresponding test scripts for consistency.
+  * Asserts `${INTERFACE}` is up with `${STATIC_IP}`.  
+  * Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.  
+  * Validates root’s `.profile` exports:  
+    - `HISTFILE=/root/.ksh_history`  
+    - `HISTSIZE=5000`  
+    - `HISTCONTROL=ignoredups`
+
+* **History‑merge test**
+
+  * Confirms old‑history marker is merged into new history.  
+  * Confirms new‑history marker remains intact.
+
+* **doas & package tests moved**
+
+  * Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
+
+* **test_obsidian_git expanded**
+
+  * SSH service config (`AllowUsers`, daemon running).  
+  * `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).  
+  * Vaults directories for both users.  
+  * Bare repo HEAD, `safe.directory` entries, post‑receive hook shebang & content.  
+  * Working‑clone verification (clone, remote URL, commit presence).  
+  * Per‑user history settings in `.profile` and `master.passwd` (password removal or setting).
+
+* **Setup scripts aligned**
+
+  * Added or moved all corresponding configuration blocks into `setup_system.sh` and `setup_obsidian_git.sh` so new tests pass out-of-the-box.
 
 ---
 
@@ -61,7 +86,7 @@ All setup and test scripts support optional logging flags:
   ```sh
   ./script.sh --log
   ./script.sh -l
-  ```
+````
 
 * **Specify a custom logfile**:
 
@@ -115,7 +140,7 @@ Same environment variables apply.
 Use version tags to snapshot working configurations:
 
 ```sh
-git tag -a v0.2.1 -m "Usability Improvements"
+git tag -a v0.3 -m "v0.3 – Configuration & Test Coverage Completion"
 git push origin --tags
 ```
 
@@ -123,19 +148,63 @@ git push origin --tags
 
 ## 📜 Changelog
 
-### v0.2.1 – Usability Improvements (2025-06-28)
+### v0.3 – Configuration & Test Coverage Completion (2025-07-02)
+
+* **Test runner reliability**
+
+  * `test_all.sh` now continues through all suites even if one fails.
+
+* **test\_github additions**
+
+  * Verified `/root/.ssh` exists.
+  * Confirmed repo clone into `$setup_dir`.
+  * Checked `remote origin` URL in `.git/config`.
+
+* **test\_system enhancements**
+
+  * Asserted `${INTERFACE}` IP assignment.
+  * Ensured SSH disallows password auth.
+  * Root’s `.profile` now exports `HISTFILE`, `HISTSIZE`, and `HISTCONTROL`.
+
+* **History‑merge test**
+
+  * Old history merged into new.
+  * New history preserved.
+
+* **doas & package tests moved**
+
+  * Tests for package installation and `doas.conf` perms/ownership now live in `test_obsidian_git.sh`.
+
+* **test\_obsidian\_git expanded**
+
+  * SSHD config & daemon checks.
+  * `.ssh` and `authorized_keys` validation for both users.
+  * Vaults directory existence and permissions.
+  * Bare repo HEAD, `safe.directory`, post‑receive hook content.
+  * Working clone functionality (clone, remote URL, commit log).
+  * Per-user history and password‑field tests in `master.passwd`.
+
+* **Setup scripts aligned**
+
+  * Added all corresponding config snippets to `setup_system.sh` and `setup_obsidian_git.sh`.
+
+### 🚀 v0.2.1 – Usability Improvements (2025-06-28)
 
 * **Logging Enhancements**
 
-  * `--log[=FILE]` / `-l` flags; default logs on failure to `logs/` with timestamps.
+  * `--log[=FILE]` / `-l`: force writing a full log on every run.
+  * Sensible defaults: logs written to `logs/` with timestamped filenames.
+
 * **Expanded User Setup**
 
-  * Now sets up both `git` and `obsidian` users with blank initial passwords.
-  * Bug fix in `setup_obsidian_git.sh` related to user setup.
+  * Configures **both** `git` and `obsidian` users (instead of only `git`).
+  * Blank initial passwords assigned for both users (can be pulled from a secrets file).
+  * Fixed the bug in `setup_obsidian_git.sh` that this change introduced.
+
 * **Refactor Sync Code**
 
-  * Pulled missing blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
-  * Aligned test scripts (`test_*.sh`) to reflect these changes.
+  * Moved missing code blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
+  * Mirrored those changes in the corresponding test scripts for consistency.
 
 ### v0.2.0 – Modularization (2025-06-26)
 
@@ -164,3 +233,5 @@ git push origin --tags
 ## License
 
 MIT OR 0BSD — see the LICENSE file.
+
+```
