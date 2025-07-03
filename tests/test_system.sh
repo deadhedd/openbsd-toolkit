@@ -3,6 +3,9 @@
 # test_system.sh – Verify general system configuration for Obsidian‑Git‑Host setup (with optional logging)
 #
 
+#--- Load secrets ---
+. "$(dirname "$0")/load-secrets.sh"
+
 # 1) Locate this script’s directory so logs always end up alongside it
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOGDIR="$SCRIPT_DIR/logs"
