@@ -3,10 +3,11 @@
 - [x] script configs for new failing tests
 - [x] fix organizational comments in test_obsidian_user
 - [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
-- [ ] Github user config
-- [ ] Add functional testing 
+- [ ] add security warning to NO_PASS
 - [ ] Create a secrets file for configuring environment variable defaults
 - [ ] add git and obsidian user passwords to secrets file
+- [ ] Github user config
+- [ ] Add functional testing 
 - [ ] Create teardown script for easier testing 
 - [ ] Better ux for choosing scripts to run 
 - [ ] Incorporate timeouts for network tests
