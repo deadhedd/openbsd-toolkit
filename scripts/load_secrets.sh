@@ -5,8 +5,8 @@
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 # example (tracked) vs real (gitignored)
-EXAMPLE="${SCRIPT_DIR}/../secrets.env.example"
-SECRETS="${SCRIPT_DIR}/../secrets.env"
+EXAMPLE="${SCRIPT_DIR}/secrets.env.example"
+SECRETS="${SCRIPT_DIR}/secrets.env"
 
 # if they haven’t yet made their real secrets file, bootstrap it
 if [ ! -f "$SECRETS" ]; then
