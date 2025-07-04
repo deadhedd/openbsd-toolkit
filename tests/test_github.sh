@@ -57,7 +57,7 @@ fi
 #–––– Test Framework ––––
 run_tests() {
   # optionally allow override, but default must match setup script
-  setup_dir=${SETUP_DIR:-/root/openbsd-server}
+  local_dir=${LOCAL_DIR:-/root/openbsd-server}
   github_repo=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
 
   tests=0; fails=0
@@ -89,9 +89,9 @@ run_tests() {
   run_test "[ -f /root/.ssh/known_hosts ]"                                    "root known_hosts exists"
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                 "known_hosts contains github.com"
 
-  run_test "[ -d \$setup_dir/.git ]"                                          "repository cloned into \$setup_dir"
+  run_test "[ -d \$local_dir/.git ]"                                          "repository cloned into \$local_dir"
 
-  run_test "grep -q \"url = \$github_repo\" \$setup_dir/.git/config"          "remote origin set to GITHUB_REPO"
+  run_test "grep -q \"url = \$github_repo\" \$local_dir/.git/config"          "remote origin set to GITHUB_REPO"
 
   #––– Summary –––
   echo ""

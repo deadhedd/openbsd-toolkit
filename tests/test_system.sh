@@ -55,12 +55,12 @@ if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
 fi
 
 # 6) Configuration defaults (can be overridden via env)
-INTERFACE=${INTERFACE:-em0}
-STATIC_IP=${STATIC_IP:-192.0.2.10}
-NETMASK=${NETMASK:-255.255.255.0}
-GATEWAY=${GATEWAY:-192.0.2.1}
-DNS1=${DNS1:-1.1.1.1}
-DNS2=${DNS2:-9.9.9.9}
+# INTERFACE=${INTERFACE:-em0}
+# STATIC_IP=${STATIC_IP:-192.0.2.10}
+# NETMASK=${NETMASK:-255.255.255.0}
+# GATEWAY=${GATEWAY:-192.0.2.1}
+# DNS1=${DNS1:-1.1.1.1}
+# DNS2=${DNS2:-9.9.9.9}
 
 #–––– Run all tests in a function so we can capture their output ––––
 run_tests() {

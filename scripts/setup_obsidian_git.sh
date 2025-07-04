@@ -8,9 +8,9 @@ set -e
 . "$(dirname "$0")/load_secrets.sh"
 
 #––– Config (override via env) –––
-REG_USER=${REG_USER:-obsidian}
-GIT_USER=${GIT_USER:-git}
-VAULT=${VAULT:-vault}
+# OBS_USER=${OBS_USER:-obsidian}
+# GIT_USER=${GIT_USER:-git}
+# VAULT=${VAULT:-vault}
 
 # 1. Install required packages
 pkg_add -v git                                         # TESTED (#1)
@@ -29,19 +29,19 @@ remove_password() {
 }
 
 # --- Obsidian user creation ---
-if ! id "$REG_USER" >/dev/null 2>&1; then
-  echo "Creating system user '$REG_USER'"
+if ! id "$OBS_USER" >/dev/null 2>&1; then
+  echo "Creating system user '$OBS_USER'"
   # TODO: Pull OBS_PASS from a secrets file instead of a default blank password
-  $ESC useradd -m -s /bin/ksh "$REG_USER"                                      # TESTED (#2 AND 3)
+  $ESC useradd -m -s /bin/ksh "$OBS_USER"                                      # TESTED (#2 AND 3)
   if [ -n "${OBS_PASS}" ]; then
-    echo "Setting provided OBS_PASS for '$REG_USER'"
-    printf '%s\n' "$OBS_PASS" | $ESC passwd "$REG_USER"                        # TESTED (#52)
+    echo "Setting provided OBS_PASS for '$OBS_USER'"
+    printf '%s\n' "$OBS_PASS" | $ESC passwd "$OBS_USER"                        # TESTED (#52)
   else
     # Remove password so no prompt on login
-    remove_password "$REG_USER"                                                # TESTED (#52)
+    remove_password "$OBS_USER"                                                # TESTED (#52)
   fi
 else
-  echo "User '$REG_USER' already exists; skipping creation"
+  echo "User '$OBS_USER' already exists; skipping creation"
 fi
 
 # --- Git user creation ---
@@ -61,10 +61,10 @@ else
 fi
 
 # 3. Configure doas
-# TESTED REG_USER PERMIT PERSIST (#7)
+# TESTED OBS_USER PERMIT PERSIST (#7)
 # TESTED GIT_USER PERMIT NOPASS (#8)
 cat > /etc/doas.conf <<-EOF                    # TESTED (#6)
-permit persist ${REG_USER} as root
+permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
 EOF
 chown root:wheel /etc/doas.conf                # TESTED (#9)
@@ -72,9 +72,9 @@ chmod 0440       /etc/doas.conf                # TESTED (#10)
 
 # 4. Configure SSH for users
 if grep -q '^AllowUsers' /etc/ssh/sshd_config; then
-  sed -i "/^AllowUsers /c\\AllowUsers ${REG_USER} ${GIT_USER}" /etc/ssh/sshd_config     # TESTED (#11)
+  sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config     # TESTED (#11)
 else
-  echo "AllowUsers ${REG_USER} ${GIT_USER}" >> /etc/ssh/sshd_config                     # TESTED (#11)
+  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config                     # TESTED (#11)
 fi
 rcctl restart sshd                                                                      # TESTED (#12)
 
@@ -89,14 +89,14 @@ chown -R ${GIT_USER}:${GIT_USER} /home/${GIT_USER}/vaults                       
 su -s /bin/sh - ${GIT_USER} -c "git init --bare /home/${GIT_USER}/vaults/${VAULT}.git"  # TESTED (#30)
 
 # 6. Safe.directory for vault
-su -s /bin/sh - ${REG_USER} -c "git config --global --add safe.directory \
+su -s /bin/sh - ${OBS_USER} -c "git config --global --add safe.directory \
          /home/${GIT_USER}/vaults/${VAULT}.git"                                    # TESTED (#31)
 
 # 7. Post-receive hook
 HOOK=/home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive
 cat > "$HOOK" << EOF                   # TESTED (#33)
 #!/bin/sh
-git --work-tree=/home/${REG_USER}/vaults/${VAULT} --git-dir=/home/${GIT_USER}/vaults/${VAULT}.git checkout -f
+git --work-tree=/home/${OBS_USER}/vaults/${VAULT} --git-dir=/home/${GIT_USER}/vaults/${VAULT}.git checkout -f
 exit 0
 EOF
                                          # TESTED (#34)
@@ -104,23 +104,23 @@ chown ${GIT_USER}:${GIT_USER} "$HOOK"    # TESTED (#35)
 chmod +x "$HOOK"                         # TESTED (#36)
 
 # 8. Clone a working copy for obsidian user
-mkdir -p /home/${REG_USER}/vaults                                                    # TESTED (#37)
-chown ${REG_USER}:${REG_USER} /home/${REG_USER}/vaults                               # TESTED (#38)
-su -s /bin/sh - ${REG_USER} -c "git clone /home/${GIT_USER}/vaults/${VAULT}.git \
-      /home/${REG_USER}/vaults/${VAULT}"                                             # TESTED (#39 AND 40)
+mkdir -p /home/${OBS_USER}/vaults                                                    # TESTED (#37)
+chown ${OBS_USER}:${OBS_USER} /home/${OBS_USER}/vaults                               # TESTED (#38)
+su -s /bin/sh - ${OBS_USER} -c "git clone /home/${GIT_USER}/vaults/${VAULT}.git \
+      /home/${OBS_USER}/vaults/${VAULT}"                                             # TESTED (#39 AND 40)
 
 # 9. Safe.directory for working clone & initial commit
-su -s /bin/sh - ${REG_USER} -c "git config --global --add safe.directory \
-      /home/${REG_USER}/vaults/${VAULT}"                                         # TESTED (#32)
-su -s /bin/sh - ${REG_USER} -c "
-  cd /home/${REG_USER}/vaults/${VAULT} &&
+su -s /bin/sh - ${OBS_USER} -c "git config --global --add safe.directory \
+      /home/${OBS_USER}/vaults/${VAULT}"                                         # TESTED (#32)
+su -s /bin/sh - ${OBS_USER} -c "
+  cd /home/${OBS_USER}/vaults/${VAULT} &&
   git -c user.name='Obsidian User' \
       -c user.email='obsidian@example.com' \
       commit --allow-empty -m 'initial commit'
 "                                                                                # TESTED (#43 AND 44)
 
 # 10. Configure HISTFILES
-for u in "$REG_USER" "$GIT_USER"; do
+for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/${u}/.profile"
   # TESTED ${u} PROFILE SETS HISTFILE (#46/#47)
   # TESTED ${u} PROFILE SETS HISTSIZE (#48/#49)

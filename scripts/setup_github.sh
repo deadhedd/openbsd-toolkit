@@ -12,8 +12,8 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 DEPLOY_KEY="$SCRIPT_DIR/deploy_key"
 
 #––– Config (override via env) –––
-SETUP_DIR=${SETUP_DIR:-/root/openbsd-server}
-GITHUB_REPO=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
+# LOCAL_DIR=${LOCAL_DIR:-/root/openbsd-server}
+# GITHUB_REPO=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
 
 # 1. Deploy key
 if [ ! -f "$DEPLOY_KEY" ]; then
@@ -27,10 +27,10 @@ chmod 600          /root/.ssh/id_ed25519        # TESTED (#3)
 ssh-keyscan github.com >> /root/.ssh/known_hosts  # TESTED (#4 AND 5)
 
 # 3. Clone or update your server-repo
-if [ ! -d "${SETUP_DIR}/.git" ]; then
-  git clone "${GITHUB_REPO}" "${SETUP_DIR}"      # TESTED (#6)
+if [ ! -d "${LOCAL_DIR}/.git" ]; then
+  git clone "${GITHUB_REPO}" "${LOCAL_DIR}"      # TESTED (#6)
 else
-  cd "${SETUP_DIR}"
+  cd "${LOCAL_DIR}"
   git pull                                       # TESTED (#6)
 fi
 

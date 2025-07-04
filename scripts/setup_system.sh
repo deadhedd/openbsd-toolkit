@@ -8,12 +8,12 @@ set -e
 . "$(dirname "$0")/load_secrets.sh"
 
 #––– Config (override via env) –––
-INTERFACE=${INTERFACE:-em0}
-STATIC_IP=${STATIC_IP:-192.0.2.10}
-NETMASK=${NETMASK:-255.255.255.0}
-GATEWAY=${GATEWAY:-192.0.2.1}
-DNS1=${DNS1:-1.1.1.1}
-DNS2=${DNS2:-9.9.9.9}
+# INTERFACE=${INTERFACE:-em0}
+# STATIC_IP=${STATIC_IP:-192.0.2.10}
+# NETMASK=${NETMASK:-255.255.255.0}
+# GATEWAY=${GATEWAY:-192.0.2.1}
+# DNS1=${DNS1:-1.1.1.1}
+# DNS2=${DNS2:-9.9.9.9}
 
 # 1. Static network
 # TESTED PERSISTENT IP (#2)
