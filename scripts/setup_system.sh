@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # 3) Source the loader from the config folder by absolute path
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load_secrets.sh"
 
 #––– Config (override via env) –––
 # INTERFACE=${INTERFACE:-em0}
