@@ -5,7 +5,14 @@
 set -e
 
 #--- Load secrets ---
-. "$(dirname "$0")/load_secrets.sh"
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
+
+# 2) Compute project root (one level up from this script)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# 3) Source the loader from the config folder by absolute path
+. "$PROJECT_ROOT/config/load-secrets.sh"
 
 #––– Config (override via env) –––
 # INTERFACE=${INTERFACE:-em0}
