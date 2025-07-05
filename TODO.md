@@ -8,6 +8,7 @@
 - [x] add admin user setup to setup_system.sh
 - [x] update REG_USER usages to OBS_USER
 - [ ] add ssh keys handling for git host
+- [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
 - [ ] Github user config
 - [ ] Add functional testing 
