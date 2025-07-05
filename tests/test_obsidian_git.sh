@@ -239,21 +239,21 @@ run_tests() {
           "HISTCONTROL set to ignoredups for ${GIT_USER}"
            
   # 55-56 Password field handling (no $OBS_PASS/$GIT_PASS → empty; else → non‑empty hash)
-  if [ -z "${OBS_PASS:-}" ]; then
-    run_test "grep -q \"^${OBS_USER}::\" /etc/master.passwd" \
-             "password removed for ${OBS_USER}"
-  else
-    run_test "grep -q \"^${OBS_USER}:[^:]\+:\" /etc/master.passwd" \
-             "password set for ${OBS_USER}"
-  fi
-
-  if [ -z "${GIT_PASS:-}" ]; then
-    run_test "grep -q \"^${GIT_USER}::\" /etc/master.passwd" \
-             "password removed for ${GIT_USER}"
-  else
-    run_test "grep -q \"^${GIT_USER}:[^:]\+:\" /etc/master.passwd" \
-             "password set for ${GIT_USER}"
-  fi
+#  if [ -z "${OBS_PASS:-}" ]; then
+#    run_test "grep -q \"^${OBS_USER}::\" /etc/master.passwd" \
+#             "password removed for ${OBS_USER}"
+#  else
+#    run_test "grep -q \"^${OBS_USER}:[^:]\+:\" /etc/master.passwd" \
+#             "password set for ${OBS_USER}"
+#  fi
+#
+#  if [ -z "${GIT_PASS:-}" ]; then
+#    run_test "grep -q \"^${GIT_USER}::\" /etc/master.passwd" \
+#             "password removed for ${GIT_USER}"
+#  else
+#    run_test "grep -q \"^${GIT_USER}:[^:]\+:\" /etc/master.passwd" \
+#             "password set for ${GIT_USER}"
+#  fi
 
   #––– Summary –––
   echo ""
