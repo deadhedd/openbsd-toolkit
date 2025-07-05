@@ -86,7 +86,7 @@ All setup and test scripts support optional logging flags:
   ```sh
   ./script.sh --log
   ./script.sh -l
-````
+```
 
 * **Specify a custom logfile**:
 
