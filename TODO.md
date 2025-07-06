@@ -7,7 +7,7 @@
 - [x] implement secrets retreival in setup and test scripts
 - [x] add admin user setup to setup_system.sh
 - [x] update REG_USER usages to OBS_USER
-- [ ] update the name STATIC_IP to GIT_SERVER
+- [x] update the name STATIC_IP to GIT_SERVER
 - [ ] add ssh keys handling for git host
 - [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
