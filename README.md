@@ -1,6 +1,16 @@
 # openbsd-server
 
-A collection of modular scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault, with support for GitHub deploy key integration.
+A collection of modular scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault, with support for GitHub deploy key integration and centralized secrets management via a `.env` file.
+
+---
+
+## 🚀 v0.4.0 – Centralized Secrets Management (2025-07-06)
+
+* **Secrets management**
+
+  * Introduced centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
+  * Bootstrap step: auto-generate `secrets.env` when missing, with user notification.
+  * All setup and test scripts now source configuration from `secrets.env` instead of hardcoded values.
 
 ---
 
@@ -10,37 +20,38 @@ A collection of modular scripts to configure and validate an OpenBSD server for 
 
   * `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
 
-* **test_github additions**
+* **test\_github additions**
 
-  * Verifies `/root/.ssh` exists.  
-  * Confirms the repository is cloned into `$setup_dir/.git`.  
+  * Verifies `/root/.ssh` exists.
+  * Confirms the repository is cloned into `$setup_dir/.git`.
   * Checks `remote origin` in `$setup_dir/.git/config` matches `$GITHUB_REPO`.
 
-* **test_system enhancements**
+* **test\_system enhancements**
 
-  * Asserts `${INTERFACE}` is up with `${STATIC_IP}`.  
-  * Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.  
-  * Validates root’s `.profile` exports:  
-    - `HISTFILE=/root/.ksh_history`  
-    - `HISTSIZE=5000`  
-    - `HISTCONTROL=ignoredups`
+  * Asserts `${INTERFACE}` is up with `${STATIC_IP}`.
+  * Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.
+  * Validates root’s `.profile` exports:
+
+    * `HISTFILE=/root/.ksh_history`
+    * `HISTSIZE=5000`
+    * `HISTCONTROL=ignoredups`
 
 * **History‑merge test**
 
-  * Confirms old‑history marker is merged into new history.  
+  * Confirms old‑history marker is merged into new history.
   * Confirms new‑history marker remains intact.
 
 * **doas & package tests moved**
 
   * Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
 
-* **test_obsidian_git expanded**
+* **test\_obsidian\_git expanded**
 
-  * SSH service config (`AllowUsers`, daemon running).  
-  * `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).  
-  * Vaults directories for both users.  
-  * Bare repo HEAD, `safe.directory` entries, post‑receive hook shebang & content.  
-  * Working‑clone verification (clone, remote URL, commit presence).  
+  * SSH service config (`AllowUsers`, daemon running).
+  * `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
+  * Vaults directories for both users.
+  * Bare repo HEAD, `safe.directory` entries, post‑receive hook shebang & content.
+  * Working‑clone verification (clone, remote URL, commit presence).
   * Per‑user history settings in `.profile` and `master.passwd` (password removal or setting).
 
 * **Setup scripts aligned**
@@ -83,16 +94,16 @@ All setup and test scripts support optional logging flags:
 
 * **Force a log on every run**:
 
-  ```sh
+```sh
   ./script.sh --log
   ./script.sh -l
 ```
 
 * **Specify a custom logfile**:
 
-  ```sh
+```sh
   ./script.sh --log=/path/to/my.log
-  ```
+```
 
 * **Default behavior**:
 
@@ -140,13 +151,21 @@ Same environment variables apply.
 Use version tags to snapshot working configurations:
 
 ```sh
-git tag -a v0.3 -m "v0.3 – Configuration & Test Coverage Completion"
+git tag -a v0.4.0 -m "v0.4.0 – centralized secrets loading"
 git push origin --tags
 ```
 
 ---
 
 ## 📜 Changelog
+
+### v0.4.0 – Centralized Secrets Management (2025-07-06)
+
+* **Secrets management**
+
+  * Centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
+  * Bootstrap step: auto-generate `secrets.env` if missing.
+  * All setup and test scripts now source configuration from `secrets.env`.
 
 ### v0.3 – Configuration & Test Coverage Completion (2025-07-02)
 
@@ -233,5 +252,3 @@ git push origin --tags
 ## License
 
 MIT OR 0BSD — see the LICENSE file.
-
-```
