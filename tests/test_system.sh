@@ -63,7 +63,7 @@ fi
 
 # 6) Configuration defaults (can be overridden via env)
 # INTERFACE=${INTERFACE:-em0}
-# STATIC_IP=${STATIC_IP:-192.0.2.10}
+# GIT_SERVER=${GIT_SERVER:-192.0.2.10}
 # NETMASK=${NETMASK:-255.255.255.0}
 # GATEWAY=${GATEWAY:-192.0.2.1}
 # DNS1=${DNS1:-1.1.1.1}
@@ -94,7 +94,7 @@ run_tests() {
 
   # 1–3: Network interface & config file
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                                 "interface config file exists"
-  run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
+  run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
   run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct default route"
   
 
@@ -105,7 +105,7 @@ run_tests() {
   assert_file_perm "/etc/resolv.conf" "644"                                                  "resolv.conf mode is 644"
   
   # 8-9: Default route in kernel
-  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${STATIC_IP}\""                            "interface ${INTERFACE} is up with IP ${STATIC_IP}"
+  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${GIT_SERVER}\""                            "interface ${INTERFACE} is up with IP ${GIT_SERVER}"
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                            "default route via ${GATEWAY} present"
 
   # 10–12: SSH daemon & config
