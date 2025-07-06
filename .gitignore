@@ -5,3 +5,5 @@
 *.tmp
 deploy_key
 **/logs/
+secrets.env
+*.pub

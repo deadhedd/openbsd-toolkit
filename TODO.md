@@ -3,10 +3,14 @@
 - [x] script configs for new failing tests
 - [x] fix organizational comments in test_obsidian_user
 - [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
-- [ ] Create a secrets file for configuring environment variable defaults
-- [ ] add git and obsidian user passwords to secrets file
+- [x] Create a secrets file for configuring environment variable defaults
+- [x] implement secrets retreival in setup and test scripts
+- [x] add admin user setup to setup_system.sh
+- [x] update REG_USER usages to OBS_USER
+- [ ] update the name STATIC_IP to GIT_SERVER
+- [ ] add ssh keys handling for git host
+- [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
-- [ ] require valid git and reg user password and provide hint on failure 
 - [ ] Github user config
 - [ ] Add functional testing 
 - [ ] Create teardown script for easier testing 
