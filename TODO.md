@@ -8,7 +8,7 @@
 - [x] add admin user setup to setup_system.sh
 - [x] update REG_USER usages to OBS_USER
 - [x] update the name STATIC_IP to GIT_SERVER
-- [ ] add ssh keys handling for git host
+- [ ] add ssh keys handling for git host (obsidian user, reg user, root)
 - [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
 - [ ] Github user config
