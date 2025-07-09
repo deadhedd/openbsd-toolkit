@@ -9,11 +9,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 # Fail early if any required secret isn’t set
-: "${KEY_NAME:?KEY_NAME must be set in secrets.env}"
 : "${GIT_USER:?GIT_USER must be set in secrets.env}"
 : "${OBS_USER:?OBS_USER must be set in secrets.env}"
 : "${SERVER:?SERVER must be set in secrets.env}"
 : "${VAULT:?VAULT must be set in secrets.env}"
+# Derive KEY_NAME from the public‐key filename
+: "${SSH_PUBLIC_KEY_FILE:?SSH_PUBLIC_KEY_FILE must be set in secrets.env}"
+KEY_NAME=$(basename "$SSH_PUBLIC_KEY_FILE" .pub)
+# (now $KEY_NAME is e.g. “id_ed25519_ghost”)
 #-------------------------------------------------------------------------------
 
 # 1) Test helper
