@@ -2,7 +2,8 @@
 # config/load-secrets.sh
 
 # 1) Determine the project root (one level above config/)
-PROJECT_ROOT="$(cd "$(dirname -- "$0")"/.. && pwd)"
+script_dir=$(dirname -- "$0")
+PROJECT_ROOT=$(cd "$script_dir"/.. && pwd)
 CONFIG_DIR="$PROJECT_ROOT/config"
 
 # 2) Define locations for example and real secrets
@@ -22,19 +23,23 @@ set -a
 . "$SECRETS"
 set +a
 
-# 5) Load file-based SSH keys into env vars (if specified)
+# 5) Load file-based SSH keys into env vars (POSIX compliant)
 for user in GIT OBS; do
   pk_file_var="${user}_SSH_PRIVATE_KEY_FILE"
   pub_file_var="${user}_SSH_PUBLIC_KEY_FILE"
 
-  # Load private key content
-  if [ -n "${!pk_file_var}" ] && [ -f "${!pk_file_var}" ]; then
-    export "${user}_SSH_PRIVATE_KEY"="$(< "${!pk_file_var}")"
+  # Resolve private key file path
+  eval "pk_file=\${$pk_file_var}"
+  if [ -n "$pk_file" ] && [ -f "$pk_file" ]; then
+    eval "${user}_SSH_PRIVATE_KEY=\$(cat \"$pk_file\")"
+    export "${user}_SSH_PRIVATE_KEY"
   fi
 
-  # Load public key content
-  if [ -n "${!pub_file_var}" ] && [ -f "${!pub_file_var}" ]; then
-    export "${user}_SSH_PUBLIC_KEY"="$(< "${!pub_file_var}")"
+  # Resolve public key file path
+  eval "pub_file=\${$pub_file_var}"
+  if [ -n "$pub_file" ] && [ -f "$pub_file" ]; then
+    eval "${user}_SSH_PUBLIC_KEY=\$(cat \"$pub_file\")"
+    export "${user}_SSH_PUBLIC_KEY"
   fi
 done
 
