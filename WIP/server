@@ -1,0 +1,58 @@
+# 0) known_hosts entry
+run_test "grep -q '192.168.0.201' /home/${OBS_USER}/.ssh/known_hosts" \
+         "known_hosts pre‑seeded with server key"
+         
+# 4) known_hosts entry + perms & ownership
+run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]" \
+         "known_hosts file exists"
+
+run_test "grep -q '${SERVER}' ${OBS_HOME}/.ssh/known_hosts" \
+         "known_hosts contains server entry"
+
+run_test \
+  "[ \"\$(stat -c '%a' ${OBS_HOME}/.ssh/known_hosts)\" = \"644\" ]" \
+  "known_hosts perms are 644"
+
+run_test \
+  "[ \"\$(stat -c '%U:%G' ${OBS_HOME}/.ssh/known_hosts)\" = \"${OBS_USER}:${OBS_USER}\" ]" \
+  "known_hosts owned by ${OBS_USER}"
+
+
+SERVER=192.168.0.201
+GIT_USER=git
+OBS_USER=obsidian
+VAULT=Main
+BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
+OBS_HOME="/home/${OBS_USER}"
+
+# 1) safe.directory for the git user
+run_test \
+  "su -s /bin/sh ${GIT_USER} -c \"git config --global --get-all safe.directory | grep -q '${BARE_REPO}'\"" \
+  "git user’s safe.directory includes ${BARE_REPO}"
+
+# 2) .ssh directory exists, perms & ownership
+run_test "[ -d ${OBS_HOME}/.ssh ]" \
+         "obsidian user has .ssh directory"
+
+run_test \
+  "[ \"\$(stat -c '%a' ${OBS_HOME}/.ssh)\" = \"700\" ]" \
+  ".ssh directory perms are 700"
+
+run_test \
+  "[ \"\$(stat -c '%U:%G' ${OBS_HOME}/.ssh)\" = \"${OBS_USER}:${OBS_USER}\" ]" \
+  ".ssh directory owned by ${OBS_USER}"
+
+# 3) SSH key files + agent
+run_test "[ -f ${OBS_HOME}/.ssh/id_ed25519 ]" \
+         "private key exists at ~/.ssh/id_ed25519"
+
+run_test \
+  "[ \"\$(stat -c '%a' ${OBS_HOME}/.ssh/id_ed25519)\" = \"600\" ]" \
+  "private key perms are 600"
+
+run_test "[ -f ${OBS_HOME}/.ssh/id_ed25519.pub ]" \
+         "public key exists at ~/.ssh/id_ed25519.pub"
+
+run_test \
+  "[ \"\$(stat -c '%a' ${OBS_HOME}/.ssh/id_ed25519.pub)\" = \"644\" ]" \
+  "public key perms are 644"
