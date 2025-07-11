@@ -90,6 +90,17 @@ chmod 700 /home/${GIT_USER}/.ssh                                                
 chown ${GIT_USER}:${GIT_USER} /home/${GIT_USER}/.ssh                                    # TESTED (#14)
 echo "Now copy your public key into /home/${GIT_USER}/.ssh/authorized_keys"
 
+# — Populate obsidian’s known_hosts so tests 23–26 pass —
+mkdir -p /home/${OBS_USER}/.ssh
+su -s /bin/sh - ${OBS_USER} -c "ssh-keyscan -H ${SERVER} >> /home/${OBS_USER}/.ssh/known_hosts"
+chown ${OBS_USER}:${OBS_USER} /home/${OBS_USER}/.ssh/known_hosts
+chmod 644                        /home/${OBS_USER}/.ssh/known_hosts
+
+# — Add safe.directory entry for the git user so test 27 passes —
+su -s /bin/sh - ${GIT_USER} -c \
+  "git config --global --add safe.directory /home/${GIT_USER}/vaults/${VAULT}.git"
+
+
 # 5. Bare repo for vault
 mkdir -p /home/${GIT_USER}/vaults                                                       # TESTED (#27)
 chown -R ${GIT_USER}:${GIT_USER} /home/${GIT_USER}/vaults                               # TESTED (#29)
