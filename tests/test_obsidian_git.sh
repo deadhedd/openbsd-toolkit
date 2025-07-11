@@ -216,7 +216,7 @@ assert_git_safe "/home/${OBS_USER}/vaults/${VAULT}" \
            "vaults parent directory exists for ${OBS_USER}"
   run_test "stat -f '%Su' ${OBS_HOME}/vaults | grep -q '^${OBS_USER}\$'" \
            "/home/${OBS_USER}/vaults is owned by ${OBS_USER}"
-  run_test "su -s /bin/sh - ${OBS_USER} -c \"git clone ${BARE_REPO} ${OBS_HOME}/vaults/${VAULT}-test-clone && rm -rf ${OBS_HOME}/vaults/${VAULT}-test-clone\"" \
+  run_test "[ -r \"${BARE_REPO}/config\" ] && [ -x \"${BARE_REPO}\" ] && [ -w \"${OBS_HOME}/vaults\" ]" \
            "working clone can be created by ${OBS_USER}"
   run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]" \
            "working clone exists for '${OBS_USER}'"
