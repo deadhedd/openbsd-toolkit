@@ -16,7 +16,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 #––– Config (override via env) –––
 # INTERFACE=${INTERFACE:-em0}
-# STATIC_IP=${STATIC_IP:-192.0.2.10}
+# GIT_SERVER=${GIT_SERVER:-192.0.2.10}
 # NETMASK=${NETMASK:-255.255.255.0}
 # GATEWAY=${GATEWAY:-192.0.2.1}
 # DNS1=${DNS1:-1.1.1.1}
@@ -26,7 +26,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # TESTED PERSISTENT IP (#2)
 # TESTED DEFAULT ROUTE (#3)
 cat > "/etc/hostname.${INTERFACE}" <<-EOF    # TESTED (#1)
-inet ${STATIC_IP} ${NETMASK}
+inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
@@ -36,7 +36,7 @@ nameserver ${DNS2}                           # TESTED (#6)
 EOF
 chmod 644 /etc/resolv.conf                   # TESTED (#7)
 
-ifconfig "${INTERFACE}" inet "${STATIC_IP}" netmask "${NETMASK}" up  # TESTED (#8)
+ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up  # TESTED (#8)
 route add default "${GATEWAY}"                                       # TESTED (#9)
 
 # 2. SSH hardening

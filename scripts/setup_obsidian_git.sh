@@ -87,19 +87,25 @@ rcctl restart sshd                                                              
 
 mkdir -p /home/${GIT_USER}/.ssh                                                         # TESTED (#13)
 chmod 700 /home/${GIT_USER}/.ssh                                                        # TESTED (#16)
+chmod 700 /home/"$OBS_USER"/.ssh
+chown "$OBS_USER":"$OBS_USER" /home/"$OBS_USER"/.ssh
 chown ${GIT_USER}:${GIT_USER} /home/${GIT_USER}/.ssh                                    # TESTED (#14)
-echo "Now copy your public key into /home/${GIT_USER}/.ssh/authorized_keys"
+
+touch /home/"$GIT_USER"/.ssh/authorized_keys
+chmod 600 /home/"$GIT_USER"/.ssh/authorized_keys
+chown "$GIT_USER":"$GIT_USER" /home/"$GIT_USER"/.ssh/authorized_keys
 
 # — Populate obsidian’s known_hosts so tests 23–26 pass —
 mkdir -p /home/${OBS_USER}/.ssh
-su -s /bin/sh - ${OBS_USER} -c "ssh-keyscan -H ${SERVER} >> /home/${OBS_USER}/.ssh/known_hosts"
+su -s /bin/sh - ${OBS_USER} -c "ssh-keyscan -H ${SERVER} >> /home/${OBS_USER}/.ssh/known_hosts" #TODO:eliminate su
 chown ${OBS_USER}:${OBS_USER} /home/${OBS_USER}/.ssh/known_hosts
 chmod 644                        /home/${OBS_USER}/.ssh/known_hosts
 
 # — Add safe.directory entry for the git user so test 27 passes —
 su -s /bin/sh - ${GIT_USER} -c \
   "git config --global --add safe.directory /home/${GIT_USER}/vaults/${VAULT}.git"
-
+su -s /bin/sh "$GIT_USER" -c \
+  "git config --global --add safe.directory /home/${OBS_USER}/vaults/${VAULT}"
 
 # 5. Bare repo for vault
 mkdir -p /home/${GIT_USER}/vaults                                                       # TESTED (#27)
@@ -107,8 +113,8 @@ chown -R ${GIT_USER}:${GIT_USER} /home/${GIT_USER}/vaults                       
 su -s /bin/sh - ${GIT_USER} -c "git init --bare /home/${GIT_USER}/vaults/${VAULT}.git"  # TESTED (#30)
 
 # 6. Safe.directory for vault
-su -s /bin/sh - ${OBS_USER} -c "git config --global --add safe.directory \
-         /home/${GIT_USER}/vaults/${VAULT}.git"                                    # TESTED (#31)
+su -s /bin/sh "$OBS_USER" -c \
+  "git config --global --add safe.directory /home/${OBS_USER}/vaults/${VAULT}"          # TESTED (#31)
 
 # 7. Post-receive hook
 HOOK=/home/${GIT_USER}/vaults/${VAULT}.git/hooks/post-receive
