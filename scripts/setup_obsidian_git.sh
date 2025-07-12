@@ -91,7 +91,8 @@ for u in "$OBS_USER" "$GIT_USER"; do
   shell_path="$( [ "$u" = "$OBS_USER" ] && printf '/bin/ksh' || printf '/usr/local/bin/git-shell' )"
   if ! id "$u" >/dev/null 2>&1; then
     useradd -m -s "$shell_path" "$u"
-    pass_var="${u^^}_PASS"  # e.g. OBS_PASS or GIT_PASS
+    # POSIX-safe uppercase for pass-var name
+    pass_var="$(printf '%s' "$u" | tr '[:lower:]' '[:upper:]')_PASS"
     if eval "[ -n \"\${$pass_var}\" ]"; then
       eval "printf '%s\n' \"\${$pass_var}\" | passwd $u"
     else
@@ -160,12 +161,13 @@ chmod +x "$hook"
 # 10. Clone working copy for OBS_USER
 work_dir="/home/${OBS_USER}/vaults/$VAULT"
 mkdir -p "$(dirname "$work_dir")"
-git clone "$bare_repo" "$work_dir"
+git -c safe.directory="$bare_repo" clone "$bare_repo" "$work_dir"
 chown -R "$OBS_USER:$OBS_USER" "$work_dir"
 
 # 11. Initial empty commit
 cd "$work_dir"
-git -c user.name='Obsidian User' \
+git -c safe.directory="$work_dir" \
+    -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
 
