@@ -1,21 +1,22 @@
 #!/bin/sh
 #
-# logging.sh — FIFO+tee logging helper
-# Usage in your script:
-#   1. Set FORCE_LOG and LOGFILE (empty or custom)
-#   2. Call: init_logging "$0"
+# logging.sh — centralized FIFO+tee logging helper
+# Usage in your scripts:
+#   FORCE_LOG=0; LOGFILE=""
+#   parse --log / -l flags into those variables
+#   . "$(dirname "$0")/logs/logging.sh"
+#   init_logging "$0"
 #
 
 init_logging() {
   ORIGIN="$1"
   [ "${FORCE_LOG}" = 1 ] || return 0
 
-  # Determine project root (dirname of the calling script)
   PROJECT_ROOT="$(cd "$(dirname -- "${ORIGIN}")" && pwd)"
   LOGDIR="$PROJECT_ROOT/logs"
   mkdir -p "$LOGDIR"
 
-  # Default logfile name if none supplied
+  # default log name if none provided
   if [ -z "$LOGFILE" ]; then
     BASENAME="$(basename "${ORIGIN}" .sh)"
     LOGFILE="$LOGDIR/${BASENAME}-$(date '+%Y%m%d_%H%M%S').log"
@@ -23,11 +24,15 @@ init_logging() {
 
   echo "ℹ️  Logging to $LOGFILE"
 
-  # Create FIFO, start tee, redirect everything into it
-  FIFO="$LOGDIR/logpipe-$$.fifo"
-  mkfifo "$FIFO"
-  tee -a "$LOGFILE" < "$FIFO" &
-  TEE_PID=$!
-  exec > "$FIFO" 2>&1
-  rm -f "$FIFO"
+  # FIFO in /tmp (must be a UNIX FS): use PID to avoid clashes
+  FIFO="/tmp/$(basename "$ORIGIN" .sh)-$$.fifo"
+  if mkfifo "$FIFO" 2>/dev/null; then
+    tee -a "$LOGFILE" <"$FIFO" &
+    exec >"$FIFO" 2>&1
+    rm -f "$FIFO"
+  else
+    echo "⚠️  mkfifo failed (FAT32 or other); falling back to direct-to-log"
+    exec >"$LOGFILE" 2>&1
+  fi
 }
+
