@@ -2,7 +2,7 @@
 #
 # setup_system.sh - General system configuration for OpenBSD Server
 # Usage: ./setup_system.sh
-set -e
+set -x
 
 #--- Load secrets ---
 # 1) Locate this script’s directory
