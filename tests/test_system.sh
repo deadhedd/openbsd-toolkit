@@ -1,42 +1,33 @@
 #!/bin/sh
 #
-# test_system.sh – Verify general system configuration for Obsidian‑Git‑Host setup (with optional logging)
+# test_system.sh – Verify general system configuration for Obsidian-Git-Host setup (with optional logging)
+# Usage: ./test_system.sh [--log[=FILE]] [-h]
 #
 
-# 1) Locate this script’s directory so logs always end up alongside it
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOGDIR="$SCRIPT_DIR/logs"
-mkdir -p "$LOGDIR"
+set -e
 
-# 2) Defaults: only write a log on failure unless --log is passed
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
 FORCE_LOG=0
 LOGFILE=""
-
-#--- Load secrets ---
-# 1) Locate this script’s directory
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
-
-# 2) Compute project root (one level up from this script)
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# 3) Source the loader from the config folder by absolute path
-. "$PROJECT_ROOT/config/load_secrets.sh"
 
 # 3) Usage helper
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--log[=FILE]] [-h]
 
-  --log[=FILE]   Always write full output to FILE.
-                 If you omit '=FILE', defaults to:
-                   $LOGDIR/$(basename "$0" .sh)-YYYYMMDD_HHMMSS.log
+  --log, -l       Capture stdout, stderr, and xtrace into:
+                    \${SCRIPT_DIR}/../logs/$(basename "$0" .sh)-TIMESTAMP.log
+                  Or use --log=FILE to choose a custom path.
 
-  -h, --help     Show this help and exit.
+  -h, --help      Show this help and exit.
 EOF
-  exit 1
+  exit 0
 }
 
-# 4) Parse command‑line flags
+# 4) Parse flags
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)
@@ -56,20 +47,18 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# 5) If logging was requested but no filename given, build a timestamped default
-if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
-  LOGFILE="$LOGDIR/$(basename "$0" .sh)-$(date +%Y%m%d_%H%M%S).log"
-fi
+# 5) Centralized logging init
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+. "$PROJECT_ROOT/logs/logging.sh"
+init_logging "$0"
 
-# 6) Configuration defaults (can be overridden via env)
-# INTERFACE=${INTERFACE:-em0}
-# STATIC_IP=${STATIC_IP:-192.0.2.10}
-# NETMASK=${NETMASK:-255.255.255.0}
-# GATEWAY=${GATEWAY:-192.0.2.1}
-# DNS1=${DNS1:-1.1.1.1}
-# DNS2=${DNS2:-9.9.9.9}
+# 6) (Optional) enable xtrace for detailed logs
+# set -x
 
-#–––– Run all tests in a function so we can capture their output ––––
+# 7) Load secrets
+. "$PROJECT_ROOT/config/load_secrets.sh"
+
+# 8) Run tests in a function to capture output
 run_tests() {
   tests=0; fails=0
 
@@ -89,39 +78,33 @@ run_tests() {
     run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
   }
 
-  #––– Begin Test Plan –––
-  echo "1..12"
+  echo "1..15"
 
-  # 1–3: Network interface & config file
-  run_test "[ -f /etc/hostname.${INTERFACE} ]"                                                 "interface config file exists"
-  run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct 'inet IP MASK' line"
-  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"           "hostname.${INTERFACE} has correct default route"
-  
+  # 1–3: Interface config
+  run_test "[ -f /etc/hostname.${INTERFACE} ]"                                             "hostname.${INTERFACE} exists"
+  run_test "grep -q \"^inet ${STATIC_IP} ${NETMASK}\$\" /etc/hostname.${INTERFACE}"       "correct IP/MASK in hostname.${INTERFACE}"
+  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}"       "correct default route in hostname.${INTERFACE}"
 
   # 4–7: DNS & resolv.conf
-  run_test "[ -f /etc/resolv.conf ]"                                                         "resolv.conf exists"
-  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                                 "resolv.conf contains DNS1"
-  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"                                 "resolv.conf contains DNS2"
-  assert_file_perm "/etc/resolv.conf" "644"                                                  "resolv.conf mode is 644"
-  
-  # 8-9: Default route in kernel
-  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${STATIC_IP}\""                            "interface ${INTERFACE} is up with IP ${STATIC_IP}"
-  run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                            "default route via ${GATEWAY} present"
+  run_test "[ -f /etc/resolv.conf ]"                                                      "resolv.conf exists"
+  run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                              "resolv.conf contains ${DNS1}"
+  run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"                              "resolv.conf contains ${DNS2}"
+  assert_file_perm "/etc/resolv.conf" "644"                                               "resolv.conf permissions"
 
-  # 10–12: SSH daemon & config
-  run_test "grep -q \"^PermitRootLogin no\" /etc/ssh/sshd_config"                             "sshd_config disallows root login"
-  run_test "grep -q \"^PasswordAuthentication no\" /etc/ssh/sshd_config"                      "sshd_config disallows password authentication"
-  run_test "rcctl check sshd"                                                                 "sshd service is running"
+  # 8–9: Interface up & route
+  run_test "ifconfig ${INTERFACE} | grep -q \"inet ${STATIC_IP}\""                        "interface ${INTERFACE} up with IP ${STATIC_IP}"
+  run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"                         "default route via ${GATEWAY}"
 
-  # 13-15: ROOT HISTFILE & HISTORY‐LENGTH
-  run_test "grep -q '^export HISTFILE=/root/\.ksh_history' /root/.profile" \
-           "root .profile sets HISTFILE to /root/.ksh_history"
-  run_test "grep -q '^export HISTSIZE=5000' /root/.profile" \
-           "root .profile sets HISTSIZE to 5000"
-  run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile" \
-           "root .profile sets HISTCONTROL to ignoredups"
+  # 10–12: SSH hardening
+  run_test "grep -q '^PermitRootLogin no' /etc/ssh/sshd_config"                            "sshd_config: PermitRootLogin no"
+  run_test "grep -q '^PasswordAuthentication no' /etc/ssh/sshd_config"                     "sshd_config: PasswordAuthentication no"
+  run_test "rcctl check sshd"                                                              "sshd service is running"
 
-  #––– Summary –––
+  # 13–15: Root history settings
+  run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"                  "root .profile sets HISTFILE"
+  run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                                "root .profile sets HISTSIZE"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"                       "root .profile sets HISTCONTROL"
+
   echo ""
   if [ "$fails" -eq 0 ]; then
     echo "✅ All $tests tests passed."
@@ -132,7 +115,7 @@ run_tests() {
   return $fails
 }
 
-#–––– Wrapper to capture output and optionally log –––
+# 9) Wrapper to capture output and optionally log
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
 
@@ -152,6 +135,6 @@ run_and_maybe_log() {
   fi
 }
 
-#––– Execute –––
+# 10) Execute
 run_and_maybe_log
 

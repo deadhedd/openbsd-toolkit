@@ -1,40 +1,33 @@
 #!/bin/sh
 #
-# test_obsidian_git.sh – Verify git‑backed Obsidian sync configuration (with optional logging)
+# test_obsidian_git.sh – Verify git-backed Obsidian sync configuration (with optional logging)
+# Usage: ./test_obsidian_git.sh [--log[=FILE]] [-h]
 #
 
-# 1) Locate this script’s directory & set up logging
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOGDIR="$SCRIPT_DIR/logs"
-mkdir -p "$LOGDIR"
+set -X
 
-# 2) Set logging defaults
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
 FORCE_LOG=0
 LOGFILE=""
 
-# 3) Load secrets
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-. "$PROJECT_ROOT/config/load_secrets.sh"
-
-# 4) Define path variables
-OBS_HOME="/home/${OBS_USER}"
-BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
-
-# 5) Usage helper
+# 3) Help text
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [--log[=FILE]] [-h]
 
-  --log[=FILE]   Always write full output to FILE.
-                 If you omit '=FILE', defaults to:
-                   $LOGDIR/$(basename "$0" .sh)-YYYYMMDD_HHMMSS.log
+  --log, -l       Capture stdout, stderr, and xtrace into:
+                    ${SCRIPT_DIR}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                  Or use --log=FILE to choose a custom path.
 
-  -h, --help     Show this help and exit.
+  -h, --help      Show this help and exit.
 EOF
-    exit 1
+    exit 0
 }
 
-# 6) Parse command‑line flags
+# 4) Parse flags
 while [ $# -gt 0 ]; do
     case "$1" in
         -l|--log)
@@ -54,16 +47,25 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# 7) Build default log filename if needed
-if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
-    LOGFILE="$LOGDIR/$(basename "$0" .sh)-$(date +%Y%m%d_%H%M%S).log"
-fi
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
 
-# 8) Test framework
+# 6) Turn on xtrace if you want command tracing in the log
+#set -x
+
+# 7) Load secrets
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+. "$PROJECT_ROOT/config/load_secrets.sh"
+
+# 8) Define path variables
+OBS_HOME="/home/${OBS_USER}"
+BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
+
+# 9) Test framework
 run_tests() {
     local tests=0 fails=0
 
-    # Helper to run a single test
     run_test() {
         tests=$((tests+1))
         desc="$2"
@@ -75,20 +77,19 @@ run_tests() {
         fi
     }
 
-    # Assert file permissions
     assert_file_perm() {
         local path="$1" want="$2" desc="$3"
-        run_test "stat -f '%Lp' \$path | grep -q '^$want\$'" "$desc"
+        run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
     }
 
-    # Assert safe.directory in Git config
     assert_git_safe() {
-        local repo="$1" desc="$2" user="${3:-${OBS_USER:-obsidian}}"
-        local config="/home/\$user/.gitconfig"
-        run_test "grep -E '^[[:space:]]*directory[[:space:]]*=[[:space:]]*$repo\$' \"\$config\"" "$desc"
+        local repo="$1" desc="$2" user="${3:-${OBS_USER}}"
+        local config="/home/$user/.gitconfig"
+        run_test \
+          "grep -E '^[[:space:]]*safe\.directory[[:space:]]*='\"$repo\"\$\" $config" \
+          "$desc"
     }
 
-    # Assert user shell in /etc/passwd
     assert_user_shell() {
         local user="$1" shell="$2" desc="$3"
         run_test "grep -q \"^$user:.*:$shell\$\" /etc/passwd" "$desc"
@@ -100,78 +101,75 @@ run_tests() {
     run_test "command -v git" "git is installed"
 
     #  2–5) Users and shells
-    run_test "id \$OBS_USER" "user '\$OBS_USER' exists"
-    assert_user_shell "\$OBS_USER" "/bin/ksh" "shell for '\$OBS_USER' is /bin/ksh"
-    run_test "id \$GIT_USER" "user '\$GIT_USER' exists"
-    assert_user_shell "\$GIT_USER" "/usr/local/bin/git-shell" "shell for '\$GIT_USER' is git-shell"
+    run_test "id $OBS_USER" "user '$OBS_USER' exists"
+    assert_user_shell "$OBS_USER" "/bin/ksh" "shell for '$OBS_USER' is /bin/ksh"
+    run_test "id $GIT_USER" "user '$GIT_USER' exists"
+    assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
 
     #  6–10) doas configuration
     run_test "[ -f /etc/doas.conf ]" "doas.conf exists"
-    run_test "grep -q \"^permit persist \$OBS_USER as root\$\" /etc/doas.conf" "doas.conf allows persist \$OBS_USER"
-    run_test "grep -q \"^permit nopass \$GIT_USER as root cmd git\\*\" /etc/doas.conf" "doas.conf allows nopass \$GIT_USER for git commands"
-    run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'" "doas.conf owned by root:wheel"
-    assert_file_perm "/etc/doas.conf" "440" "/etc/doas.conf has correct permissions"
+    run_test "grep -q \"^permit persist $OBS_USER as root\$\" /etc/doas.conf" "doas.conf allows persist $OBS_USER"
+    run_test "grep -q \"^permit nopass $GIT_USER as root cmd git\\*\" /etc/doas.conf" "doas.conf allows nopass $GIT_USER for git commands"
+    run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'" "doas.conf owner root:wheel"
+    assert_file_perm "/etc/doas.conf" "440" "/etc/doas.conf permissions"
 
     # 11–28) SSH config basics
-    run_test "grep -q \"^AllowUsers.*\$OBS_USER.*\$GIT_USER\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
+    run_test "grep -q \"^AllowUsers.*$OBS_USER.*$GIT_USER\" /etc/ssh/sshd_config" "sshd_config has AllowUsers"
     run_test "pgrep -x sshd >/dev/null" "sshd daemon is running"
 
     # Home & .ssh for GIT_USER
-    run_test "[ -d /home/\$GIT_USER ]" "home directory for \$GIT_USER exists"
-    run_test "stat -f '%Su' /home/\$GIT_USER | grep -q '^\$GIT_USER\$'" "\$GIT_USER owns their home"
-    run_test "[ -d /home/\$GIT_USER/.ssh ]" "ssh dir for \$GIT_USER exists"
-    assert_file_perm "/home/\$GIT_USER/.ssh" "700" "ssh dir permissions for \$GIT_USER"
-    run_test "stat -f '%Su:%Sg' /home/\$GIT_USER/.ssh | grep -q '^\$GIT_USER:\$GIT_USER\$'" "ssh dir owner for \$GIT_USER"
+    run_test "[ -d /home/$GIT_USER ]" "home directory for $GIT_USER exists"
+    run_test "stat -f '%Su' /home/$GIT_USER | grep -q '^$GIT_USER\$'" "$GIT_USER owns home"
+    run_test "[ -d /home/$GIT_USER/.ssh ]" "ssh dir for $GIT_USER exists"
+    assert_file_perm "/home/$GIT_USER/.ssh" "700" "ssh dir perms for $GIT_USER"
+    run_test "stat -f '%Su:%Sg' /home/$GIT_USER/.ssh | grep -q '^$GIT_USER:$GIT_USER\$'" "ssh dir owner for $GIT_USER"
 
     # Home & .ssh for OBS_USER
-    run_test "[ -d \$OBS_HOME ]" "home directory for \$OBS_USER exists"
-    run_test "stat -f '%Su' \$OBS_HOME | grep -q '^\$OBS_USER\$'" "\$OBS_USER owns their home"
-    run_test "[ -d \$OBS_HOME/.ssh ]" "ssh directory exists for \$OBS_USER"
-    assert_file_perm "\$OBS_HOME/.ssh" "700" "ssh directory permissions for \$OBS_USER"
-    run_test "stat -f '%Su:%Sg' \$OBS_HOME/.ssh | grep -q '^\$OBS_USER:\$OBS_USER\$'" "ssh directory ownership for \$OBS_USER"
+    run_test "[ -d $OBS_HOME ]" "home directory for $OBS_USER exists"
+    run_test "stat -f '%Su' $OBS_HOME | grep -q '^$OBS_USER\$'" "$OBS_USER owns home"
+    run_test "[ -d $OBS_HOME/.ssh ]" "ssh dir for $OBS_USER exists"
+    assert_file_perm "$OBS_HOME/.ssh" "700" "ssh dir perms for $OBS_USER"
+    run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh | grep -q '^$OBS_USER:$OBS_USER\$'" "ssh dir owner for $OBS_USER"
 
     # 23–26) Known hosts for OBS_USER
-    run_test "[ -f \$OBS_HOME/.ssh/known_hosts ]" "known_hosts file exists for \$OBS_USER"
-    run_test "grep -q '\$SERVER' \$OBS_HOME/.ssh/known_hosts" "known_hosts contains server entry"
-    assert_file_perm "\$OBS_HOME/.ssh/known_hosts" "644" "known_hosts permissions for \$OBS_USER"
-    run_test "stat -f '%Su:%Sg' \$OBS_HOME/.ssh/known_hosts | grep -q '^\$OBS_USER:\$OBS_USER\$'" "known_hosts owner for \$OBS_USER"
+    run_test "[ -f $OBS_HOME/.ssh/known_hosts ]" "known_hosts for $OBS_USER exists"
+    run_test "grep -q '$SERVER' $OBS_HOME/.ssh/known_hosts" "known_hosts contains server"
+    assert_file_perm "$OBS_HOME/.ssh/known_hosts" "644" "known_hosts perms for $OBS_USER"
+    run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh/known_hosts | grep -q '^$OBS_USER:$OBS_USER\$'" "known_hosts owner for $OBS_USER"
 
     # 27–28) safe.directory tests for GIT_USER
-    assert_git_safe "\$BARE_REPO" "safe.directory entry for bare repo in \$GIT_USER's global config" "\$GIT_USER"
-    assert_git_safe "/home/\$OBS_USER/vaults/\$VAULT" "safe.directory entry for work-tree in \$GIT_USER's global config" "\$GIT_USER"
+    assert_git_safe "$BARE_REPO" "safe.directory for bare repo in $GIT_USER config" "$GIT_USER"
+    assert_git_safe "/home/$OBS_USER/vaults/$VAULT" "safe.directory for work-tree in $GIT_USER config" "$GIT_USER"
 
     # 29–31) Authorized keys for GIT_USER
-    run_test "[ -f /home/\$GIT_USER/.ssh/authorized_keys ]" "authorized_keys exists for \$GIT_USER"
-    assert_file_perm "/home/\$GIT_USER/.ssh/authorized_keys" "600" "authorized_keys permissions for \$GIT_USER"
-    run_test "stat -f '%Su:%Sg' /home/\$GIT_USER/.ssh/authorized_keys | grep -q '^\$GIT_USER:\$GIT_USER\$'" "authorized_keys ownership for \$GIT_USER"
+    run_test "[ -f /home/$GIT_USER/.ssh/authorized_keys ]" "authorized_keys for $GIT_USER exists"
+    assert_file_perm "/home/$GIT_USER/.ssh/authorized_keys" "600" "authorized_keys perms for $GIT_USER"
+    run_test "stat -f '%Su:%Sg' /home/$GIT_USER/.ssh/authorized_keys | grep -q '^$GIT_USER:$GIT_USER\$'" "authorized_keys owner for $GIT_USER"
 
-    # 32–35) Bare repo configuration
-    run_test "[ -d /home/\$GIT_USER/vaults ]" "vaults parent directory exists for \$GIT_USER"
-    run_test "[ -d /home/\$GIT_USER/vaults/\$VAULT.git ]" "bare repo exists"
-    run_test "stat -f '%Su' /home/\$GIT_USER/vaults/\$VAULT.git | grep -q '^\$GIT_USER\$'" "bare repo owned by \$GIT_USER"
-    run_test "[ -f /home/\$GIT_USER/vaults/\$VAULT.git/HEAD ]" "bare repo initialized (HEAD present)"
+    # 32–35) Bare repo config
+    run_test "[ -d /home/$GIT_USER/vaults ]" "vaults dir exists for $GIT_USER"
+    run_test "[ -d /home/$GIT_USER/vaults/$VAULT.git ]" "bare repo exists"
+    run_test "stat -f '%Su' /home/$GIT_USER/vaults/$VAULT.git | grep -q '^$GIT_USER\$'" "bare repo owner $GIT_USER"
+    run_test "[ -f /home/$GIT_USER/vaults/$VAULT.git/HEAD ]" "bare repo HEAD present"
 
     # 36) safe.directory for OBS_USER
-    assert_git_safe "/home/\$OBS_USER/vaults/\$VAULT" "safe.directory for working clone in \$OBS_USER's global config"
+    assert_git_safe "/home/$OBS_USER/vaults/$VAULT" "safe.directory for working clone in $OBS_USER config"
 
-    # 37–41) Post-receive hook configuration
-    run_test "[ -f /home/\$GIT_USER/vaults/\$VAULT.git/hooks/post-receive ]" "post-receive hook exists"
-    run_test "grep -q '^#!/bin/sh' /home/\$GIT_USER/vaults/\$VAULT.git/hooks/post-receive" "post-receive hook shebang correct"
-    run_test "grep -q 'git --work-tree=/home/\$OBS_USER/vaults/\$VAULT --git-dir=\$BARE_REPO checkout -f' /home/\$GIT_USER/vaults/\$VAULT.git/hooks/post-receive" "post-receive hook content correct"
-    run_test "stat -f '%Su:%Sg' /home/\$GIT_USER/vaults/\$VAULT.git/hooks/post-receive | grep -q '^\$GIT_USER:\$GIT_USER\$'" "post-receive hook ownership correct"
-    run_test "[ -x /home/\$GIT_USER/vaults/\$VAULT.git/hooks/post-receive ]" "post-receive hook executable"
+    # 37–41) Post-receive hook
+    run_test "[ -f /home/$GIT_USER/vaults/$VAULT.git/hooks/post-receive ]" "post-receive hook exists"
+    run_test "grep -q '^#!/bin/sh' /home/$GIT_USER/vaults/$VAULT.git/hooks/post-receive" "hook shebang correct"
+    run_test "grep -q 'git --work-tree=/home/$OBS_USER/vaults/$VAULT --git-dir=$BARE_REPO checkout -f' /home/$GIT_USER/vaults/$VAULT.git/hooks/post-receive" "hook content correct"
+    run_test "stat -f '%Su:%Sg' /home/$GIT_USER/vaults/$VAULT.git/hooks/post-receive | grep -q '^$GIT_USER:$GIT_USER\$'" "hook owner correct"
+    run_test "[ -x /home/$GIT_USER/vaults/$VAULT.git/hooks/post-receive ]" "hook executable"
 
     # 42–49) Working clone checks
-    run_test "[ -d \$OBS_HOME/vaults ]" "vaults parent directory exists for \$OBS_USER"
-    run_test "stat -f '%Su' \$OBS_HOME/vaults | grep -q '^\$OBS_USER\$'" "/home/\$OBS_USER/vaults owned by \$OBS_USER"
-    run_test "[ -r \"\$BARE_REPO/config\" ] && [ -w \"\$OBS_HOME/vaults\" ]" "working clone can be created by \$OBS_USER"
-    run_test "[ -d \$OBS_HOME/vaults/\$VAULT/.git ]" "working clone exists"
-    run_test "su - \$OBS_USER -c \"git -C \$OBS_HOME/vaults/\$VAULT remote get-url origin | grep -q '\$BARE_REPO'\"" "working clone remote origin correct"
-    run_test "su - \$OBS_USER -c \"git -C \$OBS_HOME/vaults/\$VAULT log -1 --pretty=%B | grep -q 'initial commit'\"" "initial commit message present"
-    run_test "su - \$OBS_USER -c \"git -C \$OBS_HOME/vaults/\$VAULT rev-parse HEAD >/dev/null\"" "initial commit present"
-    run_test "[ -f \$BARE_REPO/HEAD ]" "bare repo HEAD present"
+    run_test "[ -d $OBS_HOME/vaults ]" "vaults dir exists for $OBS_USER"
+    run_test "stat -f '%Su' $OBS_HOME/vaults | grep -q '^$OBS_USER\$'" "vaults owner $OBS_USER"
+    run_test "su - $OBS_USER -c \"git -C $OBS_HOME/vaults/$VAULT remote get-url origin | grep -q '$BARE_REPO'\"" "working clone origin correct"
+    run_test "su - $OBS_USER -c \"git -C $OBS_HOME/vaults/$VAULT log -1 --pretty=%B | grep -q 'initial commit'\"" "initial commit present"
+    run_test "su - $OBS_USER -c \"git -C $OBS_HOME/vaults/$VAULT rev-parse HEAD >/dev/null\"" "initial commit hash present"
+    run_test "[ -f $BARE_REPO/HEAD ]" "bare repo HEAD present"
 
-    # Summary
     echo ""
     if [ "$fails" -eq 0 ]; then
         echo "✅ All $tests tests passed."
@@ -182,7 +180,7 @@ run_tests() {
     return $fails
 }
 
-# 9) Wrapper to capture output and optionally log
+# 10) Wrapper to capture output and optionally log
 run_and_maybe_log() {
     TMP="$(mktemp)" || exit 1
 
@@ -202,6 +200,6 @@ run_and_maybe_log() {
     fi
 }
 
-# 10) Execute
+# 11) Execute
 run_and_maybe_log
 

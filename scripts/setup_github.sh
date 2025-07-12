@@ -18,11 +18,11 @@ usage() {
   cat <<EOF
 Usage: $0 [--log[=FILE]] [-h]
 
-  --log, -l           Capture stdout, stderr and xtrace to a log in:
+  --log, -l           Capture stdout, stderr, and xtrace to a log file in:
                         ${SCRIPT_DIR}/logs/
-                      Use --log=FILE to pick a different path.
+                      Use --log=FILE to specify a custom path.
 
-  -h, --help          Show this message and exit.
+  -h, --help          Show this help and exit.
 EOF
   exit 0
 }
@@ -48,25 +48,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# 5) If logging, set up FIFO+tee
-if [ "$FORCE_LOG" -eq 1 ]; then
-  LOGDIR="${SCRIPT_DIR}/logs"
-  mkdir -p "$LOGDIR"
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
 
-  [ -z "$LOGFILE" ] && \
-    LOGFILE="$LOGDIR/setup_github-$(date '+%Y%m%d_%H%M%S').log"
-
-  echo "ℹ️  Logging to $LOGFILE"
-
-  FIFO="$LOGDIR/setup_github-$$.fifo"
-  mkfifo "$FIFO"
-  tee -a "$LOGFILE" <"$FIFO" &
-  TEE_PID=$!
-  exec >"$FIFO" 2>&1
-  rm -f "$FIFO"
-fi
-
-# 6) Turn on xtrace for full visibility
+# 6) Turn on xtrace so everything shows up in the log
 set -x
 
 #--- Load secrets ---

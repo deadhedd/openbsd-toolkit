@@ -1,42 +1,33 @@
 #!/bin/sh
 #
 # test_github.sh – Verify GitHub SSH key & repo bootstrap (with optional logging)
+# Usage: ./test_github.sh [--log[=FILE]] [-h]
 #
 
-# 1) Locate this script’s directory so logs always end up alongside it
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOGDIR="$SCRIPT_DIR/logs"
-mkdir -p "$LOGDIR"
+set -X
 
-# 2) Defaults: only write a log on failure unless --log is passed
+# 1) Locate this script’s directory so we can source logging.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
 FORCE_LOG=0
 LOGFILE=""
-
-#--- Load secrets ---
-# 1) Locate this script’s directory
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
-
-# 2) Compute project root (one level up from this script)
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# 3) Source the loader from the config folder by absolute path
-. "$PROJECT_ROOT/config/load_secrets.sh"
 
 # 3) Usage helper
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--log[=FILE]] [-h]
 
-  --log[=FILE]   Always write full output to FILE.
-                 If you omit '=FILE', defaults to:
-                   $LOGDIR/$(basename "$0" .sh)-YYYYMMDD_HHMMSS.log
+  --log, -l         Capture stdout, stderr and xtrace into:
+                      ${SCRIPT_DIR}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                    Or use --log=FILE to pick a custom path.
 
-  -h, --help     Show this help and exit.
+  -h, --help        Show this help and exit.
 EOF
-  exit 1
+  exit 0
 }
 
-# 4) Parse command‑line flags
+# 4) Parse flags
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)
@@ -56,14 +47,19 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# 5) If logging was requested but no filename given, build a timestamped default
-if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
-  LOGFILE="$LOGDIR/$(basename "$0" .sh)-$(date +%Y%m%d_%H%M%S).log"
-fi
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
+
+# 6) Turn on xtrace if you want command tracing in logs
+# set -x
+
+#--- Load secrets ---
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+. "$PROJECT_ROOT/config/load_secrets.sh"
 
 #–––– Test Framework ––––
 run_tests() {
-  # optionally allow override, but default must match setup script
   local_dir=${LOCAL_DIR:-/root/openbsd-server}
   github_repo=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
 
@@ -85,22 +81,17 @@ run_tests() {
     run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
   }
 
-  #––– Begin Test Plan –––
   echo "1..7"
-
-
   run_test "[ -d /root/.ssh ]"                                                "root .ssh directory exists"
-  run_test "[ -f /root/.ssh/id_ed25519 ]"                                    "deploy key present"
-  assert_file_perm "/root/.ssh/id_ed25519" "600"                              "deploy key mode is 600"
+  run_test "[ -f /root/.ssh/id_ed25519 ]"                                      "deploy key present"
+  assert_file_perm "/root/.ssh/id_ed25519" "600"                               "deploy key mode is 600"
 
-  run_test "[ -f /root/.ssh/known_hosts ]"                                    "root known_hosts exists"
-  run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                 "known_hosts contains github.com"
+  run_test "[ -f /root/.ssh/known_hosts ]"                                      "root known_hosts exists"
+  run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                   "known_hosts contains github.com"
 
-  run_test "[ -d \$local_dir/.git ]"                                          "repository cloned into \$local_dir"
+  run_test "[ -d \$local_dir/.git ]"                                            "repository cloned into \$local_dir"
+  run_test "grep -q \"url = \$github_repo\" \$local_dir/.git/config"            "remote origin set to GITHUB_REPO"
 
-  run_test "grep -q \"url = \$github_repo\" \$local_dir/.git/config"          "remote origin set to GITHUB_REPO"
-
-  #––– Summary –––
   echo ""
   if [ "$fails" -eq 0 ]; then
     echo "✅ All $tests tests passed."
@@ -111,7 +102,7 @@ run_tests() {
   return $fails
 }
 
-#–––– Wrapper to capture output and optionally log –––
+#–––– Wrapper to capture output and optionally log ––––
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
 
@@ -131,6 +122,6 @@ run_and_maybe_log() {
   fi
 }
 
-#––– Execute –––
+#––– Execute ––––
 run_and_maybe_log
 

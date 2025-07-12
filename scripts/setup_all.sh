@@ -18,9 +18,9 @@ usage() {
   cat <<EOF
 Usage: $0 [--log[=FILE]] [-h]
 
-  --log, -l           Capture everything (stdout, stderr, xtrace)
-                      into a log file under ${SCRIPT_DIR}/logs.
-                      If you do --log=FILE, that path is used instead.
+  --log, -l           Capture stdout, stderr, and xtrace to a log file in:
+                        ${SCRIPT_DIR}/logs/
+                      Use --log=FILE to specify a custom path.
 
   -h, --help          Show this help and exit.
 EOF
@@ -48,28 +48,12 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# 5) Set up log directory & default file
-LOGDIR="${SCRIPT_DIR}/logs"
-if [ "$FORCE_LOG" -eq 1 ]; then
-  mkdir -p "$LOGDIR"
-  if [ -z "$LOGFILE" ]; then
-    LOGFILE="$LOGDIR/setup_all-$(date '+%Y%m%d_%H%M%S').log"
-  fi
-  echo "ℹ️  Logging to $LOGFILE"
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
 
-  # FIFO + tee trick
-  FIFO="$LOGDIR/setup_all-$$.fifo"
-  mkfifo "$FIFO"
-  tee -a "$LOGFILE" <"$FIFO" &
-  TEE_PID=$!
-
-  # Redirect all output (incl. future xtrace) into our FIFO
-  exec >"$FIFO" 2>&1
-  rm -f "$FIFO"
-fi
-
-# 6) (Optional) if you want a trace of each command, uncomment:
-# set -x
+# 6) Turn on xtrace so everything shows up in the log
+set -x
 
 # 7) Run the three setup scripts
 echo "👉 Running system setup…"

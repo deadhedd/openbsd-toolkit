@@ -1,34 +1,33 @@
 #!/bin/sh
 #
-# test_all.sh – Run the full suite of tests, with optional logging.
+# test_all.sh – Run the full suite of tests, with optional centralized logging.
+# Usage: ./test_all.sh [--log[=FILE]] [-h]
 #
 
-# 1) Figure out where this script lives, so we can reliably call its siblings
+set -X
+
+# 1) Locate this script’s directory
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-# 2) Where to dump logs by default
-LOGDIR="${SCRIPT_DIR}/logs"
-mkdir -p "$LOGDIR"
-
-# 3) Defaults: only write a log on failure unless --log is passed
+# 2) Logging defaults
 FORCE_LOG=0
 LOGFILE=""
 
-# 4) Usage helper
+# 3) Usage helper
 usage() {
   cat <<EOF
 Usage: $0 [--log[=FILE]] [-h]
 
-  --log[=FILE]   Always write full output to FILE.
-                 If you omit '=FILE', defaults to:
-                   $LOGDIR/test_all-YYYYMMDD_HHMMSS.log
+  --log, -l         Capture stdout, stderr, and any xtrace into a log
+                    under ${SCRIPT_DIR}/logs/.
+                    Use --log=FILE to specify a custom path.
 
-  -h, --help     Show this help and exit.
+  -h, --help        Show this help and exit.
 EOF
-  exit 1
+  exit 0
 }
 
-# 5) Parse command‑line flags
+# 4) Parse flags
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)
@@ -48,32 +47,30 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# 6) If no explicit logfile was given, pick a timestamped default
-if [ -z "$LOGFILE" ]; then
-  LOGFILE="${LOGDIR}/test_all-$(date '+%Y%m%d_%H%M%S').log"
-fi
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
 
-# 7) Make sure each test script exists (we’ll invoke them via `sh`)
-SCRIPTS="
-  test_system.sh
-  test_obsidian_git.sh
-  test_github.sh
-"
-for script in $SCRIPTS; do
+# 6) (Optional) enable xtrace to include in the log
+# set -x
+
+# 7) Ensure each test script exists
+for script in test_system.sh test_obsidian_git.sh test_github.sh; do
   if [ ! -f "${SCRIPT_DIR}/${script}" ]; then
     echo "Error: ${script} not found in ${SCRIPT_DIR}" >&2
     exit 1
   fi
 done
 
-# 8) Run them all, buffer output, and decide whether to log
+# 8) Run tests, buffer their output for concise console display
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
   fail=0
 
-  for script in "${SCRIPT_DIR}/test_system.sh" \
-                "${SCRIPT_DIR}/test_obsidian_git.sh" \
-                "${SCRIPT_DIR}/test_github.sh"; do
+  for script in \
+      "${SCRIPT_DIR}/test_system.sh" \
+      "${SCRIPT_DIR}/test_obsidian_git.sh" \
+      "${SCRIPT_DIR}/test_github.sh"; do
 
     printf "⏳ Running %s …\n" "$(basename "$script")" >>"$TMP"
     if ! sh "$script" >>"$TMP" 2>&1; then
@@ -85,17 +82,15 @@ run_and_maybe_log() {
   done
 
   if [ "$fail" -ne 0 ]; then
-    echo "🛑 Some tests FAILED — dumping full log to $LOGFILE"
-    cat "$TMP" | tee "$LOGFILE"
+    echo "🛑 Some tests FAILED — see full log in $LOGFILE"
+    cat "$TMP"
     rm -f "$TMP"
     exit 1
   else
     if [ "$FORCE_LOG" -eq 1 ]; then
-      echo "ℹ️  Tests passed — writing full log to $LOGFILE"
-      cat "$TMP" >>"$LOGFILE"
-    else
-      cat "$TMP"
+      echo "ℹ️  Tests passed — full log in $LOGFILE"
     fi
+    cat "$TMP"
     rm -f "$TMP"
     echo "✅ All tests passed."
   fi
@@ -103,4 +98,4 @@ run_and_maybe_log() {
 
 # 9) Execute the suite
 run_and_maybe_log
-echo "✅ All tests passed."
+

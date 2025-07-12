@@ -1,17 +1,65 @@
 #!/bin/sh
 #
 # setup_system.sh - General system configuration for OpenBSD Server
-# Usage: ./setup_system.sh
+# Usage: ./setup_system.sh [--log[=FILE]] [-h]
+#
+
+set -X
+
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
+FORCE_LOG=0
+LOGFILE=""
+
+# 3) Help text
+usage() {
+  cat <<EOF
+Usage: $0 [--log[=FILE]] [-h]
+
+  --log, -l           Capture stdout, stderr, and xtrace to a log file in:
+                        ${SCRIPT_DIR}/logs/
+                      Use --log=FILE to specify a custom path.
+
+  -h, --help          Show this help and exit.
+EOF
+  exit 0
+}
+
+# 4) Parse flags
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l|--log)
+      FORCE_LOG=1
+      ;;
+    -l=*|--log=*)
+      FORCE_LOG=1
+      LOGFILE="${1#*=}"
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
+
+# 6) Turn on xtrace for full visibility in logs
 set -x
 
 #--- Load secrets ---
-# 1) Locate this script’s directory
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
-
-# 2) Compute project root (one level up from this script)
+# 7) Compute project root (one level up from this script)
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# 3) Source the loader from the config folder by absolute path
+# 8) Source the loader from the config folder
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 #––– Config (override via env) –––
@@ -23,8 +71,6 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # DNS2=${DNS2:-9.9.9.9}
 
 # 1. Static network
-# TESTED PERSISTENT IP (#2)
-# TESTED DEFAULT ROUTE (#3)
 cat > "/etc/hostname.${INTERFACE}" <<-EOF    # TESTED (#1)
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
@@ -44,13 +90,11 @@ sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config       
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config   # TESTED (#11)
 rcctl restart sshd                                                                        # TESTED (#12)
 
-# TESTED ROOT PROFILE SETS HISTFILE (#13)
-# TESTED ROOT PROFILE SETS HISTSIZE (#15)
-# TESTED ROOT PROFILE SETS HISTCONTROL (#16)
+# 3. Root history settings
 cat << 'EOF' >> /root/.profile
-export HISTFILE=/root/.ksh_history
-export HISTSIZE=5000
-export HISTCONTROL=ignoredups
+export HISTFILE=/root/.ksh_history      # TESTED (#13)
+export HISTSIZE=5000                    # TESTED (#15)
+export HISTCONTROL=ignoredups           # TESTED (#16)
 EOF
 . /root/.profile
 

@@ -1,11 +1,61 @@
 #!/bin/sh
 #
 # setup_obsidian_git.sh - Git-backed Obsidian vault setup
-# Usage: ./setup_obsidian_git.sh
+# Usage: ./setup_obsidian_git.sh [--log[=FILE]] [-h]
+#
+
 set -x
 
-#--- Load secrets ---
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
+FORCE_LOG=0
+LOGFILE=""
+
+# 3) Help text
+usage() {
+  cat <<EOF
+Usage: $0 [--log[=FILE]] [-h]
+
+  --log, -l           Capture stdout, stderr, and xtrace to a log file in:
+                        ${SCRIPT_DIR}/logs/
+                      Use --log=FILE to specify a custom path.
+
+  -h, --help          Show this help and exit.
+EOF
+  exit 0
+}
+
+# 4) Parse flags
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l|--log)
+      FORCE_LOG=1
+      ;;
+    -l=*|--log=*)
+      FORCE_LOG=1
+      LOGFILE="${1#*=}"
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+# 5) Centralized logging init
+. "$SCRIPT_DIR/logs/logging.sh"
+init_logging "$0"
+
+# 6) Turn on xtrace so everything shows up in the log
+set -x
+
+#— Load secrets —
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
@@ -67,14 +117,14 @@ else
 fi
 rcctl restart sshd                                                                      # TESTED (#12)
 
-# Git‐user .ssh
+# Git-user .ssh
 mkdir -p "/home/${GIT_USER}/.ssh"                                                         # TESTED (#13)
 chmod 700 "/home/${GIT_USER}/.ssh"                                                        # TESTED (#16)
 touch   "/home/${GIT_USER}/.ssh/authorized_keys"
 chmod 600 "/home/${GIT_USER}/.ssh/authorized_keys"
 chown -R "${GIT_USER}:${GIT_USER}" "/home/${GIT_USER}/.ssh"
 
-# Obs‐user .ssh & known_hosts
+# Obs-user .ssh & known_hosts
 mkdir -p "/home/${OBS_USER}/.ssh"
 chmod 700 "/home/${OBS_USER}/.ssh"
 ssh-keyscan -H "${SERVER}" >> "/home/${OBS_USER}/.ssh/known_hosts"                         # TESTED (#23–26)
@@ -87,15 +137,12 @@ chown "${GIT_USER}:${GIT_USER}" "/home/${GIT_USER}/vaults"
 git init --bare "/home/${GIT_USER}/vaults/${VAULT}.git"                                    # TESTED (#30)
 chown -R "${GIT_USER}:${GIT_USER}" "/home/${GIT_USER}/vaults/${VAULT}.git"
 
-# 6. Add safe.directory entries in each user’s own config file
-# ensure the config files exist
-touch "/home/${GIT_USER}/.gitconfig"
-touch "/home/${OBS_USER}/.gitconfig"
-# git user
+# 6. Add safe.directory entries
+touch "/home/${GIT_USER}/.gitconfig"                                                      
+touch "/home/${OBS_USER}/.gitconfig"                                                      
 git config --file "/home/${GIT_USER}/.gitconfig" --add safe.directory "/home/${GIT_USER}/vaults/${VAULT}.git"
 git config --file "/home/${GIT_USER}/.gitconfig" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
 chown "${GIT_USER}:${GIT_USER}" "/home/${GIT_USER}/.gitconfig"
-# obs user
 git config --file "/home/${OBS_USER}/.gitconfig" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.gitconfig"
 
@@ -116,7 +163,7 @@ chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/vaults"
 git clone "/home/${GIT_USER}/vaults/${VAULT}.git" "/home/${OBS_USER}/vaults/${VAULT}"     # TESTED (#39/#40)
 chown -R "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/vaults/${VAULT}"
 
-# 9. Initial empty commit by root (with correct author) in obs user’s working clone
+# 9. Initial empty commit by root in obs user’s working clone
 cd "/home/${OBS_USER}/vaults/${VAULT}"
 git -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \

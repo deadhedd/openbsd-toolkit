@@ -1,20 +1,74 @@
 #!/bin/sh
-# test_obsidian_git_client.sh
-# Assumes setup_obsidian_git_client.sh has just run.
+#
+# test_obsidian_git_client.sh – Verify client-side Obsidian Git sync (with optional logging)
+# Usage: ./test_obsidian_git_client.sh [--log[=FILE]] [-h]
+#
 
-# 0) Load config from secrets.env
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-SECRETS="$SCRIPT_DIR/../config/secrets.env"  # Adjust if needed
+set -e
+
+# 1) Locate this script’s directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 2) Logging defaults
+FORCE_LOG=0
+LOGFILE=""
+
+# 3) Usage helper
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [--log[=FILE]] [-h]
+
+  --log, -l           Capture stdout, stderr, and xtrace to:
+                        ${SCRIPT_DIR}/../logs/$(basename "$0" .sh)-TIMESTAMP.log
+                      Or use --log=FILE to pick a custom path.
+
+  -h, --help          Show this help and exit.
+EOF
+  exit 0
+}
+
+# 4) Parse flags
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l|--log)
+      FORCE_LOG=1
+      ;;
+    -l=*|--log=*)
+      FORCE_LOG=1
+      LOGFILE="${1#*=}"
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      usage
+      ;;
+  esac
+  shift
+done
+
+# 5) Centralized logging init
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+. "$PROJECT_ROOT/logs/logging.sh"
+init_logging "$0"
+
+# 6) (Optional) enable xtrace for detailed logs
+# set -x
+
+# 7) Load config from secrets.env
+SECRETS="$PROJECT_ROOT/config/secrets.env"
 if [ ! -f "$SECRETS" ]; then
   echo "❌ secrets.env not found at $SECRETS"
   exit 1
 fi
-set -a
-# shellcheck source=/dev/null
-. "$SECRETS"
-set +a
+set -a; . "$SECRETS"; set +a
 
-# 1) Test helper
+# 8) Derived paths
+BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
+WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"
+LOCAL_VAULT="$HOME/${VAULT}"
+
+# 9) Test helper
 run_test() {
   if eval "$1"; then
     echo "ok - $2"
@@ -23,39 +77,41 @@ run_test() {
   fi
 }
 
-# 2) Derived paths
-BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
-WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"
-LOCAL_VAULT="$HOME/${VAULT}"
+# 10) Run tests
+run_tests() {
+  run_test "ssh-add -l | grep -q id_ed25519"                             "ssh-agent running and id_ed25519 loaded"
+  run_test "grep -q \"$SERVER\" ~/.ssh/known_hosts"                       "known_hosts contains $SERVER"
+  run_test "[ -d \"$LOCAL_VAULT/.git\" ]"                                 "local vault is a Git repo"
+  run_test "ssh ${GIT_USER}@${SERVER} [ -d \"$BARE_REPO\" ]"              "remote bare repo exists"
+  run_test "ssh ${GIT_USER}@${SERVER} [ -x \"$BARE_REPO/hooks/post-receive\" ]" \
+           "post-receive hook is present and executable"
+  run_test "git -C \"$LOCAL_VAULT\" pull origin"                         "git pull succeeds over SSH"
+  cd "$LOCAL_VAULT" || exit 1
+  echo "# test $(date +%s)" >> test-sync.md
+  git add test-sync.md
+  git commit -m "TDD sync test"
+  run_test "git push origin HEAD"                                        "git push succeeds over SSH"
+}
 
-# 3) SSH agent & key
-run_test "ssh-add -l | grep -q id_ed25519" \
-         "ssh-agent running and id_ed25519 loaded"
+# 11) Wrapper to capture output and optionally log
+run_and_maybe_log() {
+  TMP="$(mktemp)" || exit 1
+  if ! run_tests >"$TMP" 2>&1; then
+    echo "🛑 $(basename "$0") FAILED — dumping full log to $LOGFILE"
+    cat "$TMP" | tee "$LOGFILE"
+    rm -f "$TMP"
+    exit 1
+  else
+    if [ "$FORCE_LOG" -eq 1 ]; then
+      echo "✅ $(basename "$0") passed — writing full log to $LOGFILE"
+      cat "$TMP" >>"$LOGFILE"
+    else
+      cat "$TMP"
+    fi
+    rm -f "$TMP"
+  fi
+}
 
-# 4) known_hosts entry
-run_test "grep -q \"$SERVER\" ~/.ssh/known_hosts" \
-         "known_hosts contains $SERVER"
+# 12) Execute
+run_and_maybe_log
 
-# 5) local git repo exists
-run_test "[ -d \"$LOCAL_VAULT/.git\" ]" \
-         "local vault is a Git repo"
-
-# 6) remote bare repo exists
-run_test "ssh ${GIT_USER}@${SERVER} [ -d \"$BARE_REPO\" ]" \
-         "remote bare repo exists"
-
-# 7) post-receive hook is executable
-run_test "ssh ${GIT_USER}@${SERVER} [ -x \"$BARE_REPO/hooks/post-receive\" ]" \
-         "post-receive hook is present and executable"
-
-# 8) can pull without password
-run_test "ssh -o BatchMode=yes ${GIT_USER}@${SERVER} git -C \"$LOCAL_VAULT\" pull origin" \
-         "git pull succeeds over SSH"
-
-# 9) can push a dummy commit
-cd "$LOCAL_VAULT" || exit 1
-echo "# test $(date +%s)" >> test-sync.md
-git add test-sync.md
-git commit -m "TDD sync test"
-run_test "git push origin HEAD" \
-         "git push succeeds over SSH"
