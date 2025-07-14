@@ -142,7 +142,7 @@ run_tests() {
 
   # known_hosts for OBS_USER
   run_test "[ -f $OBS_HOME/.ssh/known_hosts ]" "known_hosts for $OBS_USER exists"
-  run_test "grep -q '$SERVER' $OBS_HOME/.ssh/known_hosts" "known_hosts contains $SERVER"
+  run_test "grep -q '$GIT_SERVER' $OBS_HOME/.ssh/known_hosts" "known_hosts contains $GIT_SERVER"
   assert_file_perm "$OBS_HOME/.ssh/known_hosts" "644" "known_hosts perms for $OBS_USER"
   run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh/known_hosts | grep -q '^$OBS_USER:$OBS_USER\$'" "known_hosts owner correct"
 
