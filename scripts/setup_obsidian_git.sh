@@ -174,7 +174,8 @@ chown -R "$OBS_USER:$OBS_USER" "$work_dir"
 
 # 11. Initial empty commit
 cd "$work_dir"
-git -c user.name='Obsidian User' \
+git -c safe.directory="$work_dir" \
+    -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
 
