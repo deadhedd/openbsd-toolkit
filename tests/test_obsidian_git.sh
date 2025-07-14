@@ -73,9 +73,9 @@ init_logging "$0"
 #
 # 7) Prepare test parameters
 #
-: "${OBS_USER:?OBS_USER must be set in secrets}"
-: "${GIT_USER:?GIT_USER must be set in secrets}"
-: "${VAULT:?VAULT must be set in secrets}"
+: "\${OBS_USER:?OBS_USER must be set in secrets}"
+: "\${GIT_USER:?GIT_USER must be set in secrets}"
+: "\${VAULT:?VAULT must be set in secrets}"
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 
@@ -94,18 +94,27 @@ run_test() {
 
 assert_file_perm() {
   path="$1"; want="$2"; desc="$3"
-  run_test "stat -f '%Lp' \"$path\" | grep -q '^$want\$'" "$desc"
-}
-
-assert_git_safe() {
-  repo="$1"; desc="$2"; user="${3:-$OBS_USER}"
-  cfg="/home/$user/.gitconfig"
-  run_test "grep -Eq '^[[:space:]]*safe\\.directory *= *$repo\$' \"$cfg\"" "$desc"
+  run_test "stat -f '%Lp' \"$path\" | grep -q '^$want$'" "$desc"
 }
 
 assert_user_shell() {
   user="$1"; shell="$2"; desc="$3"
-  run_test "grep -q \"^$user:.*:$shell\$\" /etc/passwd" "$desc"
+  run_test "grep -q \"^$user:.*:$shell$\" /etc/passwd" "$desc"
+}
+
+# ——— safe.directory helper ———
+check_entry() {
+  config_file="$1"
+  dir="$2"
+  user_label="$3"
+
+  entries=$(git config --file "$config_file" --get-all safe.directory || true)
+  printf '%s
+' "$entries" |
+    grep -Fx -- "$dir" >/dev/null || {
+      echo "not ok - safe.directory for $user_label: $dir"
+      return 1
+    }
 }
 
 run_tests() {
@@ -121,9 +130,9 @@ run_tests() {
 
   # doas config
   run_test "[ -f /etc/doas.conf ]" "doas.conf exists"
-  run_test "grep -q \"^permit persist $OBS_USER as root\$\" /etc/doas.conf" "doas.conf allows persist $OBS_USER"
+  run_test "grep -q \"^permit persist $OBS_USER as root$\" /etc/doas.conf" "doas.conf allows persist $OBS_USER"
   run_test "grep -q \"^permit nopass $GIT_USER as root cmd git\\*\" /etc/doas.conf" "doas.conf allows nopass $GIT_USER for git"
-  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'" "doas.conf owned by root:wheel"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel$'" "doas.conf owned by root:wheel"
   assert_file_perm "/etc/doas.conf" "440" "/etc/doas.conf has mode 440"
 
   # SSH hardening
@@ -133,23 +142,23 @@ run_tests() {
   # GIT_USER .ssh
   run_test "[ -d /home/$GIT_USER/.ssh ]" "ssh dir for $GIT_USER exists"
   assert_file_perm "/home/$GIT_USER/.ssh" "700" "ssh dir perms for $GIT_USER"
-  run_test "stat -f '%Su:%Sg' /home/$GIT_USER/.ssh | grep -q '^$GIT_USER:$GIT_USER\$'" "ssh dir owner for $GIT_USER"
+  run_test "stat -f '%Su:%Sg' /home/$GIT_USER/.ssh | grep -q '^$GIT_USER:$GIT_USER$'" "ssh dir owner for $GIT_USER"
 
   # OBS_USER .ssh
   run_test "[ -d $OBS_HOME/.ssh ]" "ssh dir for $OBS_USER exists"
   assert_file_perm "$OBS_HOME/.ssh" "700" "ssh dir perms for $OBS_USER"
-  run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh | grep -q '^$OBS_USER:$OBS_USER\$'" "ssh dir owner for $OBS_USER"
+  run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh | grep -q '^$OBS_USER:$OBS_USER$'" "ssh dir owner for $OBS_USER"
 
   # known_hosts for OBS_USER
   run_test "[ -f $OBS_HOME/.ssh/known_hosts ]" "known_hosts for $OBS_USER exists"
   run_test "grep -q '$GIT_SERVER' $OBS_HOME/.ssh/known_hosts" "known_hosts contains $GIT_SERVER"
   assert_file_perm "$OBS_HOME/.ssh/known_hosts" "644" "known_hosts perms for $OBS_USER"
-  run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh/known_hosts | grep -q '^$OBS_USER:$OBS_USER\$'" "known_hosts owner correct"
+  run_test "stat -f '%Su:%Sg' $OBS_HOME/.ssh/known_hosts | grep -q '^$OBS_USER:$OBS_USER$'" "known_hosts owner correct"
 
   # safe.directory entries
-  assert_git_safe "$BARE_REPO" "safe.directory for bare repo in $GIT_USER config" "$GIT_USER"
-  assert_git_safe "/home/$OBS_USER/vaults/$VAULT" "safe.directory for work-tree in $GIT_USER config" "$GIT_USER"
-  assert_git_safe "/home/$OBS_USER/vaults/$VAULT" "safe.directory for working clone in $OBS_USER config" "$OBS_USER"
+  check_entry "/home/${GIT_USER}/.gitconfig" "$BARE_REPO" "${GIT_USER}"
+  check_entry "/home/${GIT_USER}/.gitconfig" "$OBS_HOME/vaults/${VAULT}" "${GIT_USER}"
+  check_entry "$OBS_HOME/.gitconfig" "$OBS_HOME/vaults/${VAULT}" "${OBS_USER}"
 
   # post-receive hook
   run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook executable"
@@ -188,4 +197,3 @@ run_and_maybe_log() {
 # 10) Execute
 #
 run_and_maybe_log
-
