@@ -104,7 +104,7 @@ done
 # 4. Configure doas
 cat >/etc/doas.conf <<-EOF
 permit persist ${OBS_USER} as root
-permit nopass  ${GIT_USER} as root cmd git*
+permit nopass ${GIT_USER} as root cmd git*
 EOF
 chown root:wheel /etc/doas.conf
 chmod 0440       /etc/doas.conf
@@ -128,7 +128,7 @@ for u in "$OBS_USER" "$GIT_USER"; do
   chown -R "$u:$u" "$sshdir"
 done
 
-ssh-keyscan -H "${SERVER}" >>"/home/${OBS_USER}/.ssh/known_hosts"
+ssh-keyscan -H "${GIT_SERVER}" >>"/home/${OBS_USER}/.ssh/known_hosts"
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "$OBS_USER:$OBS_USER" "/home/${OBS_USER}/.ssh/known_hosts"
 
@@ -142,8 +142,16 @@ git init --bare "$bare_repo"; chown -R "$GIT_USER:$GIT_USER" "$bare_repo"
 for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
   touch "$cfg"
-  safe_path="$([ "$u" = "$GIT_USER" ] && printf "$bare_repo" || printf "/home/$OBS_USER/vaults/$VAULT")"
-  git config --file "$cfg" --add safe.directory "$safe_path"
+
+  if [ "$u" = "$GIT_USER" ]; then
+    # git user needs both the bare repo and obsidian work-tree
+    git config --file "$cfg" --add safe.directory "$bare_repo"
+    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+  else
+    # obsidian only needs its own work-tree
+    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+  fi
+
   chown "$u:$u" "$cfg"
 done
 
@@ -166,8 +174,7 @@ chown -R "$OBS_USER:$OBS_USER" "$work_dir"
 
 # 11. Initial empty commit
 cd "$work_dir"
-git -c safe.directory="$work_dir" \
-    -c user.name='Obsidian User' \
+git -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
 
