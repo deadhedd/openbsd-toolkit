@@ -78,6 +78,7 @@ init_logging "$0"
 : "\${VAULT:?VAULT must be set in secrets}"
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
+WORK_TREE=/home/${OBS_USER}/vaults/${VAULT}
 
 #
 # 8) Test definitions
@@ -132,6 +133,7 @@ run_tests() {
   run_test "[ -f /etc/doas.conf ]" "doas.conf exists"
   run_test "grep -q \"^permit persist $OBS_USER as root$\" /etc/doas.conf" "doas.conf allows persist $OBS_USER"
   run_test "grep -q \"^permit nopass $GIT_USER as root cmd git\\*\" /etc/doas.conf" "doas.conf allows nopass $GIT_USER for git"
+  run_test "grep -q \"^permit nopass $GIT_USER as $OBS_USER cmd git\\*\" /etc/doas.conf" "doas.conf allows nopass $GIT_USER for working clone"
   run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel$'" "doas.conf owned by root:wheel"
   assert_file_perm "/etc/doas.conf" "440" "/etc/doas.conf has mode 440"
 
@@ -161,8 +163,14 @@ run_tests() {
   check_entry "$OBS_HOME/.gitconfig" "$OBS_HOME/vaults/${VAULT}" "${OBS_USER}"
 
   # post-receive hook
-  run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook executable"
-  run_test "grep -q '^#!/bin/sh' $BARE_REPO/hooks/post-receive" "hook shebang correct"
+run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook executable"
+run_test "grep -q '^#!/bin/sh' $BARE_REPO/hooks/post-receive" "hook shebang correct"
+
+run_test "grep -q '^git --work-tree=\"$WORK_TREE\" --git-dir=\"$BARE_REPO\" checkout -f master$' $BARE_REPO/hooks/post-receive" \
+  "hook: git checkout command correct"
+
+run_test "grep -q '^exit 0$' $BARE_REPO/hooks/post-receive" "hook: exits cleanly"
+
 
   # working clone
   run_test "[ -d $OBS_HOME/vaults/$VAULT/.git ]" "working clone exists"
