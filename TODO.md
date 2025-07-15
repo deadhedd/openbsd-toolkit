@@ -7,8 +7,8 @@
 - [x] implement secrets retreival in setup and test scripts
 - [x] add admin user setup to setup_system.sh
 - [x] update REG_USER usages to OBS_USER
-- [ ] wrap work_tree setting in quotes 
-- [ ] update the name STATIC_IP to GIT_SERVER
+- [x] wrap work_tree setting in quotes 
+- [x] update the name STATIC_IP to GIT_SERVER
 - [ ] specify master branch in post-receive
 - [ ] add "doas -u OBS_USER" to post-receive
 - [ ] add "premit nopass git as obsidian cmd git" to doas.conf
