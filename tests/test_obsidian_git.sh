@@ -78,7 +78,7 @@ init_logging "$0"
 : "\${VAULT:?VAULT must be set in secrets}"
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
-WORK_TREE=/home/${OBS_USER}/vaults/${VAULT}
+WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"
 
 #
 # 8) Test definitions
@@ -166,7 +166,7 @@ run_tests() {
 run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook executable"
 run_test "grep -q '^#!/bin/sh' $BARE_REPO/hooks/post-receive" "hook shebang correct"
 
-run_test "grep -q '^git --work-tree=\"$WORK_TREE\" --git-dir=\"$BARE_REPO\" checkout -f master$' $BARE_REPO/hooks/post-receive" \
+run_test "grep -q '^doas -u $OBS_USER git --work-tree=\"$WORK_TREE\" --git-dir=\"$BARE_REPO\" checkout -f master$' $BARE_REPO/hooks/post-receive" \
   "hook: git checkout command correct"
 
 run_test "grep -q '^exit 0$' $BARE_REPO/hooks/post-receive" "hook: exits cleanly"
