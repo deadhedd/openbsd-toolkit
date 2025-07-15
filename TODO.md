@@ -10,6 +10,7 @@
 - [ ] update the name STATIC_IP to GIT_SERVER
 - [ ] add ssh keys handling for git host
 - [ ] make setup idempotent
+- [ ] improve error handling
 - [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
 - [ ] Github user config
