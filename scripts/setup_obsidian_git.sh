@@ -105,6 +105,7 @@ done
 cat >/etc/doas.conf <<-EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
+permit nopass ${GIT_USER} as ${OBS_USER} cmd git*
 EOF
 chown root:wheel /etc/doas.conf
 chmod 0440       /etc/doas.conf
@@ -159,8 +160,7 @@ done
 hook="$bare_repo/hooks/post-receive"
 cat >"$hook" <<-EOF
 #!/bin/sh
-git --work-tree="/home/${OBS_USER}/vaults/${VAULT}" \\
-    --git-dir="$bare_repo" checkout -f
+doas -u $OBS_USER git --work-tree="/home/${OBS_USER}/vaults/${VAULT}" --git-dir="$bare_repo" checkout -f master
 exit 0
 EOF
 chown "$GIT_USER:$GIT_USER" "$hook"
