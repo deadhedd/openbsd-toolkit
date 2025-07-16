@@ -12,6 +12,7 @@
 - [x] specify master branch in post-receive
 - [x] add "doas -u OBS_USER" to post-receive
 - [x] add "premit nopass git as obsidian cmd git" to doas.conf
+- [ ] add logging to post receive hook for troubleshooting 
 - [ ] 1.0?
 - [ ] add ssh keys handling for git host
 - [ ] make setup idempotent
