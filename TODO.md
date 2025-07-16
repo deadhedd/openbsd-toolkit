@@ -9,9 +9,9 @@
 - [x] update REG_USER usages to OBS_USER
 - [x] wrap work_tree setting in quotes 
 - [x] update the name STATIC_IP to GIT_SERVER
-- [ ] specify master branch in post-receive
-- [ ] add "doas -u OBS_USER" to post-receive
-- [ ] add "premit nopass git as obsidian cmd git" to doas.conf
+- [x] specify master branch in post-receive
+- [x] add "doas -u OBS_USER" to post-receive
+- [x] add "premit nopass git as obsidian cmd git" to doas.conf
 - [ ] 1.0?
 - [ ] add ssh keys handling for git host
 - [ ] make setup idempotent
