@@ -13,6 +13,7 @@
 - [x] add "doas -u OBS_USER" to post-receive
 - [x] add "premit nopass git as obsidian cmd git" to doas.conf
 - [ ] set -x post receive
+- [ ] make post receive executable 
 - [ ] create shared group and add both git and obsidian
 - [ ] chown -R git:vault /home/git/vaults/Main.git; chmod -R g+rwX /home/git/vaults/Main.git; find /home/git/vaults/Main.git -type d -exec chmod g+s {} +
 - [ ] add to /home/git/vaults/Main.git/config: [core]
