@@ -4,6 +4,23 @@ A collection of modular scripts to configure and validate an OpenBSD server for 
 
 ---
 
+## 🚀 v0.9.0 – Permissions & Hook Improvements (2025-07-18)
+
+* **Permissions & Git config**
+
+  * Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
+  * Created a shared Unix group for the `git` and `obsidian` users to streamline permissions.
+  * Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on directories).
+  * Added `sharedRepository = group` under `[core]` in the bare repo’s Git config for group-write support.
+* **Fixes**
+
+  * Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the `obsidian` user.
+* **Logging**
+
+  * Enhanced logging across both setup and test scripts for improved traceability.
+
+---
+
 ## 🚀 v0.4.0 – Centralized Secrets Management (2025-07-06)
 
 * **Secrets management**
@@ -151,13 +168,33 @@ Same environment variables apply.
 Use version tags to snapshot working configurations:
 
 ```sh
-git tag -a v0.4.0 -m "v0.4.0 – centralized secrets loading"
+git tag -a v0.8.0 -m "v0.8.0 – previous release"
+git tag -a v0.9.0 -m "v0.9.0 – Permissions & Hook Improvements"
 git push origin --tags
 ```
 
 ---
 
 ## 📜 Changelog
+
+## \[0.9.0] – 2025-07-18
+
+### Added
+
+* Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
+* Created a shared Unix group for the Obsidian and Git users to streamline permissions.
+* Improved logging throughout both the setup scripts and the test suite for better traceability.
+
+### Changed
+
+* Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on dirs).
+* Added `sharedRepository = group` under `[core]` in the bare repo’s Git config to enable group-write operations.
+
+### Fixed
+
+* Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the Obsidian user.
+
+*— incidental improvements to logging, no user‑facing behavior changes beyond the above.*
 
 ### v0.4.0 – Centralized Secrets Management (2025-07-06)
 
@@ -203,9 +240,7 @@ git push origin --tags
   * Working clone functionality (clone, remote URL, commit log).
   * Per-user history and password‑field tests in `master.passwd`.
 
-* **Setup scripts aligned**
-
-  * Added all corresponding config snippets to `setup_system.sh` and `setup_obsidian_git.sh`.
+*
 
 ### 🚀 v0.2.1 – Usability Improvements (2025-06-28)
 
@@ -252,3 +287,4 @@ git push origin --tags
 ## License
 
 MIT OR 0BSD — see the LICENSE file.
+

@@ -1,52 +1,96 @@
 #!/bin/sh
 #
 # setup_system.sh - General system configuration for OpenBSD Server
-# Usage: ./setup_system.sh
-set -e
+# Usage: ./setup_system.sh [--log[=FILE]] [-h]
+#
 
-#--- Load secrets ---
-# 1) Locate this script’s directory
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
+set -ex  # -e: exit on any error, -x: trace all commands
 
-# 2) Compute project root (one level up from this script)
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+#
+# 1) Find where this script lives
+#
+case "$0" in
+  */*) SCRIPT_PATH="$0" ;;
+  *)   SCRIPT_PATH="$(command -v -- "$0" 2>/dev/null || printf "%s" "$0")" ;;
+esac
+SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
-# 3) Source the loader from the config folder by absolute path
+#
+# 2) Logging defaults
+#
+FORCE_LOG=0
+LOGFILE=""
+
+#
+# 3) Usage helper
+#
+usage() {
+  cat <<EOF
+Usage: $0 [--log[=FILE]] [-h]
+
+  --log, -l       Capture stdout, stderr & xtrace into:
+                   \${SCRIPT_DIR%/scripts}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                 Or use --log=FILE to choose a custom path.
+
+  -h, --help      Show this help and exit.
+EOF
+  exit 0
+}
+
+#
+# 4) Parse flags
+#
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -l|--log)        FORCE_LOG=1             ;;
+    -l=*|--log=*)    FORCE_LOG=1; LOGFILE="${1#*=}" ;;
+    -h|--help)       usage                   ;;
+    *)               echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+  shift
+done
+
+#
+# 5) Centralized logging init
+#
+PROJECT_ROOT="${SCRIPT_DIR%/scripts}"
+LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
+[ -f "$LOG_HELPER" ] || { echo "❌ logging.sh not found at $LOG_HELPER" >&2; exit 1; }
+. "$LOG_HELPER"
+init_logging "$0"
+
+#
+# 6) Load secrets
+#
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
-#––– Config (override via env) –––
-# INTERFACE=${INTERFACE:-em0}
-# STATIC_IP=${STATIC_IP:-192.0.2.10}
-# NETMASK=${NETMASK:-255.255.255.0}
-# GATEWAY=${GATEWAY:-192.0.2.1}
-# DNS1=${DNS1:-1.1.1.1}
-# DNS2=${DNS2:-9.9.9.9}
+#
+# 7) System configuration steps
+#
 
-# 1. Static network
-# TESTED PERSISTENT IP (#2)
-# TESTED DEFAULT ROUTE (#3)
-cat > "/etc/hostname.${INTERFACE}" <<-EOF    # TESTED (#1)
-inet ${STATIC_IP} ${NETMASK}
+# 1. Write interface config
+cat > "/etc/hostname.${INTERFACE}" <<-EOF
+inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-cat > /etc/resolv.conf <<-EOF                # TESTED (#4)
-nameserver ${DNS1}                           # TESTED (#5)
-nameserver ${DNS2}                           # TESTED (#6)
+# 2. Write resolv.conf
+cat > /etc/resolv.conf <<-EOF
+nameserver ${DNS1}
+nameserver ${DNS2}
 EOF
-chmod 644 /etc/resolv.conf                   # TESTED (#7)
+chmod 644 /etc/resolv.conf
 
-ifconfig "${INTERFACE}" inet "${STATIC_IP}" netmask "${NETMASK}" up  # TESTED (#8)
-route add default "${GATEWAY}"                                       # TESTED (#9)
+# 3. Bring up interface and route
+ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
+route add default "${GATEWAY}"
 
-# 2. SSH hardening
-sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config                 # TESTED (#10)
-sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config   # TESTED (#11)
-rcctl restart sshd                                                                        # TESTED (#12)
+# 4. SSH hardening
+sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+rcctl restart sshd
 
-# TESTED ROOT PROFILE SETS HISTFILE (#13)
-# TESTED ROOT PROFILE SETS HISTSIZE (#15)
-# TESTED ROOT PROFILE SETS HISTCONTROL (#16)
+# 5. Root history settings
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000

@@ -1,9 +1,24 @@
+# swap & backup
 *.swp
 *.bak
+
+# macOS
 .DS_Store
-*.log
+
+# temp files
 *.tmp
+
+# sensitive keys, secrets
 deploy_key
-**/logs/
 secrets.env
+
+# public keys
 *.pub
+
+# ignore all log files…
+*.log
+
+# …but track the logs/ folder and its logging.sh helper
+!logs/
+!logs/logging.sh
+
