@@ -1,42 +1,45 @@
 #!/bin/sh
 #
 # test_github.sh – Verify GitHub SSH key & repo bootstrap (with optional logging)
+# Usage: ./test_github.sh [--log[=FILE]] [-h]
 #
 
-# 1) Locate this script’s directory so logs always end up alongside it
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-LOGDIR="$SCRIPT_DIR/logs"
-mkdir -p "$LOGDIR"
+set -ex  # -e: exit on error; -x: trace commands
 
-# 2) Defaults: only write a log on failure unless --log is passed
+#
+# 1) Locate this script’s real path
+#
+case "$0" in
+  */*) SCRIPT_PATH="$0" ;;
+  *)   SCRIPT_PATH="$(command -v -- "$0" 2>/dev/null || printf "%s" "$0")" ;;
+esac
+SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+
+#
+# 2) Logging defaults
+#
 FORCE_LOG=0
 LOGFILE=""
 
-#--- Load secrets ---
-# 1) Locate this script’s directory
-SCRIPT_DIR="$(cd "$(dirname -- "$0")" && pwd)"
-
-# 2) Compute project root (one level up from this script)
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# 3) Source the loader from the config folder by absolute path
-. "$PROJECT_ROOT/config/load_secrets.sh"
-
+#
 # 3) Usage helper
+#
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--log[=FILE]] [-h]
 
-  --log[=FILE]   Always write full output to FILE.
-                 If you omit '=FILE', defaults to:
-                   $LOGDIR/$(basename "$0" .sh)-YYYYMMDD_HHMMSS.log
+  --log, -l       Capture stdout, stderr & xtrace into:
+                   \${PROJECT_ROOT}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                 Or use --log=FILE to choose a custom path.
 
-  -h, --help     Show this help and exit.
+  -h, --help      Show this help and exit.
 EOF
-  exit 1
+  exit 0
 }
 
-# 4) Parse command‑line flags
+#
+# 4) Parse flags
+#
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)
@@ -50,68 +53,73 @@ while [ $# -gt 0 ]; do
       usage
       ;;
     *)
-      usage
+      echo "Unknown option: $1" >&2
+      exit 1
       ;;
   esac
   shift
 done
 
-# 5) If logging was requested but no filename given, build a timestamped default
-if [ "$FORCE_LOG" -eq 1 ] && [ -z "$LOGFILE" ]; then
-  LOGFILE="$LOGDIR/$(basename "$0" .sh)-$(date +%Y%m%d_%H%M%S).log"
+#
+# 5) Centralized logging init (handle tests/ or scripts/ subdir)
+#
+base="$(basename "$SCRIPT_DIR")"
+if [ "$base" = "tests" ] || [ "$base" = "scripts" ]; then
+  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+else
+  PROJECT_ROOT="$SCRIPT_DIR"
 fi
 
-#–––– Test Framework ––––
+LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
+[ -f "$LOG_HELPER" ] || { echo "❌ logging.sh not found at $LOG_HELPER" >&2; exit 1; }
+. "$LOG_HELPER"
+init_logging "$0"
+
+#
+# 6) Load secrets
+#
+. "$PROJECT_ROOT/config/load_secrets.sh"
+
+#
+# 7) Test-framework definitions
+#
+run_test() {
+  desc="$2"
+  if eval "$1" >/dev/null 2>&1; then
+    echo "ok - $desc"
+  else
+    echo "not ok - $desc"
+    return 1
+  fi
+}
+
+assert_file_perm() {
+  path="$1"; want="$2"; desc="$3"
+  run_test "stat -f '%Lp' \"$path\" | grep -q '^$want\$'" "$desc"
+}
+
+#
+# 8) Actual tests
+#
 run_tests() {
-  # optionally allow override, but default must match setup script
   local_dir=${LOCAL_DIR:-/root/openbsd-server}
   github_repo=${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}
 
-  tests=0; fails=0
-
-  run_test() {
-    tests=$((tests+1))
-    desc="$2"
-    if eval "$1" >/dev/null 2>&1; then
-      echo "ok $tests - $desc"
-    else
-      echo "not ok $tests - $desc"
-      fails=$((fails+1))
-    fi
-  }
-
-  assert_file_perm() {
-    path=$1; want=$2; desc=$3
-    run_test "stat -f '%Lp' $path | grep -q '^$want\$'" "$desc"
-  }
-
-  #––– Begin Test Plan –––
   echo "1..7"
+  run_test "[ -d /root/.ssh ]"                                          "root .ssh directory exists"
+  run_test "[ -f /root/.ssh/id_ed25519 ]"                               "deploy key present"
+  assert_file_perm "/root/.ssh/id_ed25519" "600"                        "deploy key mode is 600"
 
+  run_test "[ -f /root/.ssh/known_hosts ]"                              "root known_hosts exists"
+  run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"            "known_hosts contains github.com"
 
-  run_test "[ -d /root/.ssh ]"                                                "root .ssh directory exists"
-  run_test "[ -f /root/.ssh/id_ed25519 ]"                                    "deploy key present"
-  assert_file_perm "/root/.ssh/id_ed25519" "600"                              "deploy key mode is 600"
-
-  run_test "[ -f /root/.ssh/known_hosts ]"                                    "root known_hosts exists"
-  run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                 "known_hosts contains github.com"
-
-  run_test "[ -d \$local_dir/.git ]"                                          "repository cloned into \$local_dir"
-
-  run_test "grep -q \"url = \$github_repo\" \$local_dir/.git/config"          "remote origin set to GITHUB_REPO"
-
-  #––– Summary –––
-  echo ""
-  if [ "$fails" -eq 0 ]; then
-    echo "✅ All $tests tests passed."
-  else
-    echo "❌ $fails of $tests tests failed."
-  fi
-
-  return $fails
+  run_test "[ -d \"\$local_dir/.git\" ]"                                "repository cloned into \$local_dir"
+  run_test "grep -q \"url = \$github_repo\" \"\$local_dir/.git/config\"" "remote origin set to GITHUB_REPO"
 }
 
-#–––– Wrapper to capture output and optionally log –––
+#
+# 9) Wrapper to capture output and optionally log
+#
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
 
@@ -131,6 +139,8 @@ run_and_maybe_log() {
   fi
 }
 
-#––– Execute –––
+#
+# 10) Execute
+#
 run_and_maybe_log
 
