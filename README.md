@@ -159,6 +159,23 @@ git push origin --tags
 
 ## 📜 Changelog
 
+## [0.9.0] – 2025-07-18
+
+### Added
+- Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.  
+- Created a shared Unix group for the Obsidian and Git users to streamline permissions.  
+- Improved logging throughout both the setup scripts and the test suite for better traceability.
+
+### Changed
+- Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on dirs).  
+- Added `sharedRepository = group` under `[core]` in the bare repo’s Git config to enable group-write operations.
+
+### Fixed
+- Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the Obsidian user.  
+
+*— incidental improvements to logging, no user‑facing behavior changes beyond the above.*  
+
+
 ### v0.4.0 – Centralized Secrets Management (2025-07-06)
 
 * **Secrets management**
