@@ -128,6 +128,32 @@ run_tests() {
   assert_user_shell "$OBS_USER" "/bin/ksh" "shell for '$OBS_USER' is /bin/ksh"
   run_test "id $GIT_USER" "user '$GIT_USER' exists"
   assert_user_shell "$GIT_USER" "/usr/local/bin/git-shell" "shell for '$GIT_USER' is git-shell"
+  
+  # Group 'obsidian' exists
+run_test "getent group vault" "group 'vault' exists"
+
+# Both users are members of the 'obsidian' group
+run_test "id -nG \$OBS_USER | grep -qw vault" "user '\$OBS_USER' is in group 'vault'"
+run_test "id -nG \$GIT_USER | grep -qw vault" "user '\$GIT_USER' is in group 'vault'"
+
+# Verify top‐level directory ownership
+run_test "stat -f '%Su:%Sg' "$BARE_REPO" | grep -q '^git:vault$'" "ownership of '\$BARE_REPO' is 'git:vault'"
+
+# Verify no files under the repo have wrong owner or group
+run_test "! find \$BARE_REPO \\! -user git -group vault | grep -q ." "all files under '\$BARE_REPO' are owned by git:vault"
+
+# All entries under the repo are group-readable
+run_test "! find \$BARE_REPO \\! -perm -g=r | grep -q ." "all entries under '\$BARE_REPO' are group-readable"
+
+# All entries under the repo are group-writable
+run_test "! find \$BARE_REPO \\! -perm -g=w | grep -q ." "all entries under '\$BARE_REPO' are group-writable"
+
+# All directories under the repo are group-executable
+run_test "! find \$BARE_REPO -type d \\! -perm -g=x | grep -q ." "all directories under '\$BARE_REPO' are group-executable"
+
+# Verify group setgid bit on all directories under the repo
+run_test "! find \$BARE_REPO -type d \\! -perm -g+s | grep -q ." "all directories under '\$BARE_REPO' have the setgid bit set"
+
 
   # doas config
   run_test "[ -f /etc/doas.conf ]" "doas.conf exists"
@@ -162,15 +188,24 @@ run_tests() {
   check_entry "/home/${GIT_USER}/.gitconfig" "$OBS_HOME/vaults/${VAULT}" "${GIT_USER}"
   check_entry "$OBS_HOME/.gitconfig" "$OBS_HOME/vaults/${VAULT}" "${OBS_USER}"
 
-  # post-receive hook
+# post-receive hook
 run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook executable"
 run_test "grep -q '^#!/bin/sh' $BARE_REPO/hooks/post-receive" "hook shebang correct"
 
-run_test "grep -q '^doas -u $OBS_USER git --work-tree=\"$WORK_TREE\" --git-dir=\"$BARE_REPO\" checkout -f master$' $BARE_REPO/hooks/post-receive" \
+run_test "grep -q '^SHA=\\$(cat $BARE_REPO/refs/heads/master)$' $BARE_REPO/hooks/post-receive" \ # Possible issue with expansion, cat command may be getting run rather than checked for in the file
+  "hook: SHA variable set correctly"
+
+run_test "grep -q '^su - $OBS_USER -c \"/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_TREE checkout -f \$SHA\"$' $BARE_REPO/hooks/post-receive" \
   "hook: git checkout command correct"
 
 run_test "grep -q '^exit 0$' $BARE_REPO/hooks/post-receive" "hook: exits cleanly"
+run_test "[ -x $BARE_REPO/hooks/post-receive ]" "post-receive hook is executable"
 
+# Config: [core] section exists
+run_test "grep -q '^\[core\]' \$BARE_REPO/config" "config file contains '[core]' section"
+
+# Config: sharedRepository = group is set under [core]
+run_test "grep -q '^[[:space:]]*sharedRepository = group' \$BARE_REPO/config" "config file sets 'sharedRepository = group' under [core]"
 
   # working clone
   run_test "[ -d $OBS_HOME/vaults/$VAULT/.git ]" "working clone exists"
