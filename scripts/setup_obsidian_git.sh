@@ -101,6 +101,12 @@ for u in "$OBS_USER" "$GIT_USER"; do
   fi
 done
 
+groupadd vault
+usermod -G vault $OBS_USER
+usermod -G vault $GIT_USER
+
+
+
 # 4. Configure doas
 cat >/etc/doas.conf <<-EOF
 permit persist ${OBS_USER} as root
@@ -160,11 +166,16 @@ done
 hook="$bare_repo/hooks/post-receive"
 cat >"$hook" <<-EOF
 #!/bin/sh
-doas -u $OBS_USER git --work-tree="/home/${OBS_USER}/vaults/${VAULT}" --git-dir="$bare_repo" checkout -f master
+
+SHA=\$(cat /home/git/vaults/Main.git/refs/heads/master)
+
+su - $OBS_USER -c "/usr/local/bin/git --git-dir=/home/git/vaults/Main.git --work-tree=/home/obsidian/vaults/Main checkout -f \$SHA"
 exit 0
 EOF
 chown "$GIT_USER:$GIT_USER" "$hook"
 chmod +x "$hook"
+
+git --git-dir="$bare_repo" config core.sharedRepository group
 
 # 10. Clone working copy for OBS_USER
 work_dir="/home/${OBS_USER}/vaults/$VAULT"
@@ -189,6 +200,10 @@ export HISTCONTROL=ignoredups
 EOF
   chown "$u:$u" "$profile"
 done
+
+chown -R $GIT_USER:vault /home/$GIT_USER/vaults/$VAULT.git
+chmod -R g+rwX /home/$GIT_USER/vaults/$VAULT.git
+find /home/$GIT_USER/vaults/$VAULT.git -type d -exec chmod g+s {} +
 
 echo "✅ Obsidian sync setup complete."
 
