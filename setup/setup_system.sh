@@ -29,7 +29,7 @@ usage() {
 Usage: $0 [--log[=FILE]] [-h]
 
   --log, -l       Capture stdout, stderr & xtrace into:
-                   \${SCRIPT_DIR%/scripts}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                   \${SCRIPT_DIR}/logs/$(basename "$0" .sh)-TIMESTAMP.log
                  Or use --log=FILE to choose a custom path.
 
   -h, --help      Show this help and exit.
@@ -53,7 +53,7 @@ done
 #
 # 5) Centralized logging init
 #
-PROJECT_ROOT="${SCRIPT_DIR%/scripts}"
+PROJECT_ROOT="${SCRIPT_DIR}"
 LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
 [ -f "$LOG_HELPER" ] || { echo "❌ logging.sh not found at $LOG_HELPER" >&2; exit 1; }
 . "$LOG_HELPER"

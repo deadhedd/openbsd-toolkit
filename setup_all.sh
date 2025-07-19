@@ -13,13 +13,13 @@ case "$0" in
 esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
-# 2) Figure out project root vs scripts dir
-if [ "$(basename "$SCRIPT_DIR")" = "scripts" ]; then
+# 2) Figure out project root vs setup scripts dir
+if [ "$(basename "$SCRIPT_DIR")" = "setup" ]; then
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 else
   PROJECT_ROOT="$SCRIPT_DIR"
 fi
-SCRIPTS_DIR="$PROJECT_ROOT/scripts"
+SETUP_SCRIPTS_DIR="$PROJECT_ROOT/setup"
 
 # 3) Logging defaults
 FORCE_LOG=0
@@ -64,13 +64,13 @@ init_logging "$0"
 
 # 7) Run the three setup scripts
 echo "👉 Running system setup…"
-sh "$SCRIPTS_DIR/setup_system.sh"
+sh "$SETUP_SCRIPTS_DIR/setup_system.sh"
 
 echo "👉 Running Obsidian-git setup…"
-sh "$SCRIPTS_DIR/setup_obsidian_git.sh"
+sh "$SETUP_SCRIPTS_DIR/setup_obsidian_git.sh"
 
 echo "👉 Running GitHub setup…"
-sh "$SCRIPTS_DIR/setup_github.sh"
+sh "$SETUP_SCRIPTS_DIR/setup_github.sh"
 
 echo ""
 echo "✅ All setup scripts completed successfully."

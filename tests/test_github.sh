@@ -61,7 +61,7 @@ while [ $# -gt 0 ]; do
 done
 
 #
-# 5) Centralized logging init (handle tests/ or scripts/ subdir)
+# 5) Centralized logging init (handle tests/ or setup/ subdir)
 #
 base="$(basename "$SCRIPT_DIR")"
 if [ "$base" = "tests" ] || [ "$base" = "scripts" ]; then
