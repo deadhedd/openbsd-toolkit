@@ -1,8 +1,7 @@
 #!/bin/sh
 #
-# test_all.sh – Run the full suite of tests, with optional centralized logging.
-# Usage: ./test_all.sh [--log[=FILE]] [-h]
-#
+# test_all.sh — run tests for specified modules, or for enabled_modules.conf, or all modules.
+# Usage: ./test_all.sh [--log[=FILE]] [-h] [module1 module2 ...]
 
 set -ex  # -e: exit on error; -x: trace commands
 
@@ -16,16 +15,16 @@ esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
 #
-# 2) Determine project root (strip /tests or /scripts if needed)
+# 2) Determine PROJECT_ROOT and MODULE_DIR
 #
 base="$(basename "$SCRIPT_DIR")"
-if [ "$base" = "tests" ] || [ "$base" = "scripts" ]; then
+if [ "$base" = "scripts" ]; then
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 else
   PROJECT_ROOT="$SCRIPT_DIR"
 fi
-
-TESTS_DIR="$PROJECT_ROOT/tests"
+MODULE_DIR="$PROJECT_ROOT/modules"
+ENABLED_FILE="$PROJECT_ROOT/config/enabled_modules.conf"
 
 #
 # 3) Logging defaults
@@ -38,13 +37,17 @@ LOGFILE=""
 #
 usage() {
   cat <<EOF
-Usage: $0 [--log[=FILE]] [-h]
+Usage: $0 [--log[=FILE]] [-h] [module1 module2 ...]
 
-  --log, -l       Capture stdout, stderr & xtrace into:
-                   ${PROJECT_ROOT}/logs/$(basename "$0" .sh)-TIMESTAMP.log
-                 Or use --log=FILE to choose a custom path.
+  --log, -l       Capture full output to:
+                    ${PROJECT_ROOT}/logs/$(basename "$0" .sh)-TIMESTAMP.log
+                  Or use --log=FILE for a custom path.
 
   -h, --help      Show this help and exit.
+
+If you list modules, only those are tested.
+Else if $ENABLED_FILE exists, tests modules listed there.
+Otherwise all modules under 'modules/' are tested.
 EOF
   exit 0
 }
@@ -57,7 +60,9 @@ while [ $# -gt 0 ]; do
     -l|--log)        FORCE_LOG=1             ;;
     -l=*|--log=*)    FORCE_LOG=1; LOGFILE="${1#*=}" ;;
     -h|--help)       usage                   ;;
-    *)               echo "Unknown option: $1" >&2; usage ;;
+    --)              shift; break            ;;
+    -*)              echo "Unknown option: $1" >&2; usage ;;
+    *)               break                   ;;
   esac
   shift
 done
@@ -71,47 +76,79 @@ LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
 init_logging "$0"
 
 #
-# 7) Verify test scripts exist
+# 7) Prepare logfile if requested
 #
-tests="test_system.sh test_obsidian_git.sh test_github.sh"
-for t in $tests; do
-  [ -f "$TESTS_DIR/$t" ] || { echo "Error: $t not found in $TESTS_DIR" >&2; exit 1; }
+if [ "$FORCE_LOG" -eq 1 ]; then
+  if [ -z "$LOGFILE" ]; then
+    TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
+    LOGFILE="$PROJECT_ROOT/logs/$(basename "$0" .sh)-$TIMESTAMP.log"
+  fi
+  mkdir -p "$(dirname "$LOGFILE")"
+  echo "ℹ️  Logging all output to $LOGFILE"
+fi
+
+#
+# 8) Determine which modules to test
+#
+if [ "$#" -gt 0 ]; then
+  MODULES="$@"
+elif [ -f "$ENABLED_FILE" ]; then
+  MODULES="$(grep -Ev '^\s*(#|$)' "$ENABLED_FILE")"
+else
+  MODULES="$(for d in "$MODULE_DIR"/*; do [ -d "$d" ] && basename "$d"; done)"
+fi
+
+#
+# 9) Run each module’s tests
+#
+TMP="$(mktemp)" || exit 1
+fail=0
+
+for mod in $MODULES; do
+  DIR="$MODULE_DIR/$mod"
+
+  # Find test script in module
+  if [ -x "$DIR/test.sh" ]; then
+    TEST="$DIR/test.sh"
+  else
+    TEST="$(ls "$DIR"/test_*.sh 2>/dev/null | head -n1)"
+  fi
+
+  if [ -z "$TEST" ] || [ ! -x "$TEST" ]; then
+    printf "⚠️  Skipping module '%s': no executable test script\n\n" "$mod" >>"$TMP"
+    continue
+  fi
+
+  printf "⏳ Running tests for module '%s' …\n" "$mod" >>"$TMP"
+  if ! sh "$TEST" >>"$TMP" 2>&1; then
+    printf "🛑 Module '%s' FAILED\n\n" "$mod" >>"$TMP"
+    fail=1
+  else
+    printf "✅ Module '%s' passed\n\n" "$mod" >>"$TMP"
+  fi
 done
 
 #
-# 8) Run tests, buffer output, and handle logging
+# 10) Report results
 #
-run_and_maybe_log() {
-  TMP="$(mktemp)" || exit 1
-  fail=0
-
-  for t in $tests; do
-    printf "⏳ Running %s …\n" "$t" >>"$TMP"
-    if ! sh "$TESTS_DIR/$t" >>"$TMP" 2>&1; then
-      printf "🛑 %s FAILED\n\n" "$t" >>"$TMP"
-      fail=1
-    else
-      printf "✅ %s passed\n\n" "$t" >>"$TMP"
-    fi
-  done
-
-  if [ "$fail" -ne 0 ]; then
-    echo "🛑 Some tests FAILED — see full log in $LOGFILE"
+if [ "$fail" -ne 0 ]; then
+  echo "🛑 Some tests FAILED — see details below or in log." >&2
+  if [ "$FORCE_LOG" -eq 1 ]; then
     cat "$TMP" | tee "$LOGFILE"
-    rm -f "$TMP"
-    exit 1
   else
-    if [ "$FORCE_LOG" -eq 1 ]; then
-      echo "ℹ️  Tests passed — full log in $LOGFILE"
-      cat "$TMP" >>"$LOGFILE"
-    else
-      cat "$TMP"
-    fi
-    rm -f "$TMP"
+    cat "$TMP"
+  fi
+  rm -f "$TMP"
+  exit 1
+else
+  if [ "$FORCE_LOG" -eq 1 ]; then
+    cat "$TMP" >>"$LOGFILE"
+    echo "✅ All tests passed — full log in $LOGFILE"
+  else
+    cat "$TMP"
     echo "✅ All tests passed."
   fi
-}
-
-# 9) Execute
-run_and_maybe_log
+  rm -f "$TMP"
+  exit 0
+fi
 

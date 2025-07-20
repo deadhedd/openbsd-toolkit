@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# test_system.sh – Verify general system configuration for Obsidian-Git-Host setup (with optional logging)
+# test.sh — Verify general system configuration for base-system module (with optional logging)
 # Usage: ./test_system.sh [--log[=FILE]] [-h]
 #
 
-set -ex  # -e: exit on error; -x: trace commands
+set -x  # -e: exit on error; -x: trace commands
 
 #
 # 1) Locate this script’s real path
@@ -16,14 +16,9 @@ esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
 #
-# 2) Determine project root (strip off /tests or /scripts)
+# 2) Determine project root (two levels up from module)
 #
-base="$(basename "$SCRIPT_DIR")"
-if [ "$base" = "tests" ] || [ "$base" = "scripts" ]; then
-  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-else
-  PROJECT_ROOT="$SCRIPT_DIR"
-fi
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 #
 # 3) Logging defaults
@@ -125,6 +120,7 @@ run_tests() {
 #
 run_and_maybe_log() {
   TMP="$(mktemp)" || exit 1
+
   if ! run_tests >"$TMP" 2>&1; then
     echo "🛑 $(basename "$0") FAILED — dumping full log to $LOGFILE"
     cat "$TMP" | tee "$LOGFILE"
