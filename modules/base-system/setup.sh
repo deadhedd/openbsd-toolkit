@@ -6,7 +6,7 @@ set -x  # -e: exit on any error; -x: trace commands
 
 # 1) Locate project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 # 2) Load secrets (INTERFACE, GIT_SERVER, NETMASK, GATEWAY, DNS1, DNS2)
 . "$PROJECT_ROOT/config/load_secrets.sh"
