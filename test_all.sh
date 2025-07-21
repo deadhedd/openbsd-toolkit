@@ -3,7 +3,7 @@
 # test_all.sh — run tests for specified modules, or for enabled_modules.conf, or all modules.
 # Usage: ./test_all.sh [--log[=FILE]] [-h] [module1 module2 ...]
 
-set -ex  # -e: exit on error; -x: trace commands
+set -x  # -e: exit on error; -x: trace commands
 
 #
 # 1) Locate this script’s real path
@@ -108,16 +108,9 @@ for mod in $MODULES; do
   DIR="$MODULE_DIR/$mod"
 
   # Find test script in module
-  if [ -x "$DIR/test.sh" ]; then
-    TEST="$DIR/test.sh"
-  else
-    TEST="$(ls "$DIR"/test_*.sh 2>/dev/null | head -n1)"
-  fi
 
-  if [ -z "$TEST" ] || [ ! -x "$TEST" ]; then
-    printf "⚠️  Skipping module '%s': no executable test script\n\n" "$mod" >>"$TMP"
-    continue
-  fi
+  TEST="$DIR/test.sh"
+
 
   printf "⏳ Running tests for module '%s' …\n" "$mod" >>"$TMP"
   if ! sh "$TEST" >>"$TMP" 2>&1; then
