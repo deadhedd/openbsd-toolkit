@@ -98,12 +98,8 @@ fi
 #
 # 8) Always install base-system first (if present)
 #
-if [ -x "$MODULE_DIR/base-system/setup_system.sh" ]; then
-  echo "🔧 Installing prerequisite module: base-system"
-  sh "$MODULE_DIR/base-system/setup_system.sh"
-else
-  echo "⚠️  base-system setup not found or not executable; skipping prereq"
-fi
+echo "🔧 Installing prerequisite module: base-system"
+sh "$MODULE_DIR/base-system/setup.sh"
 
 #
 # 9) Install the rest of the modules
@@ -113,16 +109,7 @@ for mod in $MODULES; do
 
   DIR="$MODULE_DIR/$mod"
   # pick the setup script (generic or fallback)
-  if [ -x "$DIR/setup.sh" ]; then
-    SETUP="$DIR/setup.sh"
-  else
-    SETUP="$(ls "$DIR"/setup_*.sh 2>/dev/null | head -n1)"
-  fi
-
-  if [ -z "$SETUP" ] || [ ! -x "$SETUP" ]; then
-    echo "❌ Skipping '$mod': no executable setup script found"
-    continue
-  fi
+  SETUP="$DIR/setup.sh"
 
   echo "👉 Installing module: $mod"
   sh "$SETUP"

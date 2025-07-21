@@ -8,6 +8,8 @@
 #   init_logging "$0"
 #
 
+set -x
+
 init_logging() {
   ORIGIN="$1"
   [ "${FORCE_LOG}" = 1 ] || return 0

@@ -1,8 +1,10 @@
 #!/bin/sh
 # config/load-secrets.sh
 
+set -x
+
 # 1) Determine the project root (one level above config/)
-PROJECT_ROOT="$(cd "$(dirname -- "$0")"/.. && pwd)"
+PROJECT_ROOT="$(cd "$(dirname -- "$0")"/../.. && pwd)"
 CONFIG_DIR="$PROJECT_ROOT/config"
 
 # 2) Define locations for example and real secrets
