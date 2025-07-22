@@ -4,7 +4,7 @@
 #
 # Usage in your scripts (test or setup):
 #   . "$(dirname "$0")/logging.sh"
-#   set -- $(parse_logging_flags "$@")   # reset $@ to leftovers!
+#   set -- $(parse_logging_flags "$@")   # strip out --log/--debug
 #   init_logging "<context-name>"
 #   … your logic …
 #   [if test script] finalize_logging
@@ -29,15 +29,18 @@ parse_logging_flags() {
     case "$1" in
       --log|-l)
         FORCE_LOG=1
-        shift ;;
+        shift
+        ;;
       --log=*)
         FORCE_LOG=1
         LOG_FILE="${1#*=}"
-        shift ;;
+        shift
+        ;;
       --debug)
         DEBUG_MODE=1
         FORCE_LOG=1
-        shift ;;
+        shift
+        ;;
       *) break ;;
     esac
   done
@@ -47,21 +50,18 @@ parse_logging_flags() {
 }
 
 #--------------------------------------------------
-# Initialize logging: decide PROJECT_ROOT or use pre‑set, then set up LOG_FILE or buffer
+# Initialize logging: respect a pre‑set PROJECT_ROOT or derive it, then choose logfile or buffer
 init_logging() {
   context="$1"
   echo "DEBUG(init_logging): context='$context'" >&3
 
-  # If caller already set PROJECT_ROOT, keep it; otherwise derive it
+  # If the caller has already exported PROJECT_ROOT, keep it; otherwise derive it
   if [ -n "$PROJECT_ROOT" ]; then
     echo "DEBUG(init_logging): PROJECT_ROOT pre‑set to '$PROJECT_ROOT' (keeping it)" >&3
   else
-    # determine this script’s directory
     SCRIPT_PATH="$0"
     SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
     base="$(basename "$SCRIPT_DIR")"
-
-    # only climb up if we’re inside a “scripts” subdir
     if [ "$base" = "scripts" ]; then
       PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
     else
@@ -74,7 +74,6 @@ init_logging() {
   echo "DEBUG(init_logging): creating LOG_DIR='$LOG_DIR'" >&3
   mkdir -p "$LOG_DIR"
 
-  # choose log filename
   if [ -z "$LOG_FILE" ]; then
     timestamp="$(date '+%Y%m%d_%H%M%S')"
     LOG_FILE="$LOG_DIR/${context}-${timestamp}.log"
@@ -84,7 +83,6 @@ init_logging() {
   fi
   export LOG_FILE
 
-  # redirect or buffer
   if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ]; then
     echo "DEBUG(init_logging): redirecting all output to '$LOG_FILE'" >&3
     exec >"$LOG_FILE" 2>&1
