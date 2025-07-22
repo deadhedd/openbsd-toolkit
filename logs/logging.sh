@@ -47,21 +47,26 @@ parse_logging_flags() {
 }
 
 #--------------------------------------------------
-# Initialize logging: decide PROJECT_ROOT, set up LOG_FILE or buffer
+# Initialize logging: decide PROJECT_ROOT or use pre‑set, then set up LOG_FILE or buffer
 init_logging() {
   context="$1"
   echo "DEBUG(init_logging): context='$context'" >&3
 
-  # determine this script’s directory
-  SCRIPT_PATH="$0"
-  SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-  base="$(basename "$SCRIPT_DIR")"
-
-  # only climb up if we’re inside a “scripts” subdir
-  if [ "$base" = "scripts" ]; then
-    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+  # If caller already set PROJECT_ROOT, keep it; otherwise derive it
+  if [ -n "$PROJECT_ROOT" ]; then
+    echo "DEBUG(init_logging): PROJECT_ROOT pre‑set to '$PROJECT_ROOT' (keeping it)" >&3
   else
-    PROJECT_ROOT="$SCRIPT_DIR"
+    # determine this script’s directory
+    SCRIPT_PATH="$0"
+    SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+    base="$(basename "$SCRIPT_DIR")"
+
+    # only climb up if we’re inside a “scripts” subdir
+    if [ "$base" = "scripts" ]; then
+      PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    else
+      PROJECT_ROOT="$SCRIPT_DIR"
+    fi
   fi
   echo "DEBUG(init_logging): PROJECT_ROOT='$PROJECT_ROOT'" >&3
 
