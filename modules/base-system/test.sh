@@ -1,87 +1,43 @@
 #!/bin/sh
 #
-# test.sh — Verify general system configuration for base-system module (with optional logging)
-# Usage: ./test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
+# test.sh — Verify general system configuration for base-system module
+# Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+#
 
 # 1) Locate this script’s real path
 case "$0" in
   */*) SCRIPT_PATH="$0"   ;;
-  *)   SCRIPT_PATH="$(command -v -- "$0" 2>/dev/null || printf "%s" "$0")" ;;
+  *)   SCRIPT_PATH="$PWD/$0"   ;;   # assume cwd if no slash
 esac
-SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-# 2) Determine project root (two levels up from module)
+# 2) Determine project root (two levels up from module dir)
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export PROJECT_ROOT
 
-# 3) Logging flags
-FORCE_LOG=0
-DEBUG_LOG=0
-LOGFILE=""
+# 3) Source our logging framework, strip flags, init logging
+. "$PROJECT_ROOT/logs/logging.sh"
+set -- $(parse_logging_flags "$@")   # now $@ = any non-logging args (e.g. -h)
+init_logging "test-base-system"
 
-# 4) Usage helper
-usage() {
-  cat <<-EOF
-Usage: $(basename "$0") [--log[=FILE]] [--debug[=FILE]] [-h]
-
-  -l, --log        capture stdout+stderr in a central log
-  -l=FILE          write central log to FILE
-  -d, --debug      as --log, plus trace every command
-  -d=FILE          debug central log to FILE
-  -h, --help       Show this help and exit.
-EOF
+# 4) Handle help request
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  echo "Usage: $0 [--log[=FILE]] [--debug] [-h]"
+  finalize_logging
   exit 0
-}
+fi
 
-# 5) Parse flags
-while [ $# -gt 0 ]; do
-  case "$1" in
-    -l|--log)
-      FORCE_LOG=1
-      shift
-      ;;
-    -l=*|--log=*)
-      FORCE_LOG=1
-      LOGFILE="${1#*=}"
-      shift
-      ;;
-    -d|--debug)
-      DEBUG_LOG=1
-      FORCE_LOG=1
-      shift
-      ;;
-    -d=*|--debug=*)
-      DEBUG_LOG=1
-      FORCE_LOG=1
-      LOGFILE="${1#*=}"
-      shift
-      ;;
-    -h|--help)
-      usage
-      ;;
-    *)
-      echo "Unknown option: $1" >&2
-      usage
-      ;;
-  esac
-done
-
-# 6) Centralized logging init
-LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
-[ -f "$LOG_HELPER" ] || { echo "❌ logging.sh not found at $LOG_HELPER" >&2; exit 1; }
-# pass $0 so the helper can name the log after this script
-. "$LOG_HELPER" "$0"
-
-# 7) Load secrets
+# 5) Load secrets needed by the tests
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
-# 8) Test framework
+# 6) Test framework
 run_test() {
   desc="$2"
   if eval "$1" >/dev/null 2>&1; then
     echo "ok - $desc"
   else
     echo "not ok - $desc"
-    return 1
+    mark_test_failed
   fi
 }
 
@@ -90,7 +46,7 @@ assert_file_perm() {
   run_test "stat -f '%Lp' \"$path\" | grep -q '^$want\$'" "$desc"
 }
 
-# 9) Define and run tests
+# 7) Define & run tests
 run_tests() {
   echo "1..15"
 
@@ -117,5 +73,9 @@ run_tests() {
   run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"           "root .profile sets HISTCONTROL"
 }
 
-# 10) Execute all tests
+# 8) Execute
 run_tests
+
+# 9) Finalize and exit
+finalize_logging
+[ "$TEST_FAILED" -ne 0 ] && exit 1 || exit 0
