@@ -1,12 +1,12 @@
 #!/bin/sh
 #
 # test_all.sh — run tests for specified modules, or for enabled_modules.conf, or all modules.
-# Usage: ./test_all.sh [--log[=FILE]] [-h] [module1 module2 ...]
+# Usage: ./test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
 
 # 1) Locate this script’s real path
 case "$0" in
-  *[!/]*/*) SCRIPT_PATH="$0" ;;       # already has a slash
-  *)        SCRIPT_PATH="$PWD/$0" ;;  # relative → assume cwd
+  *[!/]/*) SCRIPT_PATH="$0" ;;       # already has a slash
+  *)        SCRIPT_PATH="$PWD/$0" ;; # relative → assume cwd
 esac
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
@@ -22,11 +22,19 @@ export PROJECT_ROOT MODULE_DIR
 
 # 3) Source logging library, parse flags & init
 . "$PROJECT_ROOT/logs/logging.sh"
-set -- $(parse_logging_flags "$@")   # <-- overrides $@ with leftovers
+parse_logging_flags "$@"
+eval "set -- $REMAINING_ARGS"
 init_logging "test-all"
 
-# now fd 3 is open; safe to write debug messages:
 echo "DEBUG(test_all): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&3
+
+# decide what flags to forward to each module test
+FORWARD_FLAGS=""
+if [ "$DEBUG_MODE" -eq 1 ]; then
+  FORWARD_FLAGS="--debug"
+elif [ "$FORCE_LOG" -eq 1 ]; then
+  FORWARD_FLAGS="--log"
+fi
 
 # 4) Determine which modules to test
 if [ "$#" -gt 0 ]; then
@@ -44,9 +52,9 @@ fi
 fail=0
 for mod in $MODULES; do
   echo "⏳ Running tests for '$mod' …"
-  echo "DEBUG(test_all): invoking $MODULE_DIR/$mod/test.sh" >&3
+  echo "DEBUG(test_all): invoking $MODULE_DIR/$mod/test.sh $FORWARD_FLAGS" >&3
 
-  sh "$MODULE_DIR/$mod/test.sh"
+  sh "$MODULE_DIR/$mod/test.sh" $FORWARD_FLAGS
   rc=$?
   echo "DEBUG(test_all): '$mod' exited with $rc" >&3
 

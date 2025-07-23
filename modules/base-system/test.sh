@@ -16,15 +16,18 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
 # 3) Source logging helper & parse flags
-. "$PROJECT_ROOT/scripts/logging.sh"
-set -- $(parse_logging_flags "$@")   # strips out --log/--debug
+. "$PROJECT_ROOT/logs/logging.sh"
+parse_logging_flags "$@"
+eval "set -- $REMAINING_ARGS"
 
-# 4) Decide if we should init our own log
-if [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; then
-  init_logging "test-base-system"
-  NEED_FINALIZE=1
+# 4) If we’re already in debug/logging mode, just turn on xtrace
+if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ]; then
+  set -x           # output still goes to the parent’s logfile
+  NEED_FINALIZE=0  # parent will finalise
 else
-  NEED_FINALIZE=0
+  # we’re being run stand‑alone — create our own log
+  init_logging "test-$(basename "$SCRIPT_DIR")"
+  NEED_FINALIZE=1
 fi
 
 # 5) Handle help

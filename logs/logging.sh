@@ -4,7 +4,8 @@
 #
 # Usage in your scripts (test or setup):
 #   . "$(dirname "$0")/logging.sh"
-#   set -- $(parse_logging_flags "$@")   # strip out --log/--debug
+#   parse_logging_flags "$@"            # updates globals + REMAINING_ARGS
+#   eval "set -- $REMAINING_ARGS"       # restore positional parameters
 #   init_logging "<context-name>"
 #   … your logic …
 #   [if test script] finalize_logging
@@ -14,15 +15,16 @@
 exec 3>&1
 
 # Defaults
-FORCE_LOG=0
-DEBUG_MODE=0
-LOG_FILE=""
-LOG_TMP=""
-TEST_FAILED=0
+FORCE_LOG=${FORCE_LOG:-0}
+DEBUG_MODE=${DEBUG_MODE:-0}
+LOG_FILE=${LOG_FILE:-}
+LOG_TMP=${LOG_TMP:-}
+TEST_FAILED=${TEST_FAILED:-0}
+REMAINING_ARGS=${REMAINING_ARGS:-}
 
 #--------------------------------------------------
 # Parse --log / --debug flags
-# Outputs leftover args for caller’s `set --`
+# Sets globals and leaves leftovers in REMAINING_ARGS
 parse_logging_flags() {
   echo "DEBUG(parse_logging_flags): raw args=$*" >&3
   while [ $# -gt 0 ]; do
@@ -45,17 +47,19 @@ parse_logging_flags() {
     esac
   done
   echo "DEBUG(parse_logging_flags): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&3
-  export FORCE_LOG DEBUG_MODE LOG_FILE TEST_FAILED
-  echo "$@"
+
+  # Capture leftover args for caller
+  REMAINING_ARGS="$*"
+  export FORCE_LOG DEBUG_MODE LOG_FILE TEST_FAILED REMAINING_ARGS
 }
 
 #--------------------------------------------------
-# Initialize logging: respect a pre‑set PROJECT_ROOT or derive it, then choose logfile or buffer
+# Initialize logging: derive PROJECT_ROOT if needed, then choose logfile or buffer
 init_logging() {
   context="$1"
   echo "DEBUG(init_logging): context='$context'" >&3
 
-  # If the caller has already exported PROJECT_ROOT, keep it; otherwise derive it
+  # Derive PROJECT_ROOT if not pre-set
   if [ -n "$PROJECT_ROOT" ]; then
     echo "DEBUG(init_logging): PROJECT_ROOT pre‑set to '$PROJECT_ROOT' (keeping it)" >&3
   else
@@ -85,7 +89,7 @@ init_logging() {
 
   if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ]; then
     echo "DEBUG(init_logging): redirecting all output to '$LOG_FILE'" >&3
-    exec >"$LOG_FILE" 2>&1
+    exec >>"$LOG_FILE" 2>&1
     [ "$DEBUG_MODE" -eq 1 ] && { echo "DEBUG(init_logging): enabling xtrace" >&3; set -x; }
   else
     LOG_TMP="$(mktemp /tmp/logtmp.XXXXXXXX)"
