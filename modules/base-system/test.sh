@@ -3,44 +3,51 @@
 # test.sh — Verify general system configuration for base-system module
 # Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
 #
-
-# 1) Locate real path & module’s script dir
+##############################################################################
+# 1) Resolve paths and load logging helpers
+##############################################################################
 case "$0" in
-  */*) SCRIPT_PATH="$0" ;;
-  *)   SCRIPT_PATH="$PWD/$0" ;;
+  */*) SCRIPT_PATH="$0";;
+  *)   SCRIPT_PATH="$PWD/$0";;
 esac
-SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-
-# 2) Compute project root (two levels up) & export
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# 3) Source logging helper & parse flags
 . "$PROJECT_ROOT/logs/logging.sh"
+
+##############################################################################
+# 2) Parse flags and initialize logging
+##############################################################################
 parse_logging_flags "$@"
-eval "set -- $REMAINING_ARGS"
+set -- $REMAINING_ARGS
 
-# 4) If we’re already in debug/logging mode, just turn on xtrace
-if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ]; then
-  set -x           # output still goes to the parent’s logfile
-  NEED_FINALIZE=0  # parent will finalise
+# If running standalone with log/debug requested, include module name in logfile
+if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
+  module=$(basename "$SCRIPT_DIR")
+  init_logging "${module}-$(basename "$0")"
 else
-  # we’re being run stand‑alone — create our own log
-  init_logging "test-$(basename "$SCRIPT_DIR")"
-  NEED_FINALIZE=1
+  init_logging "$0"
 fi
+trap finalize_logging EXIT
+[ "$DEBUG_MODE" -eq 1 ] && set -x
 
-# 5) Handle help
+##############################################################################
+# 3) Show help
+##############################################################################
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "Usage: $0 [--log[=FILE]] [--debug] [-h]"
-  [ "$NEED_FINALIZE" -eq 1 ] && finalize_logging
   exit 0
 fi
 
-# 6) Load secrets
+##############################################################################
+# 4) Load configuration
+##############################################################################
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
-# 7) Test helpers
+##############################################################################
+# 5) Test helpers
+##############################################################################
 run_test() {
   desc="$2"
   if eval "$1" >/dev/null 2>&1; then
@@ -51,16 +58,18 @@ run_test() {
   fi
 }
 assert_file_perm() {
-  run_test "stat -f '%Lp' \"$1\" | grep -q '^$2\$'" "$3"
+  run_test "stat -f '%Lp' \"$1\" | grep -q '^$2$'" "$3"
 }
 
-# 8) Define & run tests
+##############################################################################
+# 6) Define & run tests
+##############################################################################
 run_tests() {
   echo "1..15"
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                "hostname.${INTERFACE} exists"
-  run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}\$\" /etc/hostname.${INTERFACE}" \
+  run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}$\" /etc/hostname.${INTERFACE}" \
            "correct 'inet IP MASK' line"
-  run_test "grep -q \"^!route add default ${GATEWAY}\$\" /etc/hostname.${INTERFACE}" \
+  run_test "grep -q \"^!route add default ${GATEWAY}$\" /etc/hostname.${INTERFACE}" \
            "correct default route line"
   run_test "[ -f /etc/resolv.conf ]"                                          "resolv.conf exists"
   run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                  "resolv.conf contains DNS1"
@@ -76,12 +85,13 @@ run_tests() {
   run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"           "root .profile sets HISTCONTROL"
 }
 
-# 9) Execute tests
 run_tests
 
-# 10) Finalize logging if we created our own
-if [ "$NEED_FINALIZE" -eq 1 ]; then
-  finalize_logging
+##############################################################################
+# 7) Exit with status
+##############################################################################
+if [ "$TEST_FAILED" -ne 0 ]; then
+  exit 1
+else
+  exit 0
 fi
-
-exit [ "$TEST_FAILED" -ne 0 ] && 1 || 0
