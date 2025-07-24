@@ -1,42 +1,45 @@
-# modules/github/setup.sh — GitHub deploy key & repo bootstrap (github module)
-
 #!/bin/sh
-set -x  # -e: exit on error; -x: trace commands
+#
+# setup.sh — General system configuration for OpenBSD Server (base‑system module)
 
-# 1) Determine script & project paths
+set -x  # -e: exit on any error; -x: trace commands
+
+# 1) Locate project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-# 2) Load secrets (LOCAL_DIR, GITHUB_REPO)
+# 2) Load secrets (INTERFACE, GIT_SERVER, NETMASK, GATEWAY, DNS1, DNS2)
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
-# 3) Deploy-key path
-DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
+# 3) Write interface config
+cat > "/etc/hostname.${INTERFACE}" <<-EOF
+inet ${GIT_SERVER} ${NETMASK}
+!route add default ${GATEWAY}
+EOF
 
-# 4) Validate deploy key exists
-[ -f "$DEPLOY_KEY" ] || { echo "ERROR: deploy_key not found at $DEPLOY_KEY" >&2; exit 1; }
+# 4) Write resolv.conf
+cat > /etc/resolv.conf <<-EOF
+nameserver ${DNS1}
+nameserver ${DNS2}
+EOF
+chmod 644 /etc/resolv.conf
 
-# 5) Install key into root's SSH
-mkdir -p /root/.ssh
-cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
-chmod 600 /root/.ssh/id_ed25519
+# 5) Bring up interface & default route
+ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
+route add default "${GATEWAY}"
 
-# 6) Add GitHub to known_hosts
-ssh-keyscan github.com >> /root/.ssh/known_hosts
+# 6) SSH hardening
+sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+rcctl restart sshd
 
-# 7) Validate secrets for cloning
-: "LOCAL_DIR=$LOCAL_DIR"   # ensure variable is set
-: "GITHUB_REPO=$GITHUB_REPO"   # ensure variable is set
+# 7) Root history settings
+cat << 'EOF' >> /root/.profile
+export HISTFILE=/root/.ksh_history
+export HISTSIZE=5000
+export HISTCONTROL=ignoredups
+EOF
+. /root/.profile
 
-[ -n "$LOCAL_DIR" ] || { echo "ERROR: LOCAL_DIR not set" >&2; exit 1; }
-[ -n "$GITHUB_REPO" ] || { echo "ERROR: GITHUB_REPO not set" >&2; exit 1; }
-
-# 8) Clone or update the repo
-if [ ! -d "${LOCAL_DIR}/.git" ]; then
-  git clone "$GITHUB_REPO" "$LOCAL_DIR"
-else
-  git -C "$LOCAL_DIR" pull
-fi
-
-echo "✅ github: GitHub configuration complete."
+echo "✅ base‑system: system configuration complete."
 
