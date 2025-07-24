@@ -29,7 +29,7 @@ ENABLED_FILE="$PROJECT_ROOT/config/enabled_modules.conf"
 # 3) Logging defaults
 #
 FORCE_LOG=0
-LOGFILE=""
+LOG_FILE=""
 
 #
 # 4) Help text
@@ -56,7 +56,7 @@ EOF
 while [ $# -gt 0 ]; do
   case "$1" in
     -l|--log)        FORCE_LOG=1             ;;
-    -l=*|--log=*)    FORCE_LOG=1; LOGFILE="${1#*=}" ;;
+    -l=*|--log=*)    FORCE_LOG=1; LOG_FILE="${1#*=}" ;;
     -h|--help)       usage                   ;;
     --)              shift; break            ;;
     -*)
@@ -69,24 +69,24 @@ while [ $# -gt 0 ]; do
 done
 
 #
-# 6) Logging init (your existing helper)
-#
-if   [ -f "$PROJECT_ROOT/logs/logging.sh" ]; then
-  LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
-elif [ -f "$PROJECT_ROOT/../logs/logging.sh" ]; then
-  LOG_HELPER="$PROJECT_ROOT/../logs/logging.sh"
-else
-  echo "❌ logging.sh not found in logs/ or ../logs/" >&2
-  exit 1
+# 6) Locate and source logging helper
+LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
+
+if [ ! -f "$LOG_HELPER" ]; then
+    echo "❌ $LOG_HELPER not found. Aborting." >&2
+    exit 1
 fi
+
+# shellcheck source=logs/logging.sh
 . "$LOG_HELPER"
 init_logging "$0"
+
 
 #
 # 7) Determine module list
 #
 if [ "$#" -gt 0 ]; then
-  MODULES="$@"
+  MODULES="$*"
 else
   if [ ! -f "$ENABLED_FILE" ]; then
     echo "❌ No modules specified and $ENABLED_FILE not found" >&2

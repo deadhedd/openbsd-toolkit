@@ -1,9 +1,10 @@
 # modules/github/setup.sh — GitHub deploy key & repo bootstrap (github module)
 
 #!/bin/sh
-set -x  # -e: exit on error; -x: trace commands
+#set -x  # -e: exit on error; -x: trace commands
 
-# 1) Determine script & project paths\ nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# 1) Determine script & project paths
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # 2) Load secrets (LOCAL_DIR, GITHUB_REPO)
