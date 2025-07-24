@@ -41,7 +41,7 @@ fi
 
 # 4) Determine which modules to test
 if [ "$#" -gt 0 ]; then
-  MODULES="$@"
+  MODULES="$*"
   if [ "$DEBUG_MODE" -eq 1 ]; then
     echo "DEBUG(test_all): modules from args -> $MODULES" >&3
   fi

@@ -4,51 +4,61 @@
 # Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
 #
 
-# 1) Locate real path & module’s script dir
+##############################################################################
+# 1) Resolve paths and load logging helpers
+##############################################################################
 case "$0" in
-  */*) SCRIPT_PATH="$0" ;;
-  *)   SCRIPT_PATH="$PWD/$0" ;;
+  */*) SCRIPT_PATH="$0";;
+  *)   SCRIPT_PATH="$PWD/$0";;
 esac
-SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
-
-# 2) Compute project root (two levels up) & export
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# 3) Source logging helper & parse flags
 . "$PROJECT_ROOT/logs/logging.sh"
+
+##############################################################################
+# 2) Parse flags and initialize logging
+##############################################################################
 parse_logging_flags "$@"
-eval "set -- $REMAINING_ARGS"
+set -- $REMAINING_ARGS
 
-# 4) Turn on xtrace if debugging, else initialize our own log
-if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ]; then
-  set -x
-  NEED_FINALIZE=0
+if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
+  module=$(basename "$SCRIPT_DIR")
+  init_logging "${module}-$(basename "$0")"
 else
-  init_logging "test-$(basename "$SCRIPT_DIR")"
-  NEED_FINALIZE=1
+  init_logging "$0"
 fi
+trap finalize_logging EXIT
+[ "$DEBUG_MODE" -eq 1 ] && set -x
 
-# 5) Handle help
+##############################################################################
+# 3) Show help
+##############################################################################
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
   echo "Usage: $0 [--log[=FILE]] [--debug] [-h]"
-  [ "$NEED_FINALIZE" -eq 1 ] && finalize_logging
   exit 0
 fi
 
-# 6) Load secrets
+##############################################################################
+# 4) Load secrets & validate
+##############################################################################
 . "$PROJECT_ROOT/config/load_secrets.sh"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
-# 7) Compute paths
+##############################################################################
+# 5) Compute paths
+##############################################################################
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="${OBS_HOME}/vaults/${VAULT}"
 
-# 8) Test helpers
+##############################################################################
+# 6) Test helpers
+##############################################################################
 run_test() {
   desc="$2"
   if eval "$1" >/dev/null 2>&1; then
@@ -72,7 +82,9 @@ check_entry() {
            "safe.directory for $3: $2"
 }
 
-# 9) Define & run tests
+##############################################################################
+# 7) Define & run tests
+##############################################################################
 run_tests() {
   echo "1..45"
 
@@ -95,7 +107,7 @@ run_tests() {
   # Bare repo ownership & perms
   run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'" \
            "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'"
-  run_test "! find ${BARE_REPO} \( -not -user ${GIT_USER} -or -not -group vault \) -print | grep -q ." \
+  run_test "! find ${BARE_REPO} \\( -not -user ${GIT_USER} -or -not -group vault \\) -print | grep -q ." \
            "all files under '${BARE_REPO}' are owned by ${GIT_USER}:vault"
   run_test "! find ${BARE_REPO} -not -perm -g=r -print | grep -q ."          "all entries under '${BARE_REPO}' are group-readable"
   run_test "! find ${BARE_REPO} -not -perm -g=w -print | grep -q ."          "all entries under '${BARE_REPO}' are group-writable"
@@ -166,8 +178,11 @@ run_tests() {
 
 run_tests
 
-# 10) Finalize logging if we created our own
-[ "$NEED_FINALIZE" -eq 1 ] && finalize_logging
-
-# 11) Exit with failure status if any test failed
-exit $([ "$TEST_FAILED" -ne 0 ] && echo 1 || echo 0)
+##############################################################################
+# 8) Exit with status
+##############################################################################
+if [ "$TEST_FAILED" -ne 0 ]; then
+  exit 1
+else
+  exit 0
+fi
