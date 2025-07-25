@@ -16,7 +16,7 @@ set -- $REMAINING_ARGS
 
 module_name="$(basename "$SCRIPT_DIR")"
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  set -x  # enable xtrace
+  set -vx  # enable xtrace
   init_logging "setup-$module_name"
 fi
 

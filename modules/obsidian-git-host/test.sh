@@ -144,7 +144,7 @@ run_tests() {
 
   # known_hosts for OBS_USER
   run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                            "known_hosts for ${OBS_USER} exists"
-  run_test "grep -q \"^${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"        "known_hosts contains ${GIT_SERVER}"
+  run_test "grep -q \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"        "known_hosts contains ${GIT_SERVER}"
   assert_file_perm "${OBS_HOME}/.ssh/known_hosts" "644"                     "known_hosts perms for ${OBS_USER}"
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
            "known_hosts owner correct"
@@ -157,7 +157,7 @@ run_tests() {
   # post-receive hook
   run_test "[ -x ${BARE_REPO}/hooks/post-receive ]"                          "post-receive hook executable"
   run_test "grep -q '^#!/bin/sh\$' ${BARE_REPO}/hooks/post-receive"           "hook shebang correct"
-  run_test "grep -q '^SHA=\\$\\(cat ${BARE_REPO}/refs/heads/master\\)\$' ${BARE_REPO}/hooks/post-receive" \
+  run_test "grep -q \"^SHA=\\\\\\\$(cat \\\"${BARE_REPO}/refs/heads/master\\\")\\\$\" \"${BARE_REPO}/hooks/post-receive\"" \
            "hook: SHA variable set correctly"
   run_test "grep -q '^su - ${OBS_USER} -c \"/usr/local/bin/git --git-dir=${BARE_REPO} --work-tree=${WORK_TREE} checkout -f \\\$SHA\"\$' ${BARE_REPO}/hooks/post-receive" \
            "hook: git checkout command correct"
@@ -172,7 +172,7 @@ run_tests() {
   run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]"                          "working clone exists"
   run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} remote get-url origin | grep -q '${BARE_REPO}'\"" \
            "working clone origin correct"
-  run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B | grep -q '	initial commit'\"" \
+  run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B | grep -q 'initial commit'\"" \
            "initial commit present"
 }
 

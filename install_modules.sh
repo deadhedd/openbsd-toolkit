@@ -87,7 +87,7 @@ fi
 # shellcheck source=../logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  set -x
+  set -vx
   init_logging "$(basename "$0" .sh)"
 fi
 

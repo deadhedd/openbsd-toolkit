@@ -20,7 +20,7 @@ set -- $REMAINING_ARGS
 
 module_name="$(basename "$SCRIPT_DIR")"
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  set -x  # enable xtrace
+  set -vx  # enable xtrace
   init_logging "setup-$module_name"
 fi
 
@@ -187,5 +187,7 @@ done
 chown -R "${GIT_USER}:vault" "$bare_repo"
 chmod -R g+rwX "$bare_repo"
 find "$bare_repo" -type d -exec chmod g+s {} +
+
+# TODO: not ok - config file sets 'sharedRepository = group' under [core]
 
 echo "✅ obsidian-git-host: Vault setup complete."
