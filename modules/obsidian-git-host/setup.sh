@@ -187,7 +187,6 @@ done
 chown -R "${GIT_USER}:vault" "$bare_repo"
 chmod -R g+rwX "$bare_repo"
 find "$bare_repo" -type d -exec chmod g+s {} +
-
-# TODO: not ok - config file sets 'sharedRepository = group' under [core]
+git --git-dir="$bare_repo" config core.sharedRepository group
 
 echo "✅ obsidian-git-host: Vault setup complete."
