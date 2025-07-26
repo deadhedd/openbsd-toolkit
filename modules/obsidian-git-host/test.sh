@@ -21,7 +21,7 @@ export PROJECT_ROOT
 # 2) Parse flags and initialize logging
 ##############################################################################
 parse_logging_flags "$@"
-set -- $REMAINING_ARGS
+eval "set -- $REMAINING_ARGS"
 
 if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
   module=$(basename "$SCRIPT_DIR")

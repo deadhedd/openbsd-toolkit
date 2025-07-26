@@ -9,10 +9,10 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
 # 2) Load logging system and parse --debug
-# shellcheck source=../../logs/logging.sh
+# shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
-set -- $REMAINING_ARGS
+eval "set -- $REMAINING_ARGS"
 
 module_name="$(basename "$SCRIPT_DIR")"
 if [ "$DEBUG_MODE" -eq 1 ]; then

@@ -13,10 +13,10 @@ export PROJECT_ROOT
 ##############################################################################
 # 2) Load logging system and parse --debug
 ##############################################################################
-# shellcheck source=../../logs/logging.sh
+# shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
-set -- $REMAINING_ARGS
+eval "set -- $REMAINING_ARGS"
 
 module_name="$(basename "$SCRIPT_DIR")"
 if [ "$DEBUG_MODE" -eq 1 ]; then
@@ -162,8 +162,8 @@ chown -R "${OBS_USER}:${OBS_USER}" "$work_dir"
 ##############################################################################
 # 15) Make initial empty commit
 ##############################################################################
-cd "$work_dir"
-git -c safe.directory="$work_dir" \
+git -C "$work_dir" \
+    -c safe.directory="$work_dir" \
     -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
