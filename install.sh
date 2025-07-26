@@ -21,7 +21,7 @@ git clone --depth=1 "$REPO_URL" "$DEST"
 cd "$DEST"
 if [ ! -f config/secrets.env ] && [ -f config/secrets.env.example ]; then
   cp config/secrets.env.example config/secrets.env
-  echo "Copied config/secrets.env.example → config/secrets.env"
+  echo "Copied config/secrets.env.example -> config/secrets.env"
 fi
 
 echo
