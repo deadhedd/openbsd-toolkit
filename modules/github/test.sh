@@ -15,14 +15,14 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# shellcheck source=../../logs/logging.sh
+# shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 
 ##############################################################################
 # 2) Parse flags and initialize logging
 ##############################################################################
 parse_logging_flags "$@"
-set -- $REMAINING_ARGS
+eval "set -- $REMAINING_ARGS"
 
 if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
   module=$(basename "$SCRIPT_DIR")
@@ -44,7 +44,7 @@ fi
 ##############################################################################
 # 4) Load secrets
 ##############################################################################
-# shellcheck source=../../config/load_secrets.sh
+# shellcheck source=config/load_secrets.sh
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 ##############################################################################

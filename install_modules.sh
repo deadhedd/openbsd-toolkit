@@ -84,7 +84,7 @@ fi
 ##############################################################################
 # 5) Initialize logging+xtrace if requested
 ##############################################################################
-# shellcheck source=../logs/logging.sh
+# shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 if [ "$DEBUG_MODE" -eq 1 ]; then
   set -vx
@@ -108,7 +108,7 @@ fi
 # 7) Install base‑system first (if present)
 ##############################################################################
 echo "🔧 Installing prerequisite module: base-system"
-sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG}
+sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 
 ##############################################################################
 # 8) Install the rest
@@ -116,7 +116,7 @@ sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG}
 for mod in $MODULES; do
   [ "$mod" = "base-system" ] && continue
   echo "👉 Installing module: $mod"
-  sh "$MODULE_DIR/$mod/setup.sh" ${DBG_FLAG}
+  sh "$MODULE_DIR/$mod/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 done
 
 echo ""
