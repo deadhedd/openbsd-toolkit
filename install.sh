@@ -17,6 +17,17 @@ echo
 # Clone repository (shallow)
 git clone --depth=1 "$REPO_URL" "$DEST"
 
+# Copy config templates if needed
+cd "$DEST"
+if [ ! -f config/secrets.env ] && [ -f config/secrets.env.example ]; then
+  cp config/secrets.env.example config/secrets.env
+  echo "Copied config/secrets.env.example → config/secrets.env"
+fi
+
 echo
+
 echo "SUCCESS! Files available at: $DEST"
-echo "Next: cd $DEST and run scripts/setup.sh as needed."
+echo "Next steps:"
+echo "   - Edit config/secrets.env to match your environment"
+echo "   - If desired, modify config/enabled_modules.conf to control which modules install"
+echo "   - Then run: install_modules.sh"
