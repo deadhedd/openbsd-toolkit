@@ -10,10 +10,12 @@
 #   ... your logic ...
 #   [if test script] finalize_logging
 
-# Make fd 3 point at the real stdout for debug messages
-exec 3>&1
+##############################################################################
+# 1) FD setup & globals
+##############################################################################
 
-# Defaults
+exec 3>&1     # Make fd 3 point at the real stdout for debug messages
+
 FORCE_LOG=${FORCE_LOG:-0}
 DEBUG_MODE=${DEBUG_MODE:-0}
 LOG_FILE=${LOG_FILE:-}
@@ -21,9 +23,10 @@ LOG_TMP=${LOG_TMP:-}
 TEST_FAILED=${TEST_FAILED:-0}
 REMAINING_ARGS=${REMAINING_ARGS:-}
 
-#--------------------------------------------------
-# Parse --log / --debug flags
-# Sets globals and leaves leftovers in REMAINING_ARGS
+##############################################################################
+# 2) Flag parser: --log / --debug
+##############################################################################
+
 parse_logging_flags() {
   raw_args="$*"
   while [ $# -gt 0 ]; do
@@ -55,8 +58,10 @@ parse_logging_flags() {
   fi
 }
 
-#--------------------------------------------------
-# Initialize logging: derive PROJECT_ROOT if needed, then choose logfile or buffer
+##############################################################################
+# 3) init_logging: choose log target & redirect stdout/stderr
+##############################################################################
+
 init_logging() {
   context="$1"
 
@@ -112,16 +117,16 @@ init_logging() {
   fi
 }
 
-#--------------------------------------------------
-# Mark that a test has failed
+##############################################################################
+# 4) Test helpers
+##############################################################################
+
 mark_test_failed() {
   TEST_FAILED=1
   export TEST_FAILED
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(mark_test_failed): TEST_FAILED=1" >&3
 }
 
-#--------------------------------------------------
-# Finalize logging at end of test script
 finalize_logging() {
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): DM=$DEBUG_MODE, FL=$FORCE_LOG, TF=$TEST_FAILED" >&3
 

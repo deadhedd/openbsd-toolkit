@@ -4,17 +4,15 @@
 # Usage: ./install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 
 ##############################################################################
-# 1) Locate this script's path
+# 1) Resolve paths
 ##############################################################################
+
 case "$0" in
   */*) SCRIPT_PATH="$0" ;;
   *)   SCRIPT_PATH="$(command -v -- "$0" 2>/dev/null || printf "%s" "$0")" ;;
 esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
-##############################################################################
-# 2) Determine PROJECT_ROOT, MODULE_DIR, and enabled-modules file
-##############################################################################
 if [ "$(basename "$SCRIPT_DIR")" = "scripts" ]; then
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 else
@@ -24,7 +22,10 @@ MODULE_DIR="$PROJECT_ROOT/modules"
 ENABLED_FILE="$PROJECT_ROOT/config/enabled_modules.conf"
 export PROJECT_ROOT
 
-# Pre-scan for help & deprecated flags
+##############################################################################
+# 2) Help & banned flags prescan
+##############################################################################
+
 usage() {
   cat <<EOF
   Usage: $(basename "$0") [--debug[=FILE]] [-h] [module1 module2 ...]
@@ -43,7 +44,6 @@ EOF
   exit 0
 }
 
-# Intercept help or deprecated --log flags before parsing
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
@@ -57,8 +57,9 @@ for arg in "$@"; do
 done
 
 ##############################################################################
-# 4) Parse just --debug
+# 3) Debug/logging init
 ##############################################################################
+
 DEBUG_MODE=0
 DEBUG_LOGFILE=""
 while [ $# -gt 0 ]; do
@@ -81,7 +82,6 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# build flag to pass to module scripts
 if [ "$DEBUG_MODE" -eq 1 ]; then
   if [ -n "$DEBUG_LOGFILE" ]; then
     DBG_FLAG="--debug=$DEBUG_LOGFILE"
@@ -90,9 +90,6 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
   fi
 fi
 
-##############################################################################
-# 5) Initialize logging+xtrace if requested
-##############################################################################
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 if [ "$DEBUG_MODE" -eq 1 ]; then
@@ -101,8 +98,9 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
 fi
 
 ##############################################################################
-# 6) Determine module list
+# 4) Determine module list
 ##############################################################################
+
 if [ "$#" -gt 0 ]; then
   MODULES="$*"
 else
@@ -114,14 +112,16 @@ else
 fi
 
 ##############################################################################
-# 7) Install base-system first (if present)
+# 5) Install base-system first (if present)
 ##############################################################################
+
 echo "Installing prerequisite module: base-system"
 sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 
 ##############################################################################
-# 8) Install the rest
+# 6) Install the rest
 ##############################################################################
+
 for mod in $MODULES; do
   [ "$mod" = "base-system" ] && continue
   echo "Installing module: $mod"
