@@ -20,6 +20,27 @@ fi
 MODULE_DIR="$PROJECT_ROOT/modules"
 export PROJECT_ROOT MODULE_DIR
 
+show_help() {
+  cat <<-EOF
+  Usage: $(basename "$0") [options]
+
+  Description:
+    Run test scripts for one or more modules (or all enabled modules by default)
+
+  Options:
+    -h, --help        Show this help message and exit
+    -d, --debug       Enable debug mode
+    -l, --log         Force log output (use --log=FILE for custom file)
+EOF
+}
+
+# Check for help
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) show_help; exit 0 ;;
+  esac
+done
+
 # 3) Source logging library, parse flags & init
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"

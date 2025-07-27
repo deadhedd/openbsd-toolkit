@@ -10,6 +10,36 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# --------------------------------------
+#  Help & flag pre-scan (setup scripts)
+# --------------------------------------
+show_help() {
+  cat <<-EOF
+  Usage: $(basename "$0") [options]
+
+  Description:
+    Set up Git user, vault repository, and post-receive hook
+
+  Options:
+    -h, --help        Show this help message and exit
+    -d, --debug       Enable debug/xtrace and write a log file
+EOF
+}
+
+# Pre-scan just for help / banned flags before the real parser
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -l|--log|-l=*|--log=*)
+      printf '%s\n' "This script no longer supports --log. Did you mean --debug?" >&2
+      exit 2
+      ;;
+  esac
+done
+
 ##############################################################################
 # 2) Load logging system and parse --debug
 ##############################################################################
@@ -39,29 +69,13 @@ fi
 pkg_add -v git
 
 ##############################################################################
-# 5) Helper to remove password from master.passwd
-##############################################################################
-remove_password() {
-  user="$1"
-  tmp=$(mktemp)
-  sed -E "s|^${user}:[^:]*:|${user}::|" /etc/master.passwd >"$tmp"
-  mv "$tmp" /etc/master.passwd
-  pwd_mkdb -p /etc/master.passwd
-}
-
-##############################################################################
 # 6) Create OBS_USER and GIT_USER
 ##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
   shell_path=$([ "$u" = "$OBS_USER" ] && echo '/bin/ksh' || echo '/usr/local/bin/git-shell')
   if ! id "$u" >/dev/null 2>&1; then
     useradd -m -s "$shell_path" "$u"
-    pass_var="$(echo "$u" | tr '[:lower:]' '[:upper:]')_PASS"
-    if eval "[ -n \"\${$pass_var}\" ]"; then
-      eval "printf '%s\n' \"\${$pass_var}\" | passwd $u"
-    else
-      remove_password "$u"
-    fi
+    usermod -p '' "$u"
   fi
 done
 
