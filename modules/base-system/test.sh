@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# test.sh — Verify general system configuration for base-system module
+# test.sh - Verify general system configuration for base-system module
 # Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
 #
 ##############################################################################

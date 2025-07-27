@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# test.sh — Validate GitHub deploy key & repo bootstrap (github module)
+# test.sh - Validate GitHub deploy key & repo bootstrap (github module)
 # Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
 #
 
@@ -62,7 +62,7 @@ trap finalize_logging EXIT
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 ##############################################################################
-# 5) Default fallbacks (if secrets aren’t set)
+# 5) Default fallbacks (if secrets aren't set)
 ##############################################################################
 LOCAL_DIR="${LOCAL_DIR:-/root/openbsd-server}"
 GITHUB_REPO="${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}"

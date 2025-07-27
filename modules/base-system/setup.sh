@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# setup.sh — General system configuration for OpenBSD Server (base‑system module)
+# setup.sh - General system configuration for OpenBSD Server (base-system module)
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 # 1) Locate project root
@@ -83,4 +83,4 @@ export HISTCONTROL=ignoredups
 EOF
 . /root/.profile # shellcheck will show an issue, but its expected and OK
 
-echo "✅ base‑system: system configuration complete."
+echo "base-system: system configuration complete!"

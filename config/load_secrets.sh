@@ -1,7 +1,7 @@
 #!/bin/sh
 # config/load-secrets.sh
 
-set -x
+#set -x
 
 # 1) Determine the project root (one level above config/)
 PROJECT_ROOT="$(cd "$(dirname -- "$0")"/../.. && pwd)"
@@ -14,7 +14,7 @@ SECRETS="$CONFIG_DIR/secrets.env"
 # 3) Bootstrap real secrets from example if missing
 if [ ! -f "$SECRETS" ]; then
   cp "$EXAMPLE" "$SECRETS"
-  echo "⚠️  Created '$SECRETS' from example. Please edit it and re-run." >&2
+  echo "Created '$SECRETS' from example. Please edit it and re-run." >&2
   exit 1
 fi
 

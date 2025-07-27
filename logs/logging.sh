@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# logging.sh — POSIX-compliant centralized logging & debug helper
+# logging.sh - POSIX-compliant centralized logging & debug helper
 #
 # Usage in your scripts (test or setup):
 #   . "$(dirname "$0")/logging.sh"
 #   parse_logging_flags "$@"            # updates globals + REMAINING_ARGS
 #   eval "set -- $REMAINING_ARGS"       # restore positional parameters
 #   init_logging "<context-name>"
-#   … your logic …
+#   ... your logic ...
 #   [if test script] finalize_logging
 
 # Make fd 3 point at the real stdout for debug messages
