@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# test_all.sh — run tests for specified modules, or for enabled_modules.conf, or all modules.
+# test_all.sh - run tests for specified modules, or for enabled_modules.conf, or all modules.
 # Usage: ./test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
 
-# 1) Locate this script’s real path
+# 1) Locate this script's real path
 case "$0" in
   *[!/]/*) SCRIPT_PATH="$0" ;;       # already has a slash
-  *)        SCRIPT_PATH="$PWD/$0" ;; # relative → assume cwd
+  *)        SCRIPT_PATH="$PWD/$0" ;; # relative -> assume cwd
 esac
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
@@ -78,10 +78,10 @@ else
   fi
 fi
 
-# 5) Run each module’s tests
+# 5) Run each module's tests
 fail=0
 for mod in $MODULES; do
-  echo "⏳ Running tests for '$mod' …"
+  echo "Running tests for '$mod' ..."
   if [ "$DEBUG_MODE" -eq 1 ]; then
     echo "DEBUG(test_all): invoking $MODULE_DIR/$mod/test.sh $FORWARD_FLAGS" >&3
   fi
@@ -93,11 +93,11 @@ for mod in $MODULES; do
   fi
 
   if [ "$rc" -ne 0 ]; then
-    echo "🛑 Module '$mod' FAILED"
+    echo "!!! Module '$mod' FAILED"
     mark_test_failed
     fail=1
   else
-    echo "✅ Module '$mod' passed"
+    echo "Module '$mod' passed!"
   fi
 done
 
@@ -106,9 +106,9 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
   echo "DEBUG(test_all): overall fail status = $fail" >&3
 fi
 if [ "$fail" -ne 0 ]; then
-  echo "🛑 Some tests FAILED — see log at $LOG_FILE"
+  echo "Some tests FAILED - see log at $LOG_FILE"
 else
-  echo "✅ All tests passed"
+  echo "All tests passed!"
 fi
 
 # 7) Finalize logging

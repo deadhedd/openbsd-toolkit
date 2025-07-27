@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# setup.sh — GitHub deploy key & repo bootstrap (github module)
+# setup.sh - GitHub deploy key & repo bootstrap (github module)
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 # 1) Determine script & project paths
@@ -81,4 +81,4 @@ else
   git -C "$LOCAL_DIR" pull
 fi
 
-echo "✅ github: GitHub configuration complete."
+echo "github: GitHub configuration complete!"

@@ -1,10 +1,10 @@
 #!/bin/sh
 #
-# install_modules.sh — install specified modules, or all in config/enabled_modules.conf if none given
+# install_modules.sh - install specified modules, or all in config/enabled_modules.conf if none given
 # Usage: ./install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 
 ##############################################################################
-# 1) Locate this script’s path
+# 1) Locate this script's path
 ##############################################################################
 case "$0" in
   */*) SCRIPT_PATH="$0" ;;
@@ -13,7 +13,7 @@ esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 
 ##############################################################################
-# 2) Determine PROJECT_ROOT, MODULE_DIR, and enabled‑modules file
+# 2) Determine PROJECT_ROOT, MODULE_DIR, and enabled-modules file
 ##############################################################################
 if [ "$(basename "$SCRIPT_DIR")" = "scripts" ]; then
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -107,16 +107,16 @@ if [ "$#" -gt 0 ]; then
   MODULES="$*"
 else
   [ -f "$ENABLED_FILE" ] || {
-    echo "❌ No modules specified and $ENABLED_FILE not found" >&2
+    echo "!!! No modules specified and $ENABLED_FILE not found" >&2
     exit 1
   }
   MODULES="$(grep -Ev '^\s*(#|$)' "$ENABLED_FILE")"
 fi
 
 ##############################################################################
-# 7) Install base‑system first (if present)
+# 7) Install base-system first (if present)
 ##############################################################################
-echo "🔧 Installing prerequisite module: base-system"
+echo "Installing prerequisite module: base-system"
 sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 
 ##############################################################################
@@ -124,9 +124,9 @@ sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 ##############################################################################
 for mod in $MODULES; do
   [ "$mod" = "base-system" ] && continue
-  echo "👉 Installing module: $mod"
+  echo "Installing module: $mod"
   sh "$MODULE_DIR/$mod/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 done
 
 echo ""
-echo "✅ All requested modules installed."
+echo "All requested modules installed!."

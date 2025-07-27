@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# test.sh — Validate Obsidian vault sync configuration (obsidian-git-host module)
+# test.sh - Validate Obsidian vault sync configuration (obsidian-git-host module)
 # Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
 #
 

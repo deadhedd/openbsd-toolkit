@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# setup.sh — Git-backed Obsidian vault setup (obsidian-git-host module)
+# setup.sh - Git-backed Obsidian vault setup (obsidian-git-host module)
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 ##############################################################################
@@ -203,4 +203,4 @@ chmod -R g+rwX "$bare_repo"
 find "$bare_repo" -type d -exec chmod g+s {} +
 git --git-dir="$bare_repo" config core.sharedRepository group
 
-echo "✅ obsidian-git-host: Vault setup complete."
+echo "obsidian-git-host: Vault setup complete!"
