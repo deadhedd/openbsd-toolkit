@@ -1,72 +1,203 @@
-## 🚀 v0.9.0 – Permissions & Hook Improvements (2025-07-18)
+# 📋 Changelog
 
-* **Permissions & Git config**
-
-  * Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
-  * Created a shared Unix group for the `git` and `obsidian` users to streamline permissions.
-  * Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on directories).
-  * Added `sharedRepository = group` under `[core]` in the bare repo’s Git config for group-write support.
-* **Fixes**
-
-  * Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the `obsidian` user.
-* **Logging**
-
-  * Enhanced logging across both setup and test scripts for improved traceability.
+All notable changes to this project will be documented in this file following [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) principles.
 
 ---
 
-## 🚀 v0.4.0 – Centralized Secrets Management (2025-07-06)
+## v0.9.2 – Setup Script Fixes + Logging Update Pre-release (2025-07-24)
 
-* **Secrets management**
+### Fixes
 
-  * Introduced centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
-  * Bootstrap step: auto-generate `secrets.env` when missing, with user notification.
-  * All setup and test scripts now source configuration from `secrets.env` instead of hardcoded values.
+* Resolved regressions in setup scripts caused by partial logging system migration.
+* All setup scripts now correctly use the centralized logging system.
+
+### Breaking Change
+
+* The `--log` flag is no longer supported in setup scripts.
+* Use `--debug` if you want full output logged to a file.
+
+---
+
+## v0.9.1 – Enhanced Logging and Project Cleanup (Pre-release) (2025-07-23)
+
+### Highlights
+
+#### Enhanced Logging Subsystem
+
+* Centralized logging implementation using FIFO + `tee`
+* Captures `set -x` traces for full debug visibility
+* Optional log buffering with `--log` / `--debug` flags
+* Per-module test logs written automatically
+
+#### Project Structure Overhaul
+
+* Renamed directories for clarity (e.g. `scripts/`, `modules/`, etc.)
+* Improved layout for testing and setup modules
+* Cleaner repo organization for contributors and automation
 
 ---
 
-## 🚀 v0.3 – Configuration & Test Coverage Completion (2025-07-02)
+## v0.9.0 – Permissions & Hook Improvements (2025-07-18)
 
-* **Test runner reliability**
+### Permissions and Git Configuration
 
-  * `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
+* Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
+* Created a shared Unix group for the `git` and `obsidian` users to streamline permissions.
+* Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on directories).
+* Added `sharedRepository = group` under `[core]` in the bare repo’s Git config for group-write support.
 
-* **test\_github additions**
+### Fixes
 
-  * Verifies `/root/.ssh` exists.
-  * Confirms the repository is cloned into `$setup_dir/.git`.
-  * Checks `remote origin` in `$setup_dir/.git/config` matches `$GITHUB_REPO`.
+* Corrected the `post-receive` hook so that the commit SHA is captured literally and the working-tree checkout runs under the `obsidian` user.
 
-* **test\_system enhancements**
+### Logging
 
-  * Asserts `${INTERFACE}` is up with `${STATIC_IP}`.
-  * Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.
-  * Validates root’s `.profile` exports:
-
-    * `HISTFILE=/root/.ksh_history`
-    * `HISTSIZE=5000`
-    * `HISTCONTROL=ignoredups`
-
-* **History‑merge test**
-
-  * Confirms old‑history marker is merged into new history.
-  * Confirms new‑history marker remains intact.
-
-* **doas & package tests moved**
-
-  * Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
-
-* **test\_obsidian\_git expanded**
-
-  * SSH service config (`AllowUsers`, daemon running).
-  * `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
-  * Vaults directories for both users.
-  * Bare repo HEAD, `safe.directory` entries, post‑receive hook shebang & content.
-  * Working‑clone verification (clone, remote URL, commit presence).
-  * Per‑user history settings in `.profile` and `master.passwd` (password removal or setting).
-
-* **Setup scripts aligned**
-
-  * Added or moved all corresponding configuration blocks into `setup_system.sh` and `setup_obsidian_git.sh` so new tests pass out-of-the-box.
+* Enhanced logging across both setup and test scripts for improved traceability.
 
 ---
+
+## v0.4.0 – Centralized Secrets Management (2025-07-06)
+
+### Secrets Management
+
+* Introduced centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
+* Bootstrap step: auto-generates `secrets.env` when missing, with user notification.
+* All setup and test scripts now source configuration from `secrets.env` instead of hardcoded values.
+
+---
+
+## v0.3 – Configuration & Test Coverage Completion (2025-07-02)
+
+### Test Runner Reliability
+
+* `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
+
+### GitHub Test Additions
+
+* Verifies `/root/.ssh` exists.
+* Confirms the repository is cloned into `$setup_dir/.git`.
+* Checks remote origin in `$setup_dir/.git/config` matches `$GITHUB_REPO`.
+
+### System Test Enhancements
+
+* Asserts `${INTERFACE}` is up with `${STATIC_IP}`.
+* Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.
+* Validates root’s `.profile` exports:
+
+  * `HISTFILE=/root/.ksh_history`
+  * `HISTSIZE=5000`
+  * `HISTCONTROL=ignoredups`
+
+### History Merge Test
+
+* Confirms `old-history` marker is merged into new history.
+* Confirms `new-history` marker remains intact.
+
+### Package and Doas Test Relocation
+
+* Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
+
+### Obsidian Git Test Expansion
+
+* SSH service config (`AllowUsers`, daemon running).
+* `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
+* Vaults directories for both users.
+* Bare repo `HEAD`, `safe.directory` entries, `post-receive` hook shebang & content.
+* Working-clone verification (clone, remote URL, commit presence).
+* Per-user history settings in `.profile` and `master.passwd` (password removal or setting).
+
+### Setup Script Alignment
+
+* Added or moved all corresponding configuration blocks into `setup_system.sh` and `setup_obsidian_git.sh` so new tests pass out-of-the-box.
+
+---
+
+## v0.2.1 – Usability Improvements (2025-06-28)
+
+### Logging Enhancements
+
+* `--log[=FILE]` / `-l`: force writing a full log on every run.
+* Sensible defaults: logs written to `logs/` with timestamped filenames.
+
+### User Setup Enhancements
+
+* Configures **both** `git` and `obsidian` users (instead of only `git`).
+* Blank initial passwords assigned for both users (can be pulled from a secrets file).
+* Fixed the bug in `setup_obsidian_git.sh` that this change introduced.
+
+### Refactor and Sync Code
+
+* Moved missing code blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
+* Mirrored those changes in the corresponding test scripts for consistency.
+
+---
+
+## v0.2 – Modular Setup and Test Suite (2025-06-27)
+
+### Architecture Overhaul
+
+* Split monolithic scripts into modular components:
+
+  * `setup_system.sh`, `setup_obsidian_git.sh`, `setup_github.sh`
+  * `test_system.sh`, `test_obsidian_git.sh`, `test_github.sh`
+
+### Wrapper Script Additions
+
+* Introduced `setup_all.sh` and `test_all.sh` for full automation.
+
+### General Improvements
+
+* Preserved environment variable support across all layers.
+* Deployment now safer — deploy key no longer must be committed.
+* Simplified maintenance and clearer separation of concerns.
+
+---
+
+## v0.1.1 – Strict Hostname Format & Test Suite Enhancements (2025-06-24)
+
+### Highlights
+
+* Obsoletes v0.1: all improvements consolidated into 0.1.1.
+
+### Format Validation Additions
+
+* Added strict format validation for `inet <IP> <NETMASK>` and `!route add default <GATEWAY>` lines in `hostname.${INTERFACE}`.
+* Anchored regex checks to prevent use of the old `netmask` keyword.
+
+### Test Suite Enhancements
+
+* Retained all existing tests for:
+
+  * User setup and login shells
+  * `doas.conf` policy
+  * Static networking and DNS
+  * SSH hardening
+  * Git installation and config
+  * Repo structure and `safe.directory` flags
+
+---
+
+## v0.1 – Initial Public Release (2025-06-23)
+
+### Scripts Included
+
+* `openbsd_server_rebuild_public_v0.1.sh`:
+
+  * Sets up static networking, hardened SSH, users, Git, and bare repo.
+  * Applies `safe.directory` flags and configures `doas`.
+
+* `test_openbsd_setup_public_v0.1.sh`:
+
+  * TAP-compatible test suite validating the above setup.
+  * Covers users, perms, `doas`, networking, DNS, SSH, Git, and repo structure.
+
+### Key Features
+
+* Self-contained, repeatable tests
+* Non-destructive, read-only validation
+* Fully functional Git-backed vault hosting setup
+
+---
+
+
+
