@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file following [K
 
 ---
 
+## v1.0 – Initial Stable Release (2025-07-26)
+
+### Setup and Tests
+
+* **User Password Simplification**
+
+  * Replaced the old `remove_password()` logic with a much simpler blank password setup for `git` and `obsidian` users.
+
+* **Git Safe Directory and `-C` Option**
+
+  * Cleaned up Git commands by switching to the `-C` option instead of `cd` for safer, cleaner directory handling.
+
+* **Shared Repository Config**
+
+  * Ensured `core.sharedRepository = group` is automatically set in bare repo configs.
+
+### Logging and Debugging
+
+* **Debug Flag Behavior**
+
+  * Updated debug logs to use `set -vx`, ensuring both executed commands and their expanded values are included.
+
+* **ASCII-Only Output**
+
+  * Restricted script output to plain ASCII for OpenBSD terminal compatibility.
+
+### Code Cleanups
+
+* **ShellCheck Pass**
+
+  * Addressed multiple ShellCheck warnings (unused vars, array-to-string assignments, variable path sourcing).
+
+* **Help Flag Standardization**
+
+  * Updated `--help`/`-h` messages and ensured consistent flag parsing across all scripts.
+
+* **Author and Header Consistency**
+
+  * Normalized file headers (`Author: deadhedd`) and comments.
+
+### Structure and Misc
+
+* **Pre-1.0 Polish**
+
+  * Consolidated redundant user creation logic.
+  * Polished `setup.sh` and `install_modules.sh` usage text and logging defaults.
+
+---
+
 ## v0.9.2 – Setup Script Fixes + Logging Update Pre-release (2025-07-24)
 
 ### Fixes
