@@ -111,13 +111,13 @@ rcctl restart sshd
 # 10) Setup SSH dirs & known_hosts for both users
 ##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
-  homedir="/home/$u"
-  sshdir="$homedir/.ssh"
-  mkdir -p "$sshdir"
-  chmod 700 "$sshdir"
-  touch "$sshdir/authorized_keys"
-  chmod 600 "$sshdir/authorized_keys"
-  chown -R "$u:$u" "$sshdir"
+  HOME_DIR="/home/$u"
+  SSH_DIR="$HOME_DIR/.ssh"
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+  touch "$SSH_DIR/authorized_keys"
+  chmod 600 "$SSH_DIR/authorized_keys"
+  chown -R "$u:$u" "$SSH_DIR"
 done
 
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
@@ -127,13 +127,13 @@ chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 ##############################################################################
 # 11) Initialize bare repo under GIT_USER
 ##############################################################################
-vault_dir="/home/${GIT_USER}/vaults"
-bare_repo="${vault_dir}/${VAULT}.git"
-mkdir -p "$vault_dir"
-chown "${GIT_USER}:${GIT_USER}" "$vault_dir"
+VAULT_DIR="/home/${GIT_USER}/vaults"
+BARE_REPO="${VAULT_DIR}/${VAULT}.git"
+mkdir -p "$VAULT_DIR"
+chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 
-git init --bare "$bare_repo"
-chown -R "${GIT_USER}:${GIT_USER}" "$bare_repo"
+git init --bare "$BARE_REPO"
+chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
 # 12) Configure Git safe.directory for both users
@@ -142,7 +142,7 @@ for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
   touch "$cfg"
   if [ "$u" = "$GIT_USER" ]; then
-    git config --file "$cfg" --add safe.directory "$bare_repo"
+    git config --file "$cfg" --add safe.directory "$BARE_REPO"
     git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   else
     git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
@@ -153,31 +153,31 @@ done
 ##############################################################################
 # 13) Create post-receive hook to update working copy
 ##############################################################################
-work_dir="/home/${OBS_USER}/vaults/${VAULT}"
-hook="$bare_repo/hooks/post-receive"
+WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
+HOOK="$BARE_REPO/hooks/post-receive"
 
-cat > "$hook" <<-EOF
+cat > "$HOOK" <<-EOF
 #!/bin/sh
-SHA=\$(cat "$bare_repo/refs/heads/master")
-su - $OBS_USER -c "/usr/local/bin/git --git-dir=$bare_repo --work-tree=$work_dir checkout -f \$SHA"
+SHA=\$(cat "$BARE_REPO/refs/heads/master")
+su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR checkout -f \$SHA"
 exit 0
 EOF
 
-chown "${GIT_USER}:${GIT_USER}" "$hook"
-chmod +x "$hook"
+chown "${GIT_USER}:${GIT_USER}" "$HOOK"
+chmod +x "$HOOK"
 
 ##############################################################################
 # 14) Clone working copy for OBS_USER
 ##############################################################################
-mkdir -p "$(dirname "$work_dir")"
-git -c safe.directory="$bare_repo" clone "$bare_repo" "$work_dir"
-chown -R "${OBS_USER}:${OBS_USER}" "$work_dir"
+mkdir -p "$(dirname "$WORK_DIR")"
+git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"
+chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
 
 ##############################################################################
 # 15) Make initial empty commit
 ##############################################################################
-git -C "$work_dir" \
-    -c safe.directory="$work_dir" \
+git -C "$WORK_DIR" \
+    -c safe.directory="$WORK_DIR" \
     -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
@@ -186,21 +186,21 @@ git -C "$work_dir" \
 # 16) Configure history settings in users' .profile
 ##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
-  profile="/home/$u/.profile"
-  cat <<-EOF >> "$profile"
+  PROFILE="/home/$u/.profile"
+  cat <<-EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups
 EOF
-  chown "$u:$u" "$profile"
+  chown "$u:$u" "$PROFILE"
 done
 
 ##############################################################################
 # 17) Fix permissions on bare repo for group collaboration
 ##############################################################################
-chown -R "${GIT_USER}:vault" "$bare_repo"
-chmod -R g+rwX "$bare_repo"
-find "$bare_repo" -type d -exec chmod g+s {} +
-git --git-dir="$bare_repo" config core.sharedRepository group
+chown -R "${GIT_USER}:vault" "$BARE_REPO"
+chmod -R g+rwX "$BARE_REPO"
+find "$BARE_REPO" -type d -exec chmod g+s {} +
+git --git-dir="$BARE_REPO" config core.sharedRepository group
 
 echo "obsidian-git-host: Vault setup complete!"
