@@ -18,6 +18,27 @@ export PROJECT_ROOT
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 
+show_help() {
+  cat <<-EOF
+  Usage: $(basename "$0") [options]
+
+  Description:
+    Verify GitHub deploy key and repo bootstrap for Git sync
+
+  Options:
+    -h, --help        Show this help message and exit
+    -d, --debug       Enable debug mode
+    -l, --log         Force log output (use --log=FILE for custom file)
+EOF
+}
+
+# Check for help
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) show_help; exit 0 ;;
+  esac
+done
+
 ##############################################################################
 # 2) Parse flags and initialize logging
 ##############################################################################
@@ -33,13 +54,6 @@ fi
 trap finalize_logging EXIT
 [ "$DEBUG_MODE" -eq 1 ] && set -x
 
-##############################################################################
-# 3) Show help
-##############################################################################
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-  echo "Usage: $0 [--log[=FILE]] [--debug] [-h]"
-  exit 0
-fi
 
 ##############################################################################
 # 4) Load secrets

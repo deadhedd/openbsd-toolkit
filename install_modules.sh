@@ -24,17 +24,18 @@ MODULE_DIR="$PROJECT_ROOT/modules"
 ENABLED_FILE="$PROJECT_ROOT/config/enabled_modules.conf"
 export PROJECT_ROOT
 
-##############################################################################
-# 3) Help text
-##############################################################################
+# Pre-scan for help & deprecated flags
 usage() {
   cat <<EOF
-Usage: $0 [--debug[=FILE]] [-h] [module1 module2 ...]
+  Usage: $(basename "$0") [--debug[=FILE]] [-h] [module1 module2 ...]
 
-  --debug, -d      Enable xtrace and capture all output (stdout/stderr/xtrace)
+  Description:
+    Install one or more module setups (or all enabled modules by default)
+
+  Options:
+    --debug, -d      Enable xtrace and capture all output (stdout/stderr/xtrace)
                    into logs/ (or into FILE if you do --debug=FILE).
-
-  -h, --help       Show this help and exit.
+    -h, --help       Show this help message and exit.
 
 If no modules are specified, will install all in:
   $ENABLED_FILE
@@ -42,10 +43,18 @@ EOF
   exit 0
 }
 
-# show help?
-case "$1" in
-  -h|--help) usage ;;
-esac
+# Intercept help or deprecated --log flags before parsing
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      usage
+      ;;
+    -l|--log|-l=*|--log=*)
+      printf '%s\n' "This script no longer supports --log. Did you mean --debug?" >&2
+      exit 2
+      ;;
+  esac
+done
 
 ##############################################################################
 # 4) Parse just --debug

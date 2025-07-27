@@ -8,6 +8,36 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# --------------------------------------
+#  Help & flag pre-scan (setup scripts)
+# --------------------------------------
+show_help() {
+  cat <<-EOF
+  Usage: $(basename "$0") [options]
+
+  Description:
+    Configure GitHub deploy key and initialize bare repo
+
+  Options:
+    -h, --help        Show this help message and exit
+    -d, --debug       Enable debug/xtrace and write a log file
+EOF
+}
+
+# Pre-scan just for help / banned flags before the real parser
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -l|--log|-l=*|--log=*)
+      printf '%s\n' "This script no longer supports --log. Did you mean --debug?" >&2
+      exit 2
+      ;;
+  esac
+done
+
 # 2) Load logging system and parse --debug
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
