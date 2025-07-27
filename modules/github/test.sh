@@ -46,8 +46,8 @@ parse_logging_flags "$@"
 eval "set -- $REMAINING_ARGS"
 
 if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
-  module=$(basename "$SCRIPT_DIR")
-  init_logging "${module}-$(basename "$0")"
+  module_name=$(basename "$SCRIPT_DIR")
+  init_logging "${module_name}-$(basename "$0")"
 else
   init_logging "$0"
 fi
