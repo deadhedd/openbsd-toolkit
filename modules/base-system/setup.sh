@@ -3,14 +3,18 @@
 # setup.sh - General system configuration for OpenBSD Server (base-system module)
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
-# 1) Locate project root
+##############################################################################
+# 0) Resolve paths
+##############################################################################
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# --------------------------------------
-#  Help & flag pre-scan (setup scripts)
-# --------------------------------------
+##############################################################################
+# 1) Help / banned flags prescan
+##############################################################################
+
 show_help() {
   cat <<-EOF
   Usage: $(basename "$0") [options]
@@ -24,7 +28,6 @@ show_help() {
 EOF
 }
 
-# Pre-scan just for help / banned flags before the real parser
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
@@ -38,7 +41,10 @@ for arg in "$@"; do
   esac
 done
 
-# 2) Load logging system and parse --debug
+##############################################################################
+# 2) Parse flags and initialize logging
+##############################################################################
+
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
@@ -50,32 +56,46 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
   init_logging "setup-$module_name"
 fi
 
-# 3) Load secrets (INTERFACE, GIT_SERVER, NETMASK, GATEWAY, DNS1, DNS2)
+##############################################################################
+# 3) Load secrets
+##############################################################################
+
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
-# 4) Write interface config
+##############################################################################
+# 4) Networking config files
+##############################################################################
+
 cat > "/etc/hostname.${INTERFACE}" <<-EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-# 5) Write resolv.conf
 cat > /etc/resolv.conf <<-EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
 chmod 644 /etc/resolv.conf
 
-# 6) Bring up interface & default route
+##############################################################################
+# 5) Apply networking (ifconfig / route)
+##############################################################################
+
 ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
 route add default "${GATEWAY}"
 
-# 7) SSH hardening
+##############################################################################
+# 6) SSH hardening
+##############################################################################
+
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 rcctl restart sshd
 
-# 8) Root history settings
+##############################################################################
+# 7) Root history
+##############################################################################
+
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000

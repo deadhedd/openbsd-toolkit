@@ -4,15 +4,17 @@
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 ##############################################################################
-# 1) Determine script & project paths
+# 1) Resolve paths
 ##############################################################################
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# --------------------------------------
-#  Help & flag pre-scan (setup scripts)
-# --------------------------------------
+##############################################################################
+# 2) Help & banned flags prescan
+##############################################################################
+
 show_help() {
   cat <<-EOF
   Usage: $(basename "$0") [options]
@@ -26,7 +28,6 @@ show_help() {
 EOF
 }
 
-# Pre-scan just for help / banned flags before the real parser
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
@@ -41,8 +42,9 @@ for arg in "$@"; do
 done
 
 ##############################################################################
-# 2) Load logging system and parse --debug
+# 3) Logging init
 ##############################################################################
+
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
@@ -55,8 +57,9 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
 fi
 
 ##############################################################################
-# 3) Load secrets (must define OBS_USER, GIT_USER, VAULT, GIT_SERVER)
+# 4) Secrets & required vars
 ##############################################################################
+
 . "$PROJECT_ROOT/config/load_secrets.sh"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
@@ -64,12 +67,13 @@ fi
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
 ##############################################################################
-# 4) Install Git
+# 5) Packages
 ##############################################################################
+
 pkg_add -v git
 
 ##############################################################################
-# 6) Create OBS_USER and GIT_USER
+# 6) Users & group
 ##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
   shell_path=$([ "$u" = "$OBS_USER" ] && echo '/bin/ksh' || echo '/usr/local/bin/git-shell')
@@ -79,16 +83,14 @@ for u in "$OBS_USER" "$GIT_USER"; do
   fi
 done
 
-##############################################################################
-# 7) Create shared group and add users
-##############################################################################
 groupadd vault || true
 usermod -G vault "$OBS_USER"
 usermod -G vault "$GIT_USER"
 
 ##############################################################################
-# 8) Configure doas
+# 7) doas config
 ##############################################################################
+
 cat > /etc/doas.conf <<-EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
@@ -98,8 +100,9 @@ chown root:wheel /etc/doas.conf
 chmod 0440 /etc/doas.conf
 
 ##############################################################################
-# 9) Harden SSH to allow only OBS_USER & GIT_USER
+# 8) SSH hardening & per-user SSH dirs
 ##############################################################################
+
 if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
   sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
 else
@@ -107,9 +110,6 @@ else
 fi
 rcctl restart sshd
 
-##############################################################################
-# 10) Setup SSH dirs & known_hosts for both users
-##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
@@ -125,8 +125,9 @@ chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
 ##############################################################################
-# 11) Initialize bare repo under GIT_USER
+# 9) Repo paths & bare init
 ##############################################################################
+
 VAULT_DIR="/home/${GIT_USER}/vaults"
 BARE_REPO="${VAULT_DIR}/${VAULT}.git"
 mkdir -p "$VAULT_DIR"
@@ -136,8 +137,9 @@ git init --bare "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
-# 12) Configure Git safe.directory for both users
+# 10) Git configs (safe.directory, sharedRepository)
 ##############################################################################
+
 for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
   touch "$cfg"
@@ -151,8 +153,9 @@ for u in "$GIT_USER" "$OBS_USER"; do
 done
 
 ##############################################################################
-# 13) Create post-receive hook to update working copy
+# 11) Post-receive hook
 ##############################################################################
+
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
 HOOK="$BARE_REPO/hooks/post-receive"
 
@@ -167,15 +170,13 @@ chown "${GIT_USER}:${GIT_USER}" "$HOOK"
 chmod +x "$HOOK"
 
 ##############################################################################
-# 14) Clone working copy for OBS_USER
+# 12) Working copy clone & initial commit
 ##############################################################################
+
 mkdir -p "$(dirname "$WORK_DIR")"
 git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"
 chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
 
-##############################################################################
-# 15) Make initial empty commit
-##############################################################################
 git -C "$WORK_DIR" \
     -c safe.directory="$WORK_DIR" \
     -c user.name='Obsidian User' \
@@ -183,8 +184,9 @@ git -C "$WORK_DIR" \
     commit --allow-empty -m 'initial commit'
 
 ##############################################################################
-# 16) Configure history settings in users' .profile
+# 13) History settings (.profile)
 ##############################################################################
+
 for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
   cat <<-EOF >> "$PROFILE"
@@ -196,8 +198,9 @@ EOF
 done
 
 ##############################################################################
-# 17) Fix permissions on bare repo for group collaboration
+# 14) Final perms on bare repo
 ##############################################################################
+
 chown -R "${GIT_USER}:vault" "$BARE_REPO"
 chmod -R g+rwX "$BARE_REPO"
 find "$BARE_REPO" -type d -exec chmod g+s {} +

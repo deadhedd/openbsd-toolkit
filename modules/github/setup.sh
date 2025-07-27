@@ -3,14 +3,18 @@
 # setup.sh - GitHub deploy key & repo bootstrap (github module)
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
-# 1) Determine script & project paths
+##############################################################################
+# 0) Locate project root
+##############################################################################
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# --------------------------------------
-#  Help & flag pre-scan (setup scripts)
-# --------------------------------------
+##############################################################################
+# 1) Help & banned flags prescan
+##############################################################################
+
 show_help() {
   cat <<-EOF
   Usage: $(basename "$0") [options]
@@ -23,8 +27,6 @@ show_help() {
     -d, --debug       Enable debug/xtrace and write a log file
 EOF
 }
-
-# Pre-scan just for help / banned flags before the real parser
 for arg in "$@"; do
   case "$arg" in
     -h|--help)
@@ -38,7 +40,10 @@ for arg in "$@"; do
   esac
 done
 
-# 2) Load logging system and parse --debug
+##############################################################################
+# 2) Logging init
+##############################################################################
+
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
@@ -50,35 +55,35 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
   init_logging "setup-$module_name"
 fi
 
-# 3) Load secrets (LOCAL_DIR, GITHUB_REPO)
-. "$PROJECT_ROOT/config/load_secrets.sh"
+##############################################################################
+# 3) Inputs (secrets & constants) + validation
+##############################################################################
 
-# 4) Deploy-key path
+. "$PROJECT_ROOT/config/load_secrets.sh"
 DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 
-# 5) Validate deploy key exists
 [ -f "$DEPLOY_KEY" ] || { echo "ERROR: deploy_key not found at $DEPLOY_KEY" >&2; exit 1; }
 
-# 6) Install key into root's SSH
+##############################################################################
+# 4) SSH setup (keys & known_hosts)
+##############################################################################
+
 mkdir -p /root/.ssh
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 chmod 600 /root/.ssh/id_ed25519
 
-# 7) Add GitHub to known_hosts
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 
-# 8) Validate secrets for cloning
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
 : "GITHUB_REPO=$GITHUB_REPO"   # ensure variable is set
 
 [ -n "$LOCAL_DIR" ]   || { echo "ERROR: LOCAL_DIR not set" >&2; exit 1; }
 [ -n "$GITHUB_REPO" ] || { echo "ERROR: GITHUB_REPO not set" >&2; exit 1; }
 
-# 9) Clone or update the repo
-if [ ! -d "${LOCAL_DIR}/.git" ]; then
-  git clone "$GITHUB_REPO" "$LOCAL_DIR"
-else
-  git -C "$LOCAL_DIR" pull
-fi
+##############################################################################
+# 5) Repo bootstrap/update
+##############################################################################
+
+git clone "$GITHUB_REPO" "$LOCAL_DIR"
 
 echo "github: GitHub configuration complete!"

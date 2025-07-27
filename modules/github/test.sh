@@ -5,8 +5,9 @@
 #
 
 ##############################################################################
-# 1) Resolve paths and load logging helpers
+# 0) Resolve paths
 ##############################################################################
+
 case "$0" in
   */*) SCRIPT_PATH="$0";;
   *)   SCRIPT_PATH="$PWD/$0";;
@@ -15,8 +16,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-# shellcheck source=logs/logging.sh
-. "$PROJECT_ROOT/logs/logging.sh"
+##############################################################################
+# 1) Help / banned flags prescan
+##############################################################################
 
 show_help() {
   cat <<-EOF
@@ -32,7 +34,6 @@ show_help() {
 EOF
 }
 
-# Check for help
 for arg in "$@"; do
   case "$arg" in
     -h|--help) show_help; exit 0 ;;
@@ -42,9 +43,13 @@ done
 ##############################################################################
 # 2) Parse flags and initialize logging
 ##############################################################################
+
+# shellcheck source=logs/logging.sh
+. "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
 eval "set -- $REMAINING_ARGS"
 
+# If running standalone with log/debug requested, include module name in logfile
 if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
   module_name=$(basename "$SCRIPT_DIR")
   init_logging "${module_name}-$(basename "$0")"
@@ -56,20 +61,16 @@ trap finalize_logging EXIT
 
 
 ##############################################################################
-# 4) Load secrets
+# 3) Load secrets
 ##############################################################################
+
 # shellcheck source=config/load_secrets.sh
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 ##############################################################################
-# 5) Default fallbacks (if secrets aren't set)
+# 4) Test helpers
 ##############################################################################
-LOCAL_DIR="${LOCAL_DIR:-/root/openbsd-server}"
-GITHUB_REPO="${GITHUB_REPO:-git@github.com:deadhedd/openbsd-server.git}"
 
-##############################################################################
-# 6) Test helpers
-##############################################################################
 run_test() {
   desc="$2"
   if eval "$1" >/dev/null 2>&1; then
@@ -81,7 +82,7 @@ run_test() {
 }
 
 ##############################################################################
-# 7) Define & run tests
+# 5) Run tests
 ##############################################################################
 run_tests() {
   echo "1..7"
@@ -97,8 +98,9 @@ run_tests() {
 run_tests
 
 ##############################################################################
-# 8) Exit with status
+# 6) Exit with status
 ##############################################################################
+
 if [ "$TEST_FAILED" -ne 0 ]; then
   exit 1
 else

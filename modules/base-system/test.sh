@@ -2,10 +2,11 @@
 #
 # test.sh - Verify general system configuration for base-system module
 # Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
-#
+
 ##############################################################################
-# 1) Resolve paths and load logging helpers
+# 0) Resolve paths
 ##############################################################################
+
 case "$0" in
   */*) SCRIPT_PATH="$0";;
   *)   SCRIPT_PATH="$PWD/$0";;
@@ -14,7 +15,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
-. "$PROJECT_ROOT/logs/logging.sh"
+##############################################################################
+# 1) Help / banned flags prescan
+##############################################################################
 
 show_help() {
   cat <<-EOF
@@ -30,17 +33,17 @@ show_help() {
 EOF
 }
 
-# Check for help
 for arg in "$@"; do
   case "$arg" in
     -h|--help) show_help; exit 0 ;;
   esac
 done
 
-
 ##############################################################################
 # 2) Parse flags and initialize logging
 ##############################################################################
+
+. "$PROJECT_ROOT/logs/logging.sh"
 parse_logging_flags "$@"
 eval "set -- $REMAINING_ARGS"
 
@@ -54,16 +57,16 @@ fi
 trap finalize_logging EXIT
 [ "$DEBUG_MODE" -eq 1 ] && set -x
 
-
-
 ##############################################################################
-# 4) Load configuration
+# 3) Load secrets
 ##############################################################################
+
 . "$PROJECT_ROOT/config/load_secrets.sh"
 
 ##############################################################################
-# 5) Test helpers
+# 4) Test helpers
 ##############################################################################
+
 run_test() {
   desc="$2"
   if eval "$1" >/dev/null 2>&1; then
@@ -78,8 +81,9 @@ assert_file_perm() {
 }
 
 ##############################################################################
-# 6) Define & run tests
+# 5) Run tests
 ##############################################################################
+
 run_tests() {
   echo "1..15"
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                "hostname.${INTERFACE} exists"
@@ -104,8 +108,9 @@ run_tests() {
 run_tests
 
 ##############################################################################
-# 7) Exit with status
+# 6) Exit with status
 ##############################################################################
+
 if [ "$TEST_FAILED" -ne 0 ]; then
   exit 1
 else

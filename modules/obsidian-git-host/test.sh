@@ -5,8 +5,9 @@
 #
 
 ##############################################################################
-# 1) Resolve paths and load logging helpers
+# 0) Locate project root
 ##############################################################################
+
 case "$0" in
   */*) SCRIPT_PATH="$0";;
   *)   SCRIPT_PATH="$PWD/$0";;
@@ -16,6 +17,10 @@ PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
 . "$PROJECT_ROOT/logs/logging.sh"
+
+##############################################################################
+# 1) Help & banned flags prescan
+##############################################################################
 
 show_help() {
   cat <<-EOF
@@ -39,8 +44,9 @@ for arg in "$@"; do
 done
 
 ##############################################################################
-# 2) Parse flags and initialize logging
+# 2) Logging init
 ##############################################################################
+
 parse_logging_flags "$@"
 eval "set -- $REMAINING_ARGS"
 
@@ -54,8 +60,9 @@ trap finalize_logging EXIT
 [ "$DEBUG_MODE" -eq 1 ] && set -x
 
 ##############################################################################
-# 4) Load secrets & validate
+# 3) Inputs (secrets & constants) + validation
 ##############################################################################
+
 . "$PROJECT_ROOT/config/load_secrets.sh"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"

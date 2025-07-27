@@ -1,24 +1,34 @@
 #!/bin/sh
 # config/load-secrets.sh
 
-#set -x
+##############################################################################
+# 1) Resolve paths
+##############################################################################
 
-# 1) Determine the project root (one level above config/)
 PROJECT_ROOT="$(cd "$(dirname -- "$0")"/../.. && pwd)"
 CONFIG_DIR="$PROJECT_ROOT/config"
 
-# 2) Define locations for example and real secrets
+##############################################################################
+# 2) Secret file locations
+##############################################################################
+
 EXAMPLE="$CONFIG_DIR/secrets.env.example"
 SECRETS="$CONFIG_DIR/secrets.env"
 
-# 3) Bootstrap real secrets from example if missing
+##############################################################################
+# 3) Bootstrap secrets file if missing
+##############################################################################
+
 if [ ! -f "$SECRETS" ]; then
   cp "$EXAMPLE" "$SECRETS"
   echo "Created '$SECRETS' from example. Please edit it and re-run." >&2
   exit 1
 fi
 
-# 4) Export all vars from the secrets file
+##############################################################################
+# 4) Export all vars from secrets.env
+##############################################################################
+
 set -a
 # shellcheck source=/dev/null
 . "$SECRETS"
