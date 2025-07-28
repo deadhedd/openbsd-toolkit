@@ -127,6 +127,7 @@ chmod 0440 /etc/doas.conf
 # 7) SSH hardening & per-user SSH dirs
 ##############################################################################
 
+# 7.1 SSH Service & Config
 if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
   sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
 else
@@ -134,6 +135,7 @@ else
 fi
 rcctl restart sshd
 
+# 7.2 .ssh Directories and authorized users
 for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
@@ -144,6 +146,7 @@ for u in "$OBS_USER" "$GIT_USER"; do
   chown -R "$u:$u" "$SSH_DIR"
 done
 
+# 7.3 Known Hosts (OBS_USER only)
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
