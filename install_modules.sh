@@ -136,18 +136,10 @@ else
 fi
 
 ##############################################################################
-# 4) Install base-system first (if present)
-##############################################################################
-# NOTE: This is actually dumb, remove it
-echo "Installing prerequisite module: base-system"
-sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
-
-##############################################################################
-# 5) Install the rest
+# 4) Install all requested modules in order
 ##############################################################################
 
 for mod in $MODULES; do
-  [ "$mod" = "base-system" ] && continue
   echo "Installing module: $mod"
   sh "$MODULE_DIR/$mod/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 done
