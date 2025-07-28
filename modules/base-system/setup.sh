@@ -1,7 +1,30 @@
 #!/bin/sh
 #
-# setup.sh - General system configuration for OpenBSD Server (base-system module)
+# modules/base-system/setup.sh — General system configuration for OpenBSD server
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
+#
+# Description:
+#   Sets hostname, networking (ifconfig/route), /etc/resolv.conf, hardens SSH,
+#   and configures root shell history. Assumes secrets/env vars are loaded.
+#
+# Deployment considerations:
+#   Requires INTERFACE, GIT_SERVER, NETMASK, GATEWAY, DNS1, DNS2 from
+#   config/load-secrets.sh. Fails early if those aren’t defined.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/base-system/test.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
+
 
 ##############################################################################
 # 0) Resolve paths
@@ -78,7 +101,7 @@ EOF
 chmod 644 /etc/resolv.conf
 
 ##############################################################################
-# 5) Apply networking (ifconfig / route)
+# 5) Apply networking
 ##############################################################################
 
 ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up

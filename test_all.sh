@@ -1,7 +1,32 @@
 #!/bin/sh
 #
-# test_all.sh - run tests for specified modules, or for enabled_modules.conf, or all modules.
+# test_all.sh — Run tests for specified modules, enabled_modules.conf, or all modules
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
 # Usage: ./test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
+#
+# Description:
+#   Executes each selected module's test.sh and reports a pass/fail summary.
+#   If no modules are specified, reads enabled_modules.conf; if that file is
+#   absent, discovers all modules by scanning the modules/ directory.
+#
+# Deployment considerations:
+#   Expects every module directory to contain an executable test.sh.
+#   Forwards --debug or --log to individual module tests when supplied.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/ (each module contains setup.sh and test.sh)
+#   - install_modules.sh
+#   - logs/logging.sh
+#   - config/enabled_modules.conf
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths

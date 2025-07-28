@@ -1,7 +1,32 @@
 #!/bin/sh
 #
-# test.sh - Validate GitHub deploy key & repo bootstrap (github module)
-# Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
+# modules/github/test.sh — Verify GitHub deploy key & repo bootstrap
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
+# Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+#
+# Description:
+#   Runs TAP-style checks against the GitHub sync setup: verifies that the SSH
+#   deploy key and known_hosts entries are present with correct permissions, and
+#   that the local repository has been cloned with the expected remote origin.
+#
+# Deployment considerations:
+#   Assumes LOCAL_DIR and GITHUB_REPO are already exported (via
+#   config/load-secrets.sh). setup.sh is not required to run this test, but most
+#   tests will fail unless it (or equivalent configuration steps) has already
+#   been completed.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/github/setup.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths

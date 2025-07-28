@@ -1,7 +1,31 @@
 #!/bin/sh
 #
-# test.sh - Validate Obsidian vault sync configuration (obsidian-git-host module)
-# Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
+# modules/obsidian-git-host/test.sh — Verify Obsidian vault sync configuration
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
+# Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+#
+# Description:
+#   Runs TAP-style checks against the Obsidian Git host setup: users/groups,
+#   doas and SSH hardening, bare repo & working clone, post-receive hook, git
+#   configs (safe.directory/sharedRepository), perms, and history settings.
+#
+# Deployment considerations:
+#   Assumes OBS_USER, GIT_USER, VAULT, and GIT_SERVER are exported (via
+#   config/load-secrets.sh). setup.sh is not required to run this test, but most
+#   checks will fail unless it (or equivalent steps) has been completed.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/obsidian-git-host/setup.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths
@@ -135,6 +159,8 @@ run_tests() {
   assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
            "ssh dir owner for ${OBS_USER}"
+
+  ### MISSING TESTS FOR KNOWN_HOSTS AND AUTHORIZED USERS
 
   # Section 8) Repo paths & bare init
   run_test "[ -d ${BARE_REPO} ]"                                             "bare repository exists"
