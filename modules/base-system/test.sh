@@ -81,25 +81,34 @@ assert_file_perm() {
 }
 
 ##############################################################################
-# 5) Run tests
+# 5) Define & run tests
 ##############################################################################
 
 run_tests() {
   echo "1..15"
+
+  # Section 4) Networking config files
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                "hostname.${INTERFACE} exists"
   run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}$\" /etc/hostname.${INTERFACE}" \
            "correct 'inet IP MASK' line"
   run_test "grep -q \"^!route add default ${GATEWAY}$\" /etc/hostname.${INTERFACE}" \
            "correct default route line"
+
   run_test "[ -f /etc/resolv.conf ]"                                          "resolv.conf exists"
   run_test "grep -q \"nameserver ${DNS1}\" /etc/resolv.conf"                  "resolv.conf contains DNS1"
   run_test "grep -q \"nameserver ${DNS2}\" /etc/resolv.conf"                  "resolv.conf contains DNS2"
   assert_file_perm "/etc/resolv.conf" "644"                                   "resolv.conf mode is 644"
+
+  # Section 5) Apply Networking
   run_test "ifconfig ${INTERFACE} | grep -q \"inet ${GIT_SERVER}\""            "interface up with correct IP"
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"            "default route via ${GATEWAY}"
+  
+  # Section 6) SSH hardening
   run_test "grep -q '^PermitRootLogin no' /etc/ssh/sshd_config"               "sshd_config disallows root login"
   run_test "grep -q '^PasswordAuthentication no' /etc/ssh/sshd_config"        "sshd_config disallows password auth"
   run_test "rcctl check sshd"                                                  "sshd service is running"
+
+  # Section 7) Root history
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE"
   run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"           "root .profile sets HISTCONTROL"

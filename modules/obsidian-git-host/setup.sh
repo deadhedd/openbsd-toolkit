@@ -4,7 +4,7 @@
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 ##############################################################################
-# 1) Resolve paths
+# 0) Resolve paths
 ##############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,7 +12,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
 ##############################################################################
-# 2) Help & banned flags prescan
+# 1) Help & banned flags prescan
 ##############################################################################
 
 show_help() {
@@ -42,7 +42,7 @@ for arg in "$@"; do
 done
 
 ##############################################################################
-# 3) Logging init
+# 2) Logging init
 ##############################################################################
 
 # shellcheck source=logs/logging.sh
@@ -57,7 +57,7 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
 fi
 
 ##############################################################################
-# 4) Secrets & required vars
+# 3) Secrets & required vars
 ##############################################################################
 
 . "$PROJECT_ROOT/config/load_secrets.sh"
@@ -67,13 +67,13 @@ fi
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
 ##############################################################################
-# 5) Packages
+# 4) Packages
 ##############################################################################
 
 pkg_add -v git
 
 ##############################################################################
-# 6) Users & group
+# 5) Users & group
 ##############################################################################
 for u in "$OBS_USER" "$GIT_USER"; do
   shell_path=$([ "$u" = "$OBS_USER" ] && echo '/bin/ksh' || echo '/usr/local/bin/git-shell')
@@ -88,7 +88,7 @@ usermod -G vault "$OBS_USER"
 usermod -G vault "$GIT_USER"
 
 ##############################################################################
-# 7) doas config
+# 6) doas config
 ##############################################################################
 
 cat > /etc/doas.conf <<-EOF
@@ -100,7 +100,7 @@ chown root:wheel /etc/doas.conf
 chmod 0440 /etc/doas.conf
 
 ##############################################################################
-# 8) SSH hardening & per-user SSH dirs
+# 7) SSH hardening & per-user SSH dirs
 ##############################################################################
 
 if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
@@ -125,7 +125,7 @@ chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
 ##############################################################################
-# 9) Repo paths & bare init
+# 8) Repo paths & bare init
 ##############################################################################
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
@@ -137,7 +137,7 @@ git init --bare "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
-# 10) Git configs (safe.directory, sharedRepository)
+# 9) Git configs (safe.directory, sharedRepository)
 ##############################################################################
 
 for u in "$GIT_USER" "$OBS_USER"; do
@@ -153,7 +153,7 @@ for u in "$GIT_USER" "$OBS_USER"; do
 done
 
 ##############################################################################
-# 11) Post-receive hook
+# 10) Post-receive hook
 ##############################################################################
 
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
@@ -170,7 +170,7 @@ chown "${GIT_USER}:${GIT_USER}" "$HOOK"
 chmod +x "$HOOK"
 
 ##############################################################################
-# 12) Working copy clone & initial commit
+# 11) Working copy clone & initial commit
 ##############################################################################
 
 mkdir -p "$(dirname "$WORK_DIR")"
@@ -182,6 +182,15 @@ git -C "$WORK_DIR" \
     -c user.name='Obsidian User' \
     -c user.email='obsidian@example.com' \
     commit --allow-empty -m 'initial commit'
+
+##############################################################################
+# 12) Final perms on bare repo
+##############################################################################
+
+chown -R "${GIT_USER}:vault" "$BARE_REPO"
+chmod -R g+rwX "$BARE_REPO"
+find "$BARE_REPO" -type d -exec chmod g+s {} +
+git --git-dir="$BARE_REPO" config core.sharedRepository group
 
 ##############################################################################
 # 13) History settings (.profile)
@@ -196,14 +205,5 @@ export HISTCONTROL=ignoredups
 EOF
   chown "$u:$u" "$PROFILE"
 done
-
-##############################################################################
-# 14) Final perms on bare repo
-##############################################################################
-
-chown -R "${GIT_USER}:vault" "$BARE_REPO"
-chmod -R g+rwX "$BARE_REPO"
-find "$BARE_REPO" -type d -exec chmod g+s {} +
-git --git-dir="$BARE_REPO" config core.sharedRepository group
 
 echo "obsidian-git-host: Vault setup complete!"

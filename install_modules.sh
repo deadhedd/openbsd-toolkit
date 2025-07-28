@@ -4,7 +4,7 @@
 # Usage: ./install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 
 ##############################################################################
-# 1) Resolve paths
+# 0) Resolve paths
 ##############################################################################
 
 case "$0" in
@@ -23,7 +23,7 @@ ENABLED_FILE="$PROJECT_ROOT/config/enabled_modules.conf"
 export PROJECT_ROOT
 
 ##############################################################################
-# 2) Help & banned flags prescan
+# 1) Help & banned flags prescan
 ##############################################################################
 
 usage() {
@@ -57,7 +57,7 @@ for arg in "$@"; do
 done
 
 ##############################################################################
-# 3) Debug/logging init
+# 2) Debug/logging init
 ##############################################################################
 
 DEBUG_MODE=0
@@ -98,7 +98,7 @@ if [ "$DEBUG_MODE" -eq 1 ]; then
 fi
 
 ##############################################################################
-# 4) Determine module list
+# 3) Determine module list
 ##############################################################################
 
 if [ "$#" -gt 0 ]; then
@@ -112,14 +112,14 @@ else
 fi
 
 ##############################################################################
-# 5) Install base-system first (if present)
+# 4) Install base-system first (if present)
 ##############################################################################
-
+# NOTE: This is actually dumb, remove it
 echo "Installing prerequisite module: base-system"
 sh "$MODULE_DIR/base-system/setup.sh" ${DBG_FLAG:+"$DBG_FLAG"}
 
 ##############################################################################
-# 6) Install the rest
+# 5) Install the rest
 ##############################################################################
 
 for mod in $MODULES; do

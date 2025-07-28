@@ -4,7 +4,7 @@
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
 
 ##############################################################################
-# 0) Locate project root
+# 0) Resolve Paths
 ##############################################################################
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -81,7 +81,7 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 [ -n "$GITHUB_REPO" ] || { echo "ERROR: GITHUB_REPO not set" >&2; exit 1; }
 
 ##############################################################################
-# 5) Repo bootstrap/update
+# 5) Repo bootstrap
 ##############################################################################
 
 git clone "$GITHUB_REPO" "$LOCAL_DIR"
