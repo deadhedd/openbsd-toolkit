@@ -59,7 +59,7 @@ parse_logging_flags() {
 }
 
 ##############################################################################
-# 3) init_logging: choose log target & redirect stdout/stderr
+# 3) Debug/logging init
 ##############################################################################
 
 init_logging() {

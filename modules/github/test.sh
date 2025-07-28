@@ -2,7 +2,6 @@
 #
 # test.sh - Validate GitHub deploy key & repo bootstrap (github module)
 # Usage: $(basename "$0") [--log[=FILE]] [--debug] [-h]
-#
 
 ##############################################################################
 # 0) Resolve paths
@@ -82,15 +81,19 @@ run_test() {
 }
 
 ##############################################################################
-# 5) Run tests
+# 5) Define & run tests
 ##############################################################################
 run_tests() {
   echo "1..7"
+
+  # Section 4) SSH setup
   run_test "[ -d /root/.ssh ]"                                                  "root .ssh directory exists"
   run_test "[ -f /root/.ssh/id_ed25519 ]"                                        "deploy key present"
   run_test "stat -f '%Lp' /root/.ssh/id_ed25519 | grep -q '^600$'"               "deploy key mode is 600"
   run_test "[ -f /root/.ssh/known_hosts ]"                                       "known_hosts exists"
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                     "known_hosts contains GitHub"
+  
+  # Section 5) Repo bootstrap
   run_test "[ -d \"$LOCAL_DIR/.git\" ]"                                          "repository was cloned"
   run_test "grep -q \"url = $GITHUB_REPO\" \"$LOCAL_DIR/.git/config\""           "remote origin set correctly"
 }
