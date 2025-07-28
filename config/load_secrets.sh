@@ -1,5 +1,25 @@
 #!/bin/sh
-# config/load-secrets.sh
+#
+# config/load-secrets.sh — Export variables from secrets.env for other scripts
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
+# Usage: . "$PROJECT_ROOT/config/load-secrets.sh"   # must be sourced
+#
+# Description:
+#   Ensures config/secrets.env exists (copies from example if missing) and then
+#   exports all KEY=VALUE pairs using `set -a`. Exits after creating the file
+#   so the caller can prompt the user to edit it.
+#
+# Deployment considerations:
+#   Handling secrets and private keys is more difficult when cloning the repo
+#   directly onto a freshly installed server instead of preparing it offline
+#   and mounting via USB. Some assumptions (like pre-editing secrets.env) may
+#   break in unattended remote install workflows.
+#
+# See also:
+#   - config/secrets.env.example
 
 ##############################################################################
 # 0) Resolve paths

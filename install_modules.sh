@@ -1,7 +1,31 @@
 #!/bin/sh
 #
-# install_modules.sh - install specified modules, or all in config/enabled_modules.conf if none given
+# install_modules.sh — Install specified modules, or all in enabled_modules.conf
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
 # Usage: ./install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
+#
+# Description:
+#   Runs each module's setup script in order. If no modules are given on the
+#   command line, reads the list from config/enabled_modules.conf.
+#
+# Deployment considerations:
+#   Expects PROJECT_ROOT/modules/*/setup.sh to exist and be executable.
+#   Falls back to config/enabled_modules.conf when no args are provided.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/ (each module contains its own setup.sh and test.sh)
+#   - test_all.sh
+#   - logs/logging.sh
+#   - config/enabled_modules.conf
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths

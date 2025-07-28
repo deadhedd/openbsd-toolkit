@@ -1,14 +1,34 @@
 #!/bin/sh
 #
-# logging.sh - POSIX-compliant centralized logging & debug helper
+# logs/logging.sh — Centralized logging & debug helpers (sourced utility)
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
 #
-# Usage in your scripts (test or setup):
-#   . "$(dirname "$0")/logging.sh"
-#   parse_logging_flags "$@"            # updates globals + REMAINING_ARGS
-#   eval "set -- $REMAINING_ARGS"       # restore positional parameters
+# Usage:
+#   . "$PROJECT_ROOT/logs/logging.sh"
+#   parse_logging_flags "$@"; eval "set -- $REMAINING_ARGS"
 #   init_logging "<context-name>"
 #   ... your logic ...
-#   [if test script] finalize_logging
+#   [tests only] finalize_logging
+#
+# Description:
+#   Provides a common flag parser (--log/--debug), sets up stdout/stderr
+#   redirection to temp or permanent log files, and exposes helpers for test
+#   failure tracking and cleanup.
+#
+# Deployment considerations:
+#   Intended to be sourced. Direct execution may behave unexpectedly.
+#   FD 3 is reserved for real stdout so debug messages can bypass redirection.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials. Use
+#   caution when sharing or retaining debug logs.
+#
+# See also:
+#   - config/load-secrets.sh
+#   - logs/ (for generated log files)
 
 ##############################################################################
 # 1) FD setup & globals

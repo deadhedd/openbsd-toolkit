@@ -1,7 +1,31 @@
 #!/bin/sh
 #
-# setup.sh - Git-backed Obsidian vault setup (obsidian-git-host module)
+# modules/obsidian-git-host/setup.sh — Git-backed Obsidian vault setup
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
 # Usage: ./setup.sh [--debug[=FILE]] [-h]
+#
+# Description:
+#   Sets up Git/Obsidian users and group, hardens SSH, writes doas rules,
+#   initializes the bare repo and working copy, installs the post-receive hook,
+#   and fixes perms (incl. setgid dirs) for group collaboration.
+#
+# Deployment considerations:
+#   Requires these vars (exported via config/load-secrets.sh):
+#     • OBS_USER, GIT_USER, VAULT, GIT_SERVER
+#   Assumes pkg_add git is available and run as root on OpenBSD.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/obsidian-git-host/test.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths

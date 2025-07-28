@@ -1,7 +1,31 @@
 #!/bin/sh
 #
-# test.sh - Verify general system configuration for base-system module
+# modules/base-system/test.sh — Verify base-system configuration (networking, SSH, history)
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
+#
 # Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+#
+# Description:
+#   Runs TAP-style checks against the base-system setup: hostname/ifconfig/route,
+#   /etc/resolv.conf, SSH hardening, and root shell history settings.
+#
+# Deployment considerations:
+#   Assumes INTERFACE, GIT_SERVER, NETMASK, GATEWAY, DNS1, and DNS2 are already
+#   exported (via config/load-secrets.sh). setup.sh is not required to run this
+#   test, but most tests will fail unless it (or equivalent configuration steps)
+#   has already been completed.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), including any exported secrets or credentials.
+#   Use caution when sharing or retaining debug logs.
+#
+# See also:
+#   - modules/base-system/setup.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
 
 ##############################################################################
 # 0) Resolve paths
