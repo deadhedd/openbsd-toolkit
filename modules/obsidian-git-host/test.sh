@@ -223,7 +223,7 @@ run_tests() {
   run_test "grep -q '^export HISTFILE=/home/${OBS_USER}/.ksh_history\$' /home/${OBS_USER}/.profile" \
            "HISTFILE export in ${OBS_USER} .profile"
   run_test "grep -q '^export HISTSIZE=5000\$' /home/${OBS_USER}/.profile"        "HISTSIZE export in ${OBS_USER} .profile"
-  run_test "grep -q '^export HISTCONTROL=ignoredups\$' /home=${OBS_USER}/.profile" \
+  run_test "grep -q '^export HISTCONTROL=ignoredups\$' /home/${OBS_USER}/.profile" \
            "HISTCONTROL export in ${OBS_USER} .profile"
   run_test "grep -q '^export HISTFILE=/home/${GIT_USER}/.ksh_history\$' /home/${GIT_USER}/.profile" \
            "HISTFILE export in ${GIT_USER} .profile"
