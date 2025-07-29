@@ -135,6 +135,8 @@ init_logging() {
     export LOG_TMP
     exec >"$LOG_TMP" 2>&1
   fi
+
+  export LOGGING_INITIALIZED=1
 }
 
 ##############################################################################
