@@ -90,6 +90,10 @@ trap finalize_logging EXIT
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
+OBS_HOME="/home/${OBS_USER}"
+BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
+WORK_TREE="${OBS_HOME}/vaults/${VAULT}"
+
 ##############################################################################
 # 4) Test helpers
 ##############################################################################
