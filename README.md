@@ -111,6 +111,20 @@ Use `--debug[=FILE]` to enable verbose tracing and optionally direct output to a
 
 Use `--log[=FILE]` to force a log file to be written even when all tests pass (only supported by test scripts).
 
+### Simplified logging helpers
+
+Scripts source `logs/logging.sh` and invoke one of these convenience functions:
+
+```sh
+. "$PROJECT_ROOT/logs/logging.sh"
+start_logging "$0" "$@"            # for test scripts
+# or
+start_logging_if_debug "setup-my-module" "$@"  # for setup scripts
+```
+
+`start_logging` automatically sets up logging, enables debug tracing when
+`--debug` is provided, and registers `finalize_logging` on exit.
+
 ---
 
 ## 🛡️ Security Notes
