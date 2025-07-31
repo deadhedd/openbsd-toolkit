@@ -4,7 +4,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./setup.sh [--debug[=FILE]] [-h]
+# Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
 # Description:
 #   Sets up Git/Obsidian users and group, hardens SSH, writes doas rules,
@@ -40,7 +40,7 @@ export PROJECT_ROOT
 
 show_help() {
   cat <<-EOF
-  Usage: $(basename "$0") [options]
+  Usage: sh $(basename "$0") [options]
 
   Description:
     Set up Git user, vault repository, and post-receive hook
