@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+# Usage: sh test.sh [--log[=FILE]] [--debug] [-h]
 #
 # Description:
 #   Runs TAP-style checks against the GitHub sync setup: verifies that the SSH
@@ -46,7 +46,7 @@ export PROJECT_ROOT
 
 show_help() {
   cat <<-EOF
-  Usage: $(basename "$0") [options]
+  Usage: sh $(basename "$0") [options]
 
   Description:
     Verify GitHub deploy key and repo bootstrap for Git sync

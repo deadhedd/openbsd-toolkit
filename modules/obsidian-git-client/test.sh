@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # test_obsidian_git_client.sh – Verify client-side Obsidian Git sync (with optional logging)
-# Usage: ./test_obsidian_git_client.sh [--log[=FILE]] [-h]
+# Usage: sh test_obsidian_git_client.sh [--log[=FILE]] [-h]
 #
 
 set -ex  # -e: exit on error; -x: trace commands
@@ -36,7 +36,7 @@ LOGFILE=""
 #
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--log[=FILE]] [-h]
+Usage: sh $(basename "$0") [--log[=FILE]] [-h]
 
   --log, -l       Capture stdout, stderr & xtrace into:
                    ${PROJECT_ROOT}/logs/$(basename "$0" .sh)-TIMESTAMP.log

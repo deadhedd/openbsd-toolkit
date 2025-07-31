@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
+# Usage: sh install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 #
 # Description:
 #   Runs each module's setup script in order. If no modules are given on the
@@ -52,7 +52,7 @@ export PROJECT_ROOT
 
 usage() {
   cat <<EOF
-  Usage: $(basename "$0") [--debug[=FILE]] [-h] [module1 module2 ...]
+  Usage: sh $(basename "$0") [--debug[=FILE]] [-h] [module1 module2 ...]
 
   Description:
     Install one or more module setups (or all enabled modules by default)

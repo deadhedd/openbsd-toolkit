@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./test.sh [--log[=FILE]] [--debug] [-h]
+# Usage: sh test.sh [--log[=FILE]] [--debug] [-h]
 #
 # Description:
 #   Runs TAP-style checks against the Obsidian Git host setup: users/groups,
@@ -45,7 +45,7 @@ export PROJECT_ROOT
 
 show_help() {
   cat <<-EOF
-  Usage: $(basename "$0") [options]
+  Usage: sh $(basename "$0") [options]
 
   Description:
     Validate Obsidian vault sync setup on the Git host
