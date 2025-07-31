@@ -1,5 +1,4 @@
-#!/bin/sh
-#
+#!/bin/sh #
 # modules/obsidian-git-host/setup.sh — Git-backed Obsidian vault setup
 # Author: deadhedd
 # Version: 1.0.0
@@ -214,10 +213,10 @@ git -C "$WORK_DIR" \
 # 12) Final perms on bare repo
 ##############################################################################
 
+git --git-dir="$BARE_REPO" config core.sharedRepository group
 chown -R "${GIT_USER}:vault" "$BARE_REPO"
 chmod -R g+rwX "$BARE_REPO"
 find "$BARE_REPO" -type d -exec chmod g+s {} +
-git --git-dir="$BARE_REPO" config core.sharedRepository group
 
 ##############################################################################
 # 13) History settings (.profile)

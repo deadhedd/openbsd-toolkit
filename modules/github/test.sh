@@ -81,7 +81,7 @@ else
   init_logging "$0"
 fi
 trap finalize_logging EXIT
-[ "$DEBUG_MODE" -eq 1 ] && set -x
+[ "$DEBUG_MODE" -eq 1 ] && set -vx
 
 
 ##############################################################################
