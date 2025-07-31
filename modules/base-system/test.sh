@@ -79,7 +79,7 @@ else
   init_logging "$0"
 fi
 trap finalize_logging EXIT
-[ "$DEBUG_MODE" -eq 1 ] && set -x
+[ "$DEBUG_MODE" -eq 1 ] && set -vx
 
 ##############################################################################
 # 3) Load secrets
@@ -91,15 +91,22 @@ trap finalize_logging EXIT
 # 4) Test helpers
 ##############################################################################
 
+echo "stdout: hello world"
+echo "stderr: uh oh" >&2
+
 run_test() {
   desc="$2"
-  if eval "$1" >/dev/null 2>&1; then
+  output="$(eval "$1" 2>&1)"
+  if [ $? -eq 0 ]; then
     echo "ok - $desc"
   else
     echo "not ok - $desc"
+    echo "# ── Output for failed test: $desc ──"
+    echo "$output" | sed 's/^/# /'
     mark_test_failed
   fi
 }
+
 assert_file_perm() {
   run_test "stat -f '%Lp' \"$1\" | grep -q '^$2$'" "$3"
 }
