@@ -68,17 +68,7 @@ done
 ##############################################################################
 
 . "$PROJECT_ROOT/logs/logging.sh"
-parse_logging_flags "$@"
-eval "set -- $REMAINING_ARGS"
-
-if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
-  module_name=$(basename "$SCRIPT_DIR")
-  init_logging "${module_name}-$(basename "$0")"
-else
-  init_logging "$0"
-fi
-trap finalize_logging EXIT
-[ "$DEBUG_MODE" -eq 1 ] && set -vx
+start_logging "$SCRIPT_PATH" "$@"
 
 ##############################################################################
 # 3) Secrets & required vars

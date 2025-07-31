@@ -7,8 +7,8 @@
 #
 # Usage:
 #   . "$PROJECT_ROOT/logs/logging.sh"
-#   parse_logging_flags "$@"; eval "set -- $REMAINING_ARGS"
-#   init_logging "<context-name>"
+#   start_logging "<context-name>" "$@"        # for test scripts
+#   start_logging_if_debug "<context-name>" "$@"  # for setup scripts
 #   ... your logic ...
 #   [tests only] finalize_logging
 #
@@ -75,6 +75,43 @@ parse_logging_flags() {
   if [ "$DEBUG_MODE" -eq 1 ]; then
     echo "DEBUG(parse_logging_flags): raw args=$raw_args" >&3
     echo "DEBUG(parse_logging_flags): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&3
+  fi
+}
+
+##############################################################################
+# 2.5) Convenience wrappers
+##############################################################################
+
+# start_logging <context> [args...]
+#   Parse logging flags from the provided args, replace "$@" with remaining
+#   arguments, and initialize logging with the given context. Debug mode also
+#   enables shell tracing.
+start_logging() {
+  context="$1"
+  shift
+  parse_logging_flags "$@"
+  eval "set -- $REMAINING_ARGS"
+  if { [ "$FORCE_LOG" -eq 1 ] || [ "$DEBUG_MODE" -eq 1 ]; } && [ -z "$LOGGING_INITIALIZED" ]; then
+    mod="$(basename "$(dirname "$context")")"
+    init_logging "${mod}-$(basename "$context")"
+  else
+    init_logging "$context"
+  fi
+  trap finalize_logging EXIT
+  [ "$DEBUG_MODE" -eq 1 ] && set -vx
+}
+
+# start_logging_if_debug <context> [args...]
+#   Same as start_logging, but only initializes logging when --debug was
+#   provided. Useful for setup scripts that normally run without logging.
+start_logging_if_debug() {
+  context="$1"
+  shift
+  parse_logging_flags "$@"
+  eval "set -- $REMAINING_ARGS"
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    init_logging "$context"
+    set -vx
   fi
 }
 
