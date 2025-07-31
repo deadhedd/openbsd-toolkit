@@ -34,6 +34,7 @@
 # 1) FD setup & globals
 ##############################################################################
 
+exec 3>&-     # Ensure any leftover fd 3 is closed
 exec 3>&1     # Make fd 3 point at the real stdout for debug messages
 
 FORCE_LOG=${FORCE_LOG:-0}
@@ -164,4 +165,6 @@ finalize_logging() {
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removing temp file '$LOG_TMP'" >&3
     rm -f "$LOG_TMP"
   fi
+  exec 1>&3 2>&3   # Restore stdout/stderr for any further output
+  exec 3>&-        # Close the debug descriptor
 }
