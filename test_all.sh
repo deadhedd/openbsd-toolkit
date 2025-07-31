@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
+# Usage: sh test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
 #
 # Description:
 #   Executes each selected module's test.sh and reports a pass/fail summary.
@@ -53,7 +53,7 @@ export PROJECT_ROOT MODULE_DIR
 
 show_help() {
   cat <<-EOF
-  Usage: $(basename "$0") [options]
+  Usage: sh $(basename "$0") [options]
 
   Description:
     Run test scripts for one or more modules (or all enabled modules by default)
