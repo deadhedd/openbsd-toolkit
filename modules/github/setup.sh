@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: ./setup.sh [--debug[=FILE]] [-h]
+# Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
 # Description:
 #   Copies the deploy key into /root/.ssh, hard-locks its permissions, adds
@@ -42,7 +42,7 @@ export PROJECT_ROOT
 
 show_help() {
   cat <<-EOF
-  Usage: $(basename "$0") [options]
+  Usage: sh $(basename "$0") [options]
 
   Description:
     Configure GitHub deploy key and initialize bare repo
