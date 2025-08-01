@@ -1,150 +1,162 @@
 #!/bin/sh
 #
-# test_obsidian_git_client.sh – Verify client-side Obsidian Git sync (with optional logging)
-# Usage: sh test_obsidian_git_client.sh [--log[=FILE]] [-h]
+# modules/obsidian-git-client/test.sh — Verify client-side Obsidian Git sync
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-07-28
 #
+# Usage: sh test.sh [--log[=FILE]] [--debug] [-h]
+#
+# Description:
+#   Runs TAP-style checks against the local Obsidian vault used for Git-based
+#   synchronization. Ensures ssh-agent is loaded, known_hosts has the server,
+#   local repo is present, remote bare repo and hooks exist, and that pushing
+#   a test commit succeeds.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands and their expanded
+#   values (via `set -vx`), including any exported secrets or credentials. Use
+#   caution when sharing or retaining debug logs.
 
-set -ex  # -e: exit on error; -x: trace commands
+##############################################################################
+# 0) Resolve paths
+##############################################################################
 
-#
-# 1) Locate this script’s real path
-#
 case "$0" in
-  */*) SCRIPT_PATH="$0" ;;
-  *)   SCRIPT_PATH="$(command -v -- "$0" 2>/dev/null || printf "%s" "$0")" ;;
+  */*) SCRIPT_PATH="$0";;
+  *)   SCRIPT_PATH="$PWD/$0";;
 esac
 SCRIPT_DIR="$(cd -- "$(dirname -- "$SCRIPT_PATH")" && pwd)"
+PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
+export PROJECT_ROOT
 
-#
-# 2) Determine project root (strip off /tests if present)
-#
-base="$(basename "$SCRIPT_DIR")"
-if [ "$base" = "tests" ] || [ "$base" = "scripts" ]; then
-  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-else
-  PROJECT_ROOT="$SCRIPT_DIR"
-fi
+##############################################################################
+# 1) Help / banned flags prescan
+##############################################################################
 
-#
-# 3) Logging defaults
-#
-FORCE_LOG=0
-LOGFILE=""
+show_help() {
+  cat <<-EOF
+  Usage: sh $(basename "$0") [options]
 
-#
-# 4) Usage helper
-#
-usage() {
-  cat <<EOF
-Usage: sh $(basename "$0") [--log[=FILE]] [-h]
+  Description:
+    Validate client-side Obsidian Git sync configuration
 
-  --log, -l       Capture stdout, stderr & xtrace into:
-                   ${PROJECT_ROOT}/logs/$(basename "$0" .sh)-TIMESTAMP.log
-                 Or use --log=FILE to choose a custom path.
-
-  -h, --help      Show this help and exit.
+  Options:
+    -h, --help        Show this help message and exit
+    -d, --debug       Enable debug mode
+    -l, --log         Force log output (use --log=FILE for custom file)
 EOF
-  exit 0
 }
 
-#
-# 5) Parse flags
-#
-while [ $# -gt 0 ]; do
-  case "$1" in
-    -l|--log)
-      FORCE_LOG=1
-      ;;
-    -l=*|--log=*)
-      FORCE_LOG=1; LOGFILE="${1#*=}"
-      ;;
-    -h|--help)
-      usage
-      ;;
-    *)
-      usage
-      ;;
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) show_help; exit 0 ;;
   esac
-  shift
 done
 
-#
-# 6) Centralized logging init
-#
-LOG_HELPER="$PROJECT_ROOT/logs/logging.sh"
-[ -f "$LOG_HELPER" ] || { echo "❌ logging.sh not found at $LOG_HELPER" >&2; exit 1; }
-. "$LOG_HELPER"
-init_logging "$0"
+##############################################################################
+# 2) Parse flags and initialize logging
+##############################################################################
 
-#
-# 7) Load configuration
-#
-SECRETS="$PROJECT_ROOT/config/secrets.env"
-[ -f "$SECRETS" ] || { echo "❌ secrets.env not found at $SECRETS" >&2; exit 1; }
-set -a; . "$SECRETS"; set +a
+. "$PROJECT_ROOT/logs/logging.sh"
+start_logging "$SCRIPT_PATH" "$@"
 
-#
-# 8) Derived paths
-#
+##############################################################################
+# 3) Load secrets
+##############################################################################
+
+. "$PROJECT_ROOT/config/load_secrets.sh"
+
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"
 LOCAL_VAULT="$HOME/${VAULT}"
 
-#
-# 9) Test helper
-#
+##############################################################################
+# 4) Test helpers
+##############################################################################
+
 run_test() {
-  if eval "$1" >/dev/null 2>&1; then
-    echo "ok - $2"
-  else
-    echo "not ok - $2"
-    return 1
-  fi
-}
-
-#
-# 10) Run tests
-#
-run_tests() {
-  echo "1..7"
-  run_test "ssh-add -l | grep -q id_ed25519"         "ssh-agent running and id_ed25519 loaded"
-  run_test "grep -q \"$SERVER\" ~/.ssh/known_hosts"  "known_hosts contains $SERVER"
-  run_test "[ -d \"$LOCAL_VAULT/.git\" ]"            "local vault is a Git repo"
-  run_test "ssh ${GIT_USER}@${SERVER} [ -d \"$BARE_REPO\" ]" \
-       "remote bare repo exists"
-  run_test "ssh ${GIT_USER}@${SERVER} [ -x \"$BARE_REPO/hooks/post-receive\" ]" \
-       "post-receive hook is present and executable"
-  run_test "git -C \"$LOCAL_VAULT\" pull origin"     "git pull succeeds over SSH"
-  cd "$LOCAL_VAULT"
-  echo "# test $(date +%s)" >> test-sync.md
-  git add test-sync.md
-  git commit -m "TDD sync test"
-  run_test "git push origin HEAD"                    "git push succeeds over SSH"
-}
-
-#
-# 11) Wrapper to capture output and optionally log
-#
-run_and_maybe_log() {
-  TMP="$(mktemp)" || exit 1
-  if ! run_tests >"$TMP" 2>&1; then
-    echo "🛑 $(basename "$0") FAILED — dumping full log to $LOGFILE"
-    cat "$TMP" | tee "$LOGFILE"
-    rm -f "$TMP"
-    exit 1
-  else
-    if [ "$FORCE_LOG" -eq 1 ]; then
-      echo "✅ $(basename "$0") passed — writing full log to $LOGFILE"
-      cat "$TMP" >>"$LOGFILE"
-    else
-      cat "$TMP"
+  cmd="$1"
+  desc="$2"
+  inspect="$3"
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    echo "DEBUG(run_test): $desc -> $cmd" >&2
+    if [ -n "$inspect" ]; then
+      inspect_out="$(eval "$inspect" 2>&1 || true)"
+      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&2
     fi
-    rm -f "$TMP"
+  fi
+  output="$(eval "$cmd" 2>&1)"
+  status=$?
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    echo "DEBUG(run_test): exit_status=$status" >&2
+    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&2
+  fi
+  if [ $status -eq 0 ]; then
+    echo "ok - $desc"
+  else
+    echo "not ok - $desc"
+    [ -n "$output" ] && {
+      echo "# ── Output for failed test: $desc ──"
+      echo "$output" | sed 's/^/# /'
+    }
+    mark_test_failed
   fi
 }
 
-#
-# 12) Execute
-#
-run_and_maybe_log
+##############################################################################
+# 5) Define & run tests
+##############################################################################
+
+run_tests() {
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
+  echo "1..7"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
+  run_test "ssh-add -l | grep -q id_ed25519" \
+           "ssh-agent running and id_ed25519 loaded" \
+           "ssh-add -l"
+  run_test "grep -q \"${GIT_SERVER}\" ~/.ssh/known_hosts" \
+           "known_hosts contains ${GIT_SERVER}" \
+           "grep \"${GIT_SERVER}\" ~/.ssh/known_hosts"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): checking local and remote repositories" >&2
+  run_test "[ -d \"${LOCAL_VAULT}/.git\" ]" \
+           "local vault is a Git repo" \
+           "ls -ld \"${LOCAL_VAULT}/.git\""
+  run_test "ssh ${GIT_USER}@${GIT_SERVER} [ -d \"${BARE_REPO}\" ]" \
+           "remote bare repo exists" \
+           "ssh ${GIT_USER}@${GIT_SERVER} ls -ld \"${BARE_REPO}\""
+  run_test "ssh ${GIT_USER}@${GIT_SERVER} [ -x \"${BARE_REPO}/hooks/post-receive\" ]" \
+           "post-receive hook is present and executable" \
+           "ssh ${GIT_USER}@${GIT_SERVER} ls -l \"${BARE_REPO}/hooks/post-receive\""
+  run_test "git -C \"${LOCAL_VAULT}\" pull origin" \
+           "git pull succeeds over SSH" \
+           "git -C \"${LOCAL_VAULT}\" status -s"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): creating and pushing test commit" >&2
+  cd "$LOCAL_VAULT" || return 1
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG: creating test commit in $LOCAL_VAULT" >&2
+  echo "# test $(date +%s)" >> test-sync.md
+  git add test-sync.md >/dev/null 2>&1
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    git commit -m "TDD sync test" >&2
+  else
+    git commit -m "TDD sync test" >/dev/null 2>&1
+  fi
+  run_test "git push origin HEAD" \
+           "git push succeeds over SSH" \
+           "git -C \"${LOCAL_VAULT}\" status -s"
+}
+
+run_tests
+
+##############################################################################
+# 6) Exit with status
+##############################################################################
+
+if [ "$TEST_FAILED" -ne 0 ]; then
+  exit 1
+else
+  exit 0
+fi
 
