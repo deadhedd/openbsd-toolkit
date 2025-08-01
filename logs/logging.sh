@@ -61,6 +61,12 @@ parse_logging_flags() {
         LOG_FILE="${1#*=}"
         shift
         ;;
+      --debug=*)
+        DEBUG_MODE=1
+        FORCE_LOG=1
+        LOG_FILE="${1#*=}"
+        shift
+        ;;
       --debug)
         DEBUG_MODE=1
         FORCE_LOG=1
