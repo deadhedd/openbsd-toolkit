@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: sh test_all.sh [--log[=FILE]] [--debug] [-h] [module1 module2 ...]
+# Usage: sh test_all.sh [--log[=FILE]] [--debug[=FILE]] [-h] [module1 module2 ...]
 #
 # Description:
 #   Executes each selected module's test.sh and reports a pass/fail summary.
@@ -60,7 +60,7 @@ show_help() {
 
   Options:
     -h, --help        Show this help message and exit
-    -d, --debug       Enable debug mode
+    -d, --debug       Enable debug mode (use --debug=FILE for custom file)
     -l, --log         Force log output (use --log=FILE for custom file)
 EOF
 }

@@ -5,7 +5,7 @@
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: sh test.sh [--log[=FILE]] [--debug] [-h]
+# Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #
 # Description:
 #   Runs TAP-style checks against the local Obsidian vault used for Git-based
@@ -44,7 +44,7 @@ show_help() {
 
   Options:
     -h, --help        Show this help message and exit
-    -d, --debug       Enable debug mode
+    -d, --debug       Enable debug mode (use --debug=FILE for custom file)
     -l, --log         Force log output (use --log=FILE for custom file)
 EOF
 }
