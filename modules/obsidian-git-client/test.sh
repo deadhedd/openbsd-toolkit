@@ -66,7 +66,7 @@ start_logging "$SCRIPT_PATH" "$@"
 # 3) Load secrets
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load_secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh"
 
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"

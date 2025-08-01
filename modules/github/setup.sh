@@ -78,7 +78,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 3) Inputs (secrets & constants) + validation
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load_secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh"
 DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 
 [ -f "$DEPLOY_KEY" ] || { echo "ERROR: deploy_key not found at $DEPLOY_KEY" >&2; exit 1; }

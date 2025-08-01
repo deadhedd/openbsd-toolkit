@@ -1,11 +1,11 @@
 - [x] Dump test results to a log file 
 - [x] create the obsidian user
 - [x] script configs for new failing tests
-- [x] fix organizational comments in test_obsidian_user
-- [x] add tests for the setup actions that dont currently have tests in test_obsidian_user
+- [x] fix organizational comments in test-obsidian-user
+- [x] add tests for the setup actions that dont currently have tests in test-obsidian-user
 - [x] Create a secrets file for configuring environment variable defaults
 - [x] implement secrets retreival in setup and test scripts
-- [x] add admin user setup to setup_system.sh
+- [x] add admin user setup to setup-system.sh
 - [x] update REG_USER usages to OBS_USER
 - [x] wrap work_tree setting in quotes 
 - [x] update the name STATIC_IP to GIT_SERVER

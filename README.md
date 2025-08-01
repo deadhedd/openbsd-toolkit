@@ -17,19 +17,19 @@ Alternatively, clone the repo manually:
 ```sh
 git clone https://github.com/deadhedd/openbsd-toolkit
 cd openbsd-toolkit
-sh install_modules.sh
+sh install-modules.sh
 ```
 
 Use `--help` for options:
 
 ```sh
-sh install_modules.sh --help
+sh install-modules.sh --help
 ```
 
 Then validate your setup:
 
 ```sh
-sh test_all.sh
+sh test-all.sh
 ```
 
 ---
@@ -66,8 +66,8 @@ openbsd-toolkit/
 │   └── <module>/
 │       ├── setup.sh  # Configures that module
 │       └── test.sh   # Verifies it works
-├── install_modules.sh  # Installs selected modules
-└── test_all.sh          # Runs all tests
+├── install-modules.sh  # Installs selected modules
+└── test-all.sh          # Runs all tests
 ```
 
 Modules are declared in `config/enabled_modules.conf`. Each module’s `setup.sh` and `test.sh` can be run independently or as part of a full stack install/test.
@@ -87,7 +87,7 @@ Each module:
 * Can be run independently
 * Can be toggled via `enabled_modules.conf`
 * Supports logging flags and will generate a separate log file when run on its own
-* When run via `install_modules.sh` or `test_all.sh`, logs are combined into a single output file
+* When run via `install-modules.sh` or `test-all.sh`, logs are combined into a single output file
 
 ---
 
@@ -102,7 +102,7 @@ sh modules/<module>/test.sh
 Run full system tests:
 
 ```sh
-sh test_all.sh
+sh test-all.sh
 ```
 
 Logs are saved to the `logs/` directory. By default, logs are only saved when a test fails.
