@@ -116,10 +116,12 @@ assert_file_perm() {
 ##############################################################################
 
 run_tests() {
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
   echo "1..15"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
+
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                "hostname.${INTERFACE} exists" \
            "ls -l /etc/hostname.${INTERFACE}"
   run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}$\" /etc/hostname.${INTERFACE}" \
@@ -150,6 +152,7 @@ run_tests() {
            "grep '^PasswordAuthentication' /etc/ssh/sshd_config"
   run_test "rcctl check sshd"                                                  "sshd service is running" \
            "ps -ax | grep '[s]shd'"
+
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \

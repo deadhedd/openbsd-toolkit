@@ -80,17 +80,21 @@ run_test() {
   desc="$2"
   inspect="$3"
   if [ "$DEBUG_MODE" -eq 1 ]; then
+
     echo "DEBUG(run_test): $desc -> $cmd" >&2
     if [ -n "$inspect" ]; then
       inspect_out="$(eval "$inspect" 2>&1 || true)"
       [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&2
+
     fi
   fi
   output="$(eval "$cmd" 2>&1)"
   status=$?
   if [ "$DEBUG_MODE" -eq 1 ]; then
+
     echo "DEBUG(run_test): exit_status=$status" >&2
     [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&2
+
   fi
   if [ $status -eq 0 ]; then
     echo "ok - $desc"
@@ -109,9 +113,11 @@ run_test() {
 ##############################################################################
 
 run_tests() {
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
   echo "1..7"
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
+
   run_test "ssh-add -l | grep -q id_ed25519" \
            "ssh-agent running and id_ed25519 loaded" \
            "ssh-add -l"
@@ -119,7 +125,9 @@ run_tests() {
            "known_hosts contains ${GIT_SERVER}" \
            "grep \"${GIT_SERVER}\" ~/.ssh/known_hosts"
 
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): checking local and remote repositories" >&2
+
   run_test "[ -d \"${LOCAL_VAULT}/.git\" ]" \
            "local vault is a Git repo" \
            "ls -ld \"${LOCAL_VAULT}/.git\""
@@ -140,6 +148,7 @@ run_tests() {
   git add test-sync.md >/dev/null 2>&1
   if [ "$DEBUG_MODE" -eq 1 ]; then
     git commit -m "TDD sync test" >&2
+
   else
     git commit -m "TDD sync test" >/dev/null 2>&1
   fi

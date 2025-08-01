@@ -93,10 +93,12 @@ run_test() {
   desc="$2"
   inspect="$3"
   if [ "$DEBUG_MODE" -eq 1 ]; then
+
     echo "DEBUG(run_test): $desc -> $cmd" >&2
     if [ -n "$inspect" ]; then
       inspect_out="$(eval "$inspect" 2>&1 || true)"
       [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&2
+
     fi
   fi
   output="$(eval "$cmd" 2>&1)"
@@ -104,6 +106,7 @@ run_test() {
   if [ "$DEBUG_MODE" -eq 1 ]; then
     echo "DEBUG(run_test): exit_status=$status" >&2
     [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&2
+
   fi
   if [ $status -eq 0 ]; then
     echo "ok - $desc"
@@ -143,6 +146,7 @@ run_tests() {
   run_test "command -v git"                                              "git is installed" "command -v git"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 users & group" >&2
+
   run_test "id ${OBS_USER}"                                              "user '${OBS_USER}' exists" "id ${OBS_USER}"
   assert_user_shell "${OBS_USER}" "/bin/ksh"                              "shell for '${OBS_USER}' is /bin/ksh"
   run_test "id ${GIT_USER}"                                              "user '${GIT_USER}' exists" "id ${GIT_USER}"
@@ -154,6 +158,7 @@ run_tests() {
            "id -nG ${GIT_USER}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 doas config" >&2
+
   run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists" \
            "ls -l /etc/doas.conf"
   run_test "grep -q \"^permit persist ${OBS_USER} as root\$\" /etc/doas.conf" \
@@ -170,6 +175,7 @@ run_tests() {
            "stat -f '%Su:%Sg' /etc/doas.conf"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.1 SSH service & config" >&2
+
   run_test "grep -q \"^AllowUsers ${OBS_USER} ${GIT_USER}\$\" /etc/ssh/sshd_config" \
            "sshd_config has AllowUsers" \
            "grep '^AllowUsers' /etc/ssh/sshd_config"
@@ -177,6 +183,7 @@ run_tests() {
            "pgrep -ax sshd || true"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 .ssh directories" >&2
+
   run_test "[ -d /home/${GIT_USER}/.ssh ]"                                  "ssh dir for ${GIT_USER} exists" \
            "ls -ld /home/${GIT_USER}/.ssh"
   assert_file_perm "/home/${GIT_USER}/.ssh" "700"                            "ssh dir perms for ${GIT_USER}"
@@ -191,6 +198,7 @@ run_tests() {
            "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${GIT_USER}" >&2
+
   run_test "[ -f /home/${GIT_USER}/.ssh/authorized_keys ]"                           "authorized_keys for ${GIT_USER} exists" \
            "ls -l /home/${GIT_USER}/.ssh/authorized_keys"
   assert_file_perm "/home/${GIT_USER}/.ssh/authorized_keys" "600"                     "authorized_keys perms for ${GIT_USER}"
@@ -199,6 +207,7 @@ run_tests() {
            "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${OBS_USER}" >&2
+
   run_test "[ -f ${OBS_HOME}/.ssh/authorized_keys ]"                                  "authorized_keys for ${OBS_USER} exists" \
            "ls -l ${OBS_HOME}/.ssh/authorized_keys"
   assert_file_perm "${OBS_HOME}/.ssh/authorized_keys"             "600"               "authorized_keys perms for ${OBS_USER}"
@@ -207,6 +216,7 @@ run_tests() {
            "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.3 known hosts for ${OBS_USER}" >&2
+
   run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                                      "known_hosts for ${OBS_USER} exists" \
            "ls -l ${OBS_HOME}/.ssh/known_hosts"
   assert_file_perm "${OBS_HOME}/.ssh/known_hosts"               "644"                  "known_hosts perms for ${OBS_USER}"
@@ -221,6 +231,7 @@ run_tests() {
            "ls -ld ${BARE_REPO}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 git configs" >&2
+
   check_entry "/home/${GIT_USER}/.gitconfig"       "${BARE_REPO}"             "${GIT_USER}"
   check_entry "/home/${GIT_USER}/.gitconfig"       "${OBS_HOME}/vaults/${VAULT}" "${GIT_USER}"
   check_entry "${OBS_HOME}/.gitconfig"             "${OBS_HOME}/vaults/${VAULT}" "${OBS_USER}"
@@ -230,7 +241,9 @@ run_tests() {
            "config file sets 'sharedRepository = group' under [core]" \
            "grep 'sharedRepository' ${BARE_REPO}/config"
 
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 10 post-receive hook" >&2
+
   run_test "[ -x ${BARE_REPO}/hooks/post-receive ]"                          "post-receive hook executable" \
            "ls -l ${BARE_REPO}/hooks/post-receive"
   run_test "grep -q '^#!/bin/sh\$' ${BARE_REPO}/hooks/post-receive"           "hook shebang correct" \
@@ -244,7 +257,9 @@ run_tests() {
   run_test "grep -q '^exit 0\$' ${BARE_REPO}/hooks/post-receive"             "hook: exits cleanly" \
            "tail -n 1 ${BARE_REPO}/hooks/post-receive"
 
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 11 working copy clone" >&2
+
   run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]"                          "working clone exists" \
            "ls -ld ${OBS_HOME}/vaults/${VAULT}/.git"
   run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} remote get-url origin | grep -q '${BARE_REPO}'\"" \
@@ -255,6 +270,7 @@ run_tests() {
            "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B\""
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 12 final perms on bare repo" >&2
+
   run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'" \
            "stat -f '%Su:%Sg' ${BARE_REPO}"
   # Debug helpers (uncomment for troubleshooting)
@@ -276,6 +292,7 @@ run_tests() {
            "find ${BARE_REPO} -type d -not -perm -g+s -print | head -n 20"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 history settings" >&2
+
   run_test "grep -q '^export HISTFILE=/home/${OBS_USER}/.ksh_history\$' /home/${OBS_USER}/.profile" \
            "HISTFILE export in ${OBS_USER} .profile" \
            "grep 'HISTFILE' /home/${OBS_USER}/.profile"

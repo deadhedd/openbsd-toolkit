@@ -117,6 +117,7 @@ run_test() {
 # 5) Define & run tests
 ##############################################################################
 run_tests() {
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting github tests" >&2
   echo "1..7"
 
@@ -133,6 +134,7 @@ run_tests() {
            "grep '^github\\.com' /root/.ssh/known_hosts"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 repo bootstrap" >&2
+
   run_test "[ -d \"$LOCAL_DIR/.git\" ]"                                          "repository was cloned" \
            "ls -ld \"$LOCAL_DIR/.git\""
   run_test "grep -q \"url = $GITHUB_REPO\" \"$LOCAL_DIR/.git/config\""           "remote origin set correctly" \
