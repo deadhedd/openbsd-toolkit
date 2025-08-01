@@ -85,17 +85,17 @@ run_test() {
   desc="$2"
   inspect="$3"
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(run_test): $desc -> $cmd" >&3
+    echo "DEBUG(run_test): $desc -> $cmd" >&2
     if [ -n "$inspect" ]; then
       inspect_out="$(eval "$inspect" 2>&1 || true)"
-      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&3
+      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&2
     fi
   fi
   output="$(eval "$cmd" 2>&1)"
   status=$?
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(run_test): exit_status=$status" >&3
-    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&3
+    echo "DEBUG(run_test): exit_status=$status" >&2
+    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&2
   fi
   if [ $status -eq 0 ]; then
     echo "ok - $desc"
@@ -116,10 +116,12 @@ assert_file_perm() {
 ##############################################################################
 
 run_tests() {
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&3
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
   echo "1..15"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
+
   run_test "[ -f /etc/hostname.${INTERFACE} ]"                                "hostname.${INTERFACE} exists" \
            "ls -l /etc/hostname.${INTERFACE}"
   run_test "grep -q \"^inet ${GIT_SERVER} ${NETMASK}$\" /etc/hostname.${INTERFACE}" \
@@ -137,13 +139,13 @@ run_tests() {
            "grep 'nameserver' /etc/resolv.conf"
   assert_file_perm "/etc/resolv.conf" "644"                                   "resolv.conf mode is 644"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 apply networking" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 apply networking" >&2
   run_test "ifconfig ${INTERFACE} | grep -q \"inet ${GIT_SERVER}\""            "interface up with correct IP" \
            "ifconfig ${INTERFACE}"
   run_test "netstat -rn | grep -q '^default[[:space:]]*${GATEWAY}'"            "default route via ${GATEWAY}" \
            "netstat -rn"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 SSH hardening" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 SSH hardening" >&2
   run_test "grep -q '^PermitRootLogin no' /etc/ssh/sshd_config"               "sshd_config disallows root login" \
            "grep '^PermitRootLogin' /etc/ssh/sshd_config"
   run_test "grep -q '^PasswordAuthentication no' /etc/ssh/sshd_config"        "sshd_config disallows password auth" \
@@ -151,7 +153,8 @@ run_tests() {
   run_test "rcctl check sshd"                                                  "sshd service is running" \
            "ps -ax | grep '[s]shd'"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&3
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \
            "grep '^export HISTFILE' /root/.profile"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE" \

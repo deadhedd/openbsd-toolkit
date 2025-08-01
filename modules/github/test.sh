@@ -89,17 +89,17 @@ run_test() {
   desc="$2"
   inspect="$3"
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(run_test): $desc -> $cmd" >&3
+    echo "DEBUG(run_test): $desc -> $cmd" >&2
     if [ -n "$inspect" ]; then
       inspect_out="$(eval "$inspect" 2>&1 || true)"
-      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&3
+      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&2
     fi
   fi
   output="$(eval "$cmd" 2>&1)"
   status=$?
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(run_test): exit_status=$status" >&3
-    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&3
+    echo "DEBUG(run_test): exit_status=$status" >&2
+    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&2
   fi
   if [ $status -eq 0 ]; then
     echo "ok - $desc"
@@ -117,10 +117,11 @@ run_test() {
 # 5) Define & run tests
 ##############################################################################
 run_tests() {
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting github tests" >&3
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting github tests" >&2
   echo "1..7"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 SSH setup" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 SSH setup" >&2
   run_test "[ -d /root/.ssh ]"                                                  "root .ssh directory exists" \
            "ls -ld /root/.ssh"
   run_test "[ -f /root/.ssh/id_ed25519 ]"                                        "deploy key present" \
@@ -132,7 +133,8 @@ run_tests() {
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                     "known_hosts contains GitHub" \
            "grep '^github\\.com' /root/.ssh/known_hosts"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 repo bootstrap" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 repo bootstrap" >&2
+
   run_test "[ -d \"$LOCAL_DIR/.git\" ]"                                          "repository was cloned" \
            "ls -ld \"$LOCAL_DIR/.git\""
   run_test "grep -q \"url = $GITHUB_REPO\" \"$LOCAL_DIR/.git/config\""           "remote origin set correctly" \

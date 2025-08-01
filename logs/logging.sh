@@ -74,8 +74,8 @@ parse_logging_flags() {
   export FORCE_LOG DEBUG_MODE LOG_FILE TEST_FAILED REMAINING_ARGS
 
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(parse_logging_flags): raw args=$raw_args" >&3
-    echo "DEBUG(parse_logging_flags): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&3
+    echo "DEBUG(parse_logging_flags): raw args=$raw_args" >&2
+    echo "DEBUG(parse_logging_flags): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&2
   fi
 }
 
@@ -123,7 +123,7 @@ start_logging_if_debug() {
 init_logging() {
   context="$1"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): context='$context'" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): context='$context'" >&2
 
   # Derive PROJECT_ROOT if not pre-set
   if [ -z "$PROJECT_ROOT" ]; then
@@ -136,12 +136,12 @@ init_logging() {
       PROJECT_ROOT="$SCRIPT_DIR"
     fi
   else
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): PROJECT_ROOT pre-set to '$PROJECT_ROOT'" >&3
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): PROJECT_ROOT pre-set to '$PROJECT_ROOT'" >&2
   fi
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): PROJECT_ROOT='$PROJECT_ROOT'" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): PROJECT_ROOT='$PROJECT_ROOT'" >&2
 
   LOG_DIR="$PROJECT_ROOT/logs"
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): creating LOG_DIR='$LOG_DIR'" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): creating LOG_DIR='$LOG_DIR'" >&2
   mkdir -p "$LOG_DIR"
 
   if [ -z "$LOG_FILE" ]; then
@@ -157,19 +157,19 @@ init_logging() {
     fi
 
     LOG_FILE="$LOG_DIR/${base_context}-${timestamp}.log"
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): default LOG_FILE='$LOG_FILE'" >&3
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): default LOG_FILE='$LOG_FILE'" >&2
   else
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): provided LOG_FILE='$LOG_FILE'" >&3
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): provided LOG_FILE='$LOG_FILE'" >&2
   fi
   export LOG_FILE
 
   if [ "$FORCE_LOG" -eq 1 ]; then
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): redirecting output to '$LOG_FILE'" >&3
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): enabling xtrace" >&3 && set -x
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): redirecting output to '$LOG_FILE'" >&2
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): enabling xtrace" >&2 && set -x
     exec >>"$LOG_FILE" 2>&1
   else
     LOG_TMP="$(mktemp /tmp/logtmp.XXXXXXXX)"
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): buffering into '$LOG_TMP'" >&3
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): buffering into '$LOG_TMP'" >&2
     export LOG_TMP
     exec >"$LOG_TMP" 2>&1
   fi
@@ -184,22 +184,22 @@ init_logging() {
 mark_test_failed() {
   TEST_FAILED=1
   export TEST_FAILED
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(mark_test_failed): TEST_FAILED=1" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(mark_test_failed): TEST_FAILED=1" >&2
 }
 
 finalize_logging() {
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): DM=$DEBUG_MODE, FL=$FORCE_LOG, TF=$TEST_FAILED" >&3
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): DM=$DEBUG_MODE, FL=$FORCE_LOG, TF=$TEST_FAILED" >&2
 
   if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ] || [ "$TEST_FAILED" -eq 1 ]; then
     if [ -n "$LOG_TMP" ] && [ -f "$LOG_TMP" ]; then
-      [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): appending '$LOG_TMP' to '$LOG_FILE'" >&3
+      [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): appending '$LOG_TMP' to '$LOG_FILE'" >&2
       cat "$LOG_TMP" >>"$LOG_FILE"
       rm -f "$LOG_TMP"
-      [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removed temp file" >&3
+      [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removed temp file" >&2
     fi
     echo "Logs written to $LOG_FILE" >&3
   else
-    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removing temp file '$LOG_TMP'" >&3
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removing temp file '$LOG_TMP'" >&2
     rm -f "$LOG_TMP"
   fi
   exec 1>&3 2>&3   # Restore stdout/stderr for any further output
