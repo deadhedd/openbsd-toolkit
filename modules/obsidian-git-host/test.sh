@@ -206,11 +206,12 @@ run_tests() {
 
   ### Section 12) Final perms on bare repo (6)
   run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'"
-echo "DEBUG: GIT_USER='${GIT_USER}', BARE_REPO='${BARE_REPO}'"
-echo "first ownership violation, if any:"
-find "$BARE_REPO" \( ! -user "$GIT_USER" -o ! -group vault \) -print -ls | head -n 20
-echo "raw exit status of the find pipeline (nithout !):"
-find "$BARE_REPO" \( ! -user "$GIT_USER" -o ! -group vault \) -print | grep -q .; echo "grep exit=$?"
+  # Debug helpers (uncomment for troubleshooting)
+  # echo "GIT_USER='${GIT_USER}', BARE_REPO='${BARE_REPO}'"
+  # echo "first ownership violation, if any:"
+  # find "$BARE_REPO" \( ! -user "$GIT_USER" -o ! -group vault \) -print -ls | head -n 20
+  # echo "raw exit status of the find pipeline (without !):"
+  # find "$BARE_REPO" \( ! -user "$GIT_USER" -o ! -group vault \) -print | grep -q .; echo "grep exit=$?"
   run_test "! find ${BARE_REPO} \( -not -user ${GIT_USER} -or -not -group vault \) -print | grep -q ." \
            "all files under '${BARE_REPO}' are owned by ${GIT_USER}:vault"
   run_test "! find ${BARE_REPO} -not -perm -g=r -print | grep -q ."          "all entries under '${BARE_REPO}' are group-readable"
