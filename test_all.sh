@@ -52,7 +52,7 @@ export PROJECT_ROOT MODULE_DIR
 ##############################################################################
 
 show_help() {
-  cat <<-EOF
+  cat <<EOF
   Usage: sh $(basename "$0") [options]
 
   Description:
