@@ -1,11 +1,11 @@
 #!/bin/sh
 #
-# install_modules.sh — Install specified modules, or all in enabled_modules.conf
+# install-modules.sh — Install specified modules, or all in enabled_modules.conf
 # Author: deadhedd
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: sh install_modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
+# Usage: sh install-modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 #
 # Description:
 #   Runs each module's setup script in order. If no modules are given on the
@@ -22,7 +22,7 @@
 #
 # See also:
 #   - modules/ (each module contains its own setup.sh and test.sh)
-#   - test_all.sh
+#   - test-all.sh
 #   - logs/logging.sh
 #   - config/enabled_modules.conf
 #   - config/load-secrets.sh

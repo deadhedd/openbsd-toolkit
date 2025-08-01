@@ -1,11 +1,11 @@
 #!/bin/sh
 #
-# test_all.sh — Run tests for specified modules, enabled_modules.conf, or all modules
+# test-all.sh — Run tests for specified modules, enabled_modules.conf, or all modules
 # Author: deadhedd
 # Version: 1.0.0
 # Updated: 2025-07-28
 #
-# Usage: sh test_all.sh [--log[=FILE]] [--debug[=FILE]] [-h] [module1 module2 ...]
+# Usage: sh test-all.sh [--log[=FILE]] [--debug[=FILE]] [-h] [module1 module2 ...]
 #
 # Description:
 #   Executes each selected module's test.sh and reports a pass/fail summary.
@@ -23,7 +23,7 @@
 #
 # See also:
 #   - modules/ (each module contains setup.sh and test.sh)
-#   - install_modules.sh
+#   - install-modules.sh
 #   - logs/logging.sh
 #   - config/enabled_modules.conf
 #   - config/load-secrets.sh
@@ -81,7 +81,7 @@ eval "set -- $REMAINING_ARGS"
 init_logging "test-all"
 
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  echo "DEBUG(test_all): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&2
+  echo "DEBUG(test-all): FORCE_LOG=$FORCE_LOG, DEBUG_MODE=$DEBUG_MODE, LOG_FILE='$LOG_FILE'" >&2
 fi
 
 # Flags to forward to module tests
@@ -99,17 +99,17 @@ fi
 if [ "$#" -gt 0 ]; then
   MODULES="$*"
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(test_all): modules from args -> $MODULES" >&2
+    echo "DEBUG(test-all): modules from args -> $MODULES" >&2
   fi
 elif [ -f "$PROJECT_ROOT/config/enabled_modules.conf" ]; then
   MODULES="$(grep -Ev '^[[:space:]]*(#|$)' "$PROJECT_ROOT/config/enabled_modules.conf")"
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(test_all): modules from enabled_modules.conf -> $MODULES" >&2
+    echo "DEBUG(test-all): modules from enabled_modules.conf -> $MODULES" >&2
   fi
 else
   MODULES="$(for d in "$MODULE_DIR"/*; do [ -d "$d" ] && basename "$d"; done)"
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(test_all): modules from directory scan -> $MODULES" >&2
+    echo "DEBUG(test-all): modules from directory scan -> $MODULES" >&2
   fi
 fi
 
@@ -121,13 +121,13 @@ fail=0
 for mod in $MODULES; do
   echo "Running tests for '$mod' ..."
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(test_all): invoking $MODULE_DIR/$mod/test.sh $FORWARD_FLAGS" >&2
+    echo "DEBUG(test-all): invoking $MODULE_DIR/$mod/test.sh $FORWARD_FLAGS" >&2
   fi
 
   sh "$MODULE_DIR/$mod/test.sh" $FORWARD_FLAGS
   rc=$?
   if [ "$DEBUG_MODE" -eq 1 ]; then
-    echo "DEBUG(test_all): '$mod' exited with $rc" >&2
+    echo "DEBUG(test-all): '$mod' exited with $rc" >&2
   fi
 
   if [ "$rc" -ne 0 ]; then
@@ -144,7 +144,7 @@ done
 ##############################################################################
 
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  echo "DEBUG(test_all): overall fail status = $fail" >&2
+  echo "DEBUG(test-all): overall fail status = $fail" >&2
 fi
 if [ "$fail" -ne 0 ]; then
   echo "Some tests FAILED - see log at $LOG_FILE"
@@ -153,8 +153,8 @@ else
 fi
 
 if [ "$DEBUG_MODE" -eq 1 ]; then
-  echo "DEBUG(test_all): exiting with code $fail" >&2
-  echo "DEBUG(test_all): calling finalize_logging" >&2
+  echo "DEBUG(test-all): exiting with code $fail" >&2
+  echo "DEBUG(test-all): calling finalize_logging" >&2
 fi
 finalize_logging
 [ "$fail" -ne 0 ] && exit 1 || exit 0

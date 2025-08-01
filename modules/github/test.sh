@@ -78,8 +78,8 @@ start_logging "$SCRIPT_PATH" "$@"
 # 3) Load secrets
 ##############################################################################
 
-# shellcheck source=config/load_secrets.sh
-. "$PROJECT_ROOT/config/load_secrets.sh"
+# shellcheck source=config/load-secrets.sh
+. "$PROJECT_ROOT/config/load-secrets.sh"
 
 ##############################################################################
 # 4) Test helpers

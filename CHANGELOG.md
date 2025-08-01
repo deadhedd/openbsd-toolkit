@@ -57,7 +57,7 @@ All notable changes to this project will be documented in this file following [K
 * **Pre-1.0 Polish**
 
   * Consolidated redundant user creation logic.
-  * Polished `setup.sh` and `install_modules.sh` usage text and logging defaults.
+  * Polished `setup.sh` and `install-modules.sh` usage text and logging defaults.
 
 ---
 
@@ -127,7 +127,7 @@ All notable changes to this project will be documented in this file following [K
 
 ### Test Runner Reliability
 
-* `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
+* `test-all.sh` now continues through all suites even if one fails, so you get a full report in one run.
 
 ### GitHub Test Additions
 
@@ -152,7 +152,7 @@ All notable changes to this project will be documented in this file following [K
 
 ### Package and Doas Test Relocation
 
-* Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
+* Package installation and `doas.conf` permission/ownership tests are now in `test-obsidian-git.sh`.
 
 ### Obsidian Git Test Expansion
 
@@ -165,7 +165,7 @@ All notable changes to this project will be documented in this file following [K
 
 ### Setup Script Alignment
 
-* Added or moved all corresponding configuration blocks into `setup_system.sh` and `setup_obsidian_git.sh` so new tests pass out-of-the-box.
+* Added or moved all corresponding configuration blocks into `setup-system.sh` and `setup-obsidian-git.sh` so new tests pass out-of-the-box.
 
 ---
 
@@ -180,11 +180,11 @@ All notable changes to this project will be documented in this file following [K
 
 * Configures **both** `git` and `obsidian` users (instead of only `git`).
 * Blank initial passwords assigned for both users (can be pulled from a secrets file).
-* Fixed the bug in `setup_obsidian_git.sh` that this change introduced.
+* Fixed the bug in `setup-obsidian-git.sh` that this change introduced.
 
 ### Refactor and Sync Code
 
-* Moved missing code blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
+* Moved missing code blocks from `setup-all.sh` into `setup-obsidian-git.sh`.
 * Mirrored those changes in the corresponding test scripts for consistency.
 
 ---
@@ -195,12 +195,12 @@ All notable changes to this project will be documented in this file following [K
 
 * Split monolithic scripts into modular components:
 
-  * `setup_system.sh`, `setup_obsidian_git.sh`, `setup_github.sh`
-  * `test_system.sh`, `test_obsidian_git.sh`, `test_github.sh`
+  * `setup-system.sh`, `setup-obsidian-git.sh`, `setup-github.sh`
+  * `test-system.sh`, `test-obsidian-git.sh`, `test-github.sh`
 
 ### Wrapper Script Additions
 
-* Introduced `setup_all.sh` and `test_all.sh` for full automation.
+* Introduced `setup-all.sh` and `test-all.sh` for full automation.
 
 ### General Improvements
 
