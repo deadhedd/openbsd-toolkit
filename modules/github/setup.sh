@@ -41,7 +41,7 @@ export PROJECT_ROOT
 ##############################################################################
 
 show_help() {
-  cat <<-EOF
+  cat <<EOF
   Usage: sh $(basename "$0") [options]
 
   Description:

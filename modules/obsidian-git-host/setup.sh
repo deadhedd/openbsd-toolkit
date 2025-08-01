@@ -39,7 +39,7 @@ export PROJECT_ROOT
 ##############################################################################
 
 show_help() {
-  cat <<-EOF
+  cat <<EOF
   Usage: sh $(basename "$0") [options]
 
   Description:
@@ -108,7 +108,7 @@ usermod -G vault "$GIT_USER"
 # 6) doas config
 ##############################################################################
 
-cat > /etc/doas.conf <<-EOF
+cat > /etc/doas.conf <<EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
 permit nopass ${GIT_USER} as ${OBS_USER} cmd git*
@@ -179,7 +179,7 @@ done
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
 HOOK="$BARE_REPO/hooks/post-receive"
 
-cat > "$HOOK" <<-EOF
+cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
 su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR checkout -f \$SHA"
@@ -218,7 +218,7 @@ find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
-  cat <<-EOF >> "$PROFILE"
+  cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups
