@@ -61,9 +61,9 @@ Directory layout:
 ```
 openbsd-toolkit/
 ├── config/           # Secrets and module selection
-├── logs/             # Auto-created during runs
+├── logs/             # Contains logging.sh and generated log files
 ├── modules/          # One folder per module
-│   └── <module>/     
+│   └── <module>/
 │       ├── setup.sh  # Configures that module
 │       └── test.sh   # Verifies it works
 ├── install_modules.sh  # Installs selected modules
