@@ -18,9 +18,10 @@
 #   has already been completed.
 #
 # Security note:
-#   Enabling the --debug flag will log all executed commands *and their expanded
-#   values* (via `set -vx`), including any exported secrets or credentials.
-#   Use caution when sharing or retaining debug logs.
+#   Enabling the --debug flag will log all executed commands (via `set -x`).
+#   Setup scripts still log expanded values via `set -vx`, which may include
+#   exported secrets or credentials. Use caution when sharing or retaining
+#   debug logs.
 #
 # See also:
 #   - modules/base-system/setup.sh
