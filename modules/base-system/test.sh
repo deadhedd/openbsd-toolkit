@@ -80,9 +80,6 @@ start_logging "$SCRIPT_PATH" "$@"
 # 4) Test helpers
 ##############################################################################
 
-echo "stdout: hello world"
-echo "stderr: uh oh" >&2
-
 run_test() {
   desc="$2"
   output="$(eval "$1" 2>&1)"
