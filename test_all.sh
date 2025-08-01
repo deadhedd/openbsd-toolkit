@@ -153,11 +153,8 @@ else
 fi
 
 if [ "$DEBUG_MODE" -eq 1 ]; then
+  echo "DEBUG(test_all): exiting with code $fail" >&3
   echo "DEBUG(test_all): calling finalize_logging" >&3
 fi
 finalize_logging
-
-if [ "$DEBUG_MODE" -eq 1 ]; then
-  echo "DEBUG(test_all): exiting with code $fail" >&3
-fi
 [ "$fail" -ne 0 ] && exit 1 || exit 0
