@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file following [K
 
 * Dropped `set -v` from test scripts, now using `set -x` while setup scripts
   continue to leverage `set -vx` for expanded command logging.
+* Added support for `--debug=FILE` to direct debug output to a custom log file.
 
 ## v1.0 – Initial Stable Release (2025-07-26)
 
