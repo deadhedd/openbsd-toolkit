@@ -89,26 +89,46 @@ WORK_TREE="${OBS_HOME}/vaults/${VAULT}"
 ##############################################################################
 
 run_test() {
+  cmd="$1"
   desc="$2"
-  if eval "$1" >/dev/null 2>&1; then
+  inspect="$3"
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    echo "DEBUG(run_test): $desc -> $cmd" >&3
+    if [ -n "$inspect" ]; then
+      inspect_out="$(eval "$inspect" 2>&1 || true)"
+      [ -n "$inspect_out" ] && printf '%s\n' "DEBUG(run_test): inspect ->\n$inspect_out" >&3
+    fi
+  fi
+  output="$(eval "$cmd" 2>&1)"
+  status=$?
+  if [ "$DEBUG_MODE" -eq 1 ]; then
+    echo "DEBUG(run_test): exit_status=$status" >&3
+    [ -n "$output" ] && printf '%s\n' "DEBUG(run_test): output ->\n$output" >&3
+  fi
+  if [ $status -eq 0 ]; then
     echo "ok - $desc"
   else
     echo "not ok - $desc"
+    [ -n "$output" ] && {
+      echo "# ── Output for failed test: $desc ──"
+      echo "$output" | sed 's/^/# /'
+    }
     mark_test_failed
   fi
 }
 
 assert_file_perm() {
-  run_test "stat -f '%Lp' \"$1\" | grep -q '^$2\$'" "$3"
+  run_test "stat -f '%Lp' \"$1\" | grep -q '^$2$'" "$3" "stat -f '%Sp' \"$1\""
 }
 
 assert_user_shell() {
-  run_test "grep -q \"^$1:.*:$2\$\" /etc/passwd" "$3"
+  run_test "grep -q \"^$1:.*:$2\$\" /etc/passwd" "$3" "grep \"^$1:\" /etc/passwd"
 }
 
 check_entry() {
   run_test "git config --file \"$1\" --get-all safe.directory | grep -Fxq \"$2\"" \
-           "safe.directory for $3: $2"
+           "safe.directory for $3: $2" \
+           "git config --file \"$1\" --get-all safe.directory"
 }
 
 ##############################################################################
@@ -116,96 +136,127 @@ check_entry() {
 ##############################################################################
 
 run_tests() {
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&3
   echo "1..58"
 
-  ### Section 4) Packages (1)
-  run_test "command -v git"                                              "git is installed"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 packages" >&3
+  run_test "command -v git"                                              "git is installed" "command -v git"
 
-  ### Section 5) Users & group (7)
-  run_test "id ${OBS_USER}"                                              "user '${OBS_USER}' exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 5 users & group" >&3
+  run_test "id ${OBS_USER}"                                              "user '${OBS_USER}' exists" "id ${OBS_USER}"
   assert_user_shell "${OBS_USER}" "/bin/ksh"                              "shell for '${OBS_USER}' is /bin/ksh"
-  run_test "id ${GIT_USER}"                                              "user '${GIT_USER}' exists"
+  run_test "id ${GIT_USER}"                                              "user '${GIT_USER}' exists" "id ${GIT_USER}"
   assert_user_shell "${GIT_USER}" "/usr/local/bin/git-shell"             "shell for '${GIT_USER}' is git-shell"
-  run_test "getent group vault"                                          "group 'vault' exists"
-  run_test "id -nG ${OBS_USER} | grep -qw vault"                         "user '${OBS_USER}' is in group 'vault'"
-  run_test "id -nG ${GIT_USER} | grep -qw vault"                         "user '${GIT_USER}' is in group 'vault'"
+  run_test "getent group vault"                                          "group 'vault' exists" "getent group vault"
+  run_test "id -nG ${OBS_USER} | grep -qw vault"                         "user '${OBS_USER}' is in group 'vault'" \
+           "id -nG ${OBS_USER}"
+  run_test "id -nG ${GIT_USER} | grep -qw vault"                         "user '${GIT_USER}' is in group 'vault'" \
+           "id -nG ${GIT_USER}"
 
-  ### Section 6) doas config (6)
-  run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 doas config" >&3
+  run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists" \
+           "ls -l /etc/doas.conf"
   run_test "grep -q \"^permit persist ${OBS_USER} as root\$\" /etc/doas.conf" \
-           "doas.conf allows persist ${OBS_USER}"
+           "doas.conf allows persist ${OBS_USER}" \
+           "grep '\^permit' /etc/doas.conf"
   run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\\\$\" /etc/doas.conf" \
-           "doas.conf allows nopass ${GIT_USER} for git"
+           "doas.conf allows nopass ${GIT_USER} for git" \
+           "grep '${GIT_USER}' /etc/doas.conf"
   run_test "grep -q \"^permit nopass ${GIT_USER} as ${OBS_USER} cmd git\\*\\\$\" /etc/doas.conf" \
-           "doas.conf allows nopass ${GIT_USER} for working clone"
+           "doas.conf allows nopass ${GIT_USER} for working clone" \
+           "grep '${GIT_USER}' /etc/doas.conf"
   assert_file_perm "/etc/doas.conf" "440"                                  "/etc/doas.conf has mode 440"
-  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"       "/etc/doas.conf owned by root:wheel"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"       "/etc/doas.conf owned by root:wheel" \
+           "stat -f '%Su:%Sg' /etc/doas.conf"
 
-  ### Section 7) SSH hardening & per-user SSH dirs
-
-  # 7.1 SSH Service & Config (2)
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.1 SSH service & config" >&3
   run_test "grep -q \"^AllowUsers ${OBS_USER} ${GIT_USER}\$\" /etc/ssh/sshd_config" \
-           "sshd_config has AllowUsers"
-  run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running"
-  
-  # 7.2 .ssh Directories and authorized users (6)
-  run_test "[ -d /home/${GIT_USER}/.ssh ]"                                  "ssh dir for ${GIT_USER} exists"
+           "sshd_config has AllowUsers" \
+           "grep '^AllowUsers' /etc/ssh/sshd_config"
+  run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
+           "pgrep -ax sshd || true"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 .ssh directories" >&3
+  run_test "[ -d /home/${GIT_USER}/.ssh ]"                                  "ssh dir for ${GIT_USER} exists" \
+           "ls -ld /home/${GIT_USER}/.ssh"
   assert_file_perm "/home/${GIT_USER}/.ssh" "700"                            "ssh dir perms for ${GIT_USER}"
   run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
-           "ssh dir owner for ${GIT_USER}"
-  run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists"
+           "ssh dir owner for ${GIT_USER}" \
+           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh"
+  run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists" \
+           "ls -ld ${OBS_HOME}/.ssh"
   assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "ssh dir owner for ${OBS_USER}"
+           "ssh dir owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh"
 
-  # authorized_keys for GIT_USER (3)
-  run_test "[ -f /home/${GIT_USER}/.ssh/authorized_keys ]"                           "authorized_keys for ${GIT_USER} exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${GIT_USER}" >&3
+  run_test "[ -f /home/${GIT_USER}/.ssh/authorized_keys ]"                           "authorized_keys for ${GIT_USER} exists" \
+           "ls -l /home/${GIT_USER}/.ssh/authorized_keys"
   assert_file_perm "/home/${GIT_USER}/.ssh/authorized_keys" "600"                     "authorized_keys perms for ${GIT_USER}"
   run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
-           "authorized_keys owner for ${GIT_USER}"
+           "authorized_keys owner for ${GIT_USER}" \
+           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
 
-  # authorized_keys for OBS_USER (3)
-  run_test "[ -f ${OBS_HOME}/.ssh/authorized_keys ]"                                  "authorized_keys for ${OBS_USER} exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${OBS_USER}" >&3
+  run_test "[ -f ${OBS_HOME}/.ssh/authorized_keys ]"                                  "authorized_keys for ${OBS_USER} exists" \
+           "ls -l ${OBS_HOME}/.ssh/authorized_keys"
   assert_file_perm "${OBS_HOME}/.ssh/authorized_keys"             "600"               "authorized_keys perms for ${OBS_USER}"
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "authorized_keys owner for ${OBS_USER}"
+           "authorized_keys owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
 
-  # 7.3 Known Hosts (OBS_USER only) (4)
-  run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                                      "known_hosts for ${OBS_USER} exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.3 known hosts for ${OBS_USER}" >&3
+  run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                                      "known_hosts for ${OBS_USER} exists" \
+           "ls -l ${OBS_HOME}/.ssh/known_hosts"
   assert_file_perm "${OBS_HOME}/.ssh/known_hosts"               "644"                  "known_hosts perms for ${OBS_USER}"
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "known_hosts owner for ${OBS_USER}"
-  run_test "grep -q \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"                   "known_hosts contains entry for ${GIT_SERVER}"
+           "known_hosts owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts"
+  run_test "grep -q \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"                   "known_hosts contains entry for ${GIT_SERVER}" \
+           "grep \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"
 
-  ### Section 8) Repo paths & bare init (1)
-  run_test "[ -d ${BARE_REPO} ]"                                             "bare repository exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 repo paths & bare init" >&3
+  run_test "[ -d ${BARE_REPO} ]"                                             "bare repository exists" \
+           "ls -ld ${BARE_REPO}"
 
-  ### Section 9) Git configs (safe.directory & sharedRepository) (5)
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 git configs" >&3
   check_entry "/home/${GIT_USER}/.gitconfig"       "${BARE_REPO}"             "${GIT_USER}"
   check_entry "/home/${GIT_USER}/.gitconfig"       "${OBS_HOME}/vaults/${VAULT}" "${GIT_USER}"
   check_entry "${OBS_HOME}/.gitconfig"             "${OBS_HOME}/vaults/${VAULT}" "${OBS_USER}"
-  run_test "grep -q '^\[core\]\$' ${BARE_REPO}/config"                       "config file contains '[core]' section"
+  run_test "grep -q '^\[core\]\$' ${BARE_REPO}/config"                       "config file contains '[core]' section" \
+           "grep '^\[core\]' ${BARE_REPO}/config"
   run_test "grep -q '^[[:space:]]*sharedRepository = group\$' ${BARE_REPO}/config" \
-           "config file sets 'sharedRepository = group' under [core]"
+           "config file sets 'sharedRepository = group' under [core]" \
+           "grep 'sharedRepository' ${BARE_REPO}/config"
 
-  ### Section 10) Post-receive hook (5)
-  run_test "[ -x ${BARE_REPO}/hooks/post-receive ]"                          "post-receive hook executable"
-  run_test "grep -q '^#!/bin/sh\$' ${BARE_REPO}/hooks/post-receive"           "hook shebang correct"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 10 post-receive hook" >&3
+  run_test "[ -x ${BARE_REPO}/hooks/post-receive ]"                          "post-receive hook executable" \
+           "ls -l ${BARE_REPO}/hooks/post-receive"
+  run_test "grep -q '^#!/bin/sh\$' ${BARE_REPO}/hooks/post-receive"           "hook shebang correct" \
+           "head -n 1 ${BARE_REPO}/hooks/post-receive"
   run_test "grep -q \"^SHA=\\\$(cat \\\"${BARE_REPO}/refs/heads/master\\\")\\\$\" \"${BARE_REPO}/hooks/post-receive\"" \
-           "hook: SHA variable set correctly"
+           "hook: SHA variable set correctly" \
+           "grep '^SHA=' ${BARE_REPO}/hooks/post-receive"
   run_test "grep -q '^su - ${OBS_USER} -c \"/usr/local/bin/git --git-dir=${BARE_REPO} --work-tree=${WORK_TREE} checkout -f \\\$SHA\"\$' ${BARE_REPO}/hooks/post-receive" \
-           "hook: git checkout command correct"
-  run_test "grep -q '^exit 0\$' ${BARE_REPO}/hooks/post-receive"             "hook: exits cleanly"
+           "hook: git checkout command correct" \
+           "grep 'git --git-dir' ${BARE_REPO}/hooks/post-receive"
+  run_test "grep -q '^exit 0\$' ${BARE_REPO}/hooks/post-receive"             "hook: exits cleanly" \
+           "tail -n 1 ${BARE_REPO}/hooks/post-receive"
 
-  ### Section 11) Working copy clone & initial commit (3)
-  run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]"                          "working clone exists"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 11 working copy clone" >&3
+  run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]"                          "working clone exists" \
+           "ls -ld ${OBS_HOME}/vaults/${VAULT}/.git"
   run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} remote get-url origin | grep -q '${BARE_REPO}'\"" \
-           "working clone origin correct"
+           "working clone origin correct" \
+           "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} remote -v\""
   run_test "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B | grep -q 'initial commit'\"" \
-           "initial commit present"
+           "initial commit present" \
+           "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B\""
 
-  ### Section 12) Final perms on bare repo (6)
-  run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 12 final perms on bare repo" >&3
+  run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'" \
+           "stat -f '%Su:%Sg' ${BARE_REPO}"
   # Debug helpers (uncomment for troubleshooting)
   # echo "GIT_USER='${GIT_USER}', BARE_REPO='${BARE_REPO}'"
   # echo "first ownership violation, if any:"
@@ -213,23 +264,34 @@ run_tests() {
   # echo "raw exit status of the find pipeline (without !):"
   # find "$BARE_REPO" \( ! -user "$GIT_USER" -o ! -group vault \) -print | grep -q .; echo "grep exit=$?"
   run_test "! find ${BARE_REPO} \( -not -user ${GIT_USER} -or -not -group vault \) -print | grep -q ." \
-           "all files under '${BARE_REPO}' are owned by ${GIT_USER}:vault"
-  run_test "! find ${BARE_REPO} -not -perm -g=r -print | grep -q ."          "all entries under '${BARE_REPO}' are group-readable"
-  run_test "! find ${BARE_REPO} -not -perm -g=w -print | grep -q ."          "all entries under '${BARE_REPO}' are group-writable"
-  run_test "! find ${BARE_REPO} -type d -not -perm -g=x -print | grep -q ."  "all directories under '${BARE_REPO}' are group-executable"
-  run_test "! find ${BARE_REPO} -type d -not -perm -g+s -print | grep -q ."  "all directories under '${BARE_REPO}' have the setgid bit set"
+           "all files under '${BARE_REPO}' are owned by ${GIT_USER}:vault" \
+           "find ${BARE_REPO} \( -not -user ${GIT_USER} -or -not -group vault \) -print | head -n 20"
+  run_test "! find ${BARE_REPO} -not -perm -g=r -print | grep -q ."          "all entries under '${BARE_REPO}' are group-readable" \
+           "find ${BARE_REPO} -not -perm -g=r -print | head -n 20"
+  run_test "! find ${BARE_REPO} -not -perm -g=w -print | grep -q ."          "all entries under '${BARE_REPO}' are group-writable" \
+           "find ${BARE_REPO} -not -perm -g=w -print | head -n 20"
+  run_test "! find ${BARE_REPO} -type d -not -perm -g=x -print | grep -q ."  "all directories under '${BARE_REPO}' are group-executable" \
+           "find ${BARE_REPO} -type d -not -perm -g=x -print | head -n 20"
+  run_test "! find ${BARE_REPO} -type d -not -perm -g+s -print | grep -q ."  "all directories under '${BARE_REPO}' have the setgid bit set" \
+           "find ${BARE_REPO} -type d -not -perm -g+s -print | head -n 20"
 
-  ### Section 13) History settings (.profile) (6)
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 history settings" >&3
   run_test "grep -q '^export HISTFILE=/home/${OBS_USER}/.ksh_history\$' /home/${OBS_USER}/.profile" \
-           "HISTFILE export in ${OBS_USER} .profile"
-  run_test "grep -q '^export HISTSIZE=5000\$' /home/${OBS_USER}/.profile"        "HISTSIZE export in ${OBS_USER} .profile"
+           "HISTFILE export in ${OBS_USER} .profile" \
+           "grep 'HISTFILE' /home/${OBS_USER}/.profile"
+  run_test "grep -q '^export HISTSIZE=5000\$' /home/${OBS_USER}/.profile"        "HISTSIZE export in ${OBS_USER} .profile" \
+           "grep 'HISTSIZE' /home/${OBS_USER}/.profile"
   run_test "grep -q '^export HISTCONTROL=ignoredups\$' /home/${OBS_USER}/.profile" \
-           "HISTCONTROL export in ${OBS_USER} .profile"
+           "HISTCONTROL export in ${OBS_USER} .profile" \
+           "grep 'HISTCONTROL' /home/${OBS_USER}/.profile"
   run_test "grep -q '^export HISTFILE=/home/${GIT_USER}/.ksh_history\$' /home/${GIT_USER}/.profile" \
-           "HISTFILE export in ${GIT_USER} .profile"
-  run_test "grep -q '^export HISTSIZE=5000\$' /home/${GIT_USER}/.profile"        "HISTSIZE export in ${GIT_USER} .profile"
+           "HISTFILE export in ${GIT_USER} .profile" \
+           "grep 'HISTFILE' /home/${GIT_USER}/.profile"
+  run_test "grep -q '^export HISTSIZE=5000\$' /home/${GIT_USER}/.profile"        "HISTSIZE export in ${GIT_USER} .profile" \
+           "grep 'HISTSIZE' /home/${GIT_USER}/.profile"
   run_test "grep -q '^export HISTCONTROL=ignoredups\$' /home/${GIT_USER}/.profile" \
-           "HISTCONTROL export in ${GIT_USER} .profile"
+           "HISTCONTROL export in ${GIT_USER} .profile" \
+           "grep 'HISTCONTROL' /home/${GIT_USER}/.profile"
 }
 
 run_tests
