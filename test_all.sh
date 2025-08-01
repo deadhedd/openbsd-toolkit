@@ -17,9 +17,9 @@
 #   Forwards --debug or --log to individual module tests when supplied.
 #
 # Security note:
-#   Enabling the --debug flag will log all executed commands *and their expanded
-#   values* (via `set -vx`), including any exported secrets or credentials.
-#   Use caution when sharing or retaining debug logs.
+#   Enabling the --debug flag will log all executed commands *without* their
+#   expanded values (test scripts use `set -x`). Setup scripts still capture
+#   expansions via `set -vx`. Use caution when sharing or retaining debug logs.
 #
 # See also:
 #   - modules/ (each module contains setup.sh and test.sh)

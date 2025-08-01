@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file following [K
 
 ---
 
+## Unreleased
+
+### Logging and Debugging
+
+* Dropped `set -v` from test scripts, now using `set -x` while setup scripts
+  continue to leverage `set -vx` for expanded command logging.
+
 ## v1.0 – Initial Stable Release (2025-07-26)
 
 ### Setup and Tests

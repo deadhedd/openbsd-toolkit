@@ -22,9 +22,9 @@
 #   FD 3 is reserved for real stdout so debug messages can bypass redirection.
 #
 # Security note:
-#   Enabling the --debug flag will log all executed commands *and their expanded
-#   values* (via `set -vx`), including any exported secrets or credentials. Use
-#   caution when sharing or retaining debug logs.
+#   Enabling the --debug flag will log all executed commands. Setup scripts also
+#   log their expanded values (via `set -vx`), which may include exported secrets
+#   or credentials. Use caution when sharing or retaining debug logs.
 #
 # See also:
 #   - config/load-secrets.sh
@@ -99,7 +99,7 @@ start_logging() {
     init_logging "$context"
   fi
   trap finalize_logging EXIT
-  [ "$DEBUG_MODE" -eq 1 ] && set -vx
+  [ "$DEBUG_MODE" -eq 1 ] && set -x
 }
 
 # start_logging_if_debug <context> [args...]
