@@ -39,7 +39,7 @@ export PROJECT_ROOT
 ##############################################################################
 
 show_help() {
-  cat <<-EOF
+  cat <<EOF
   Usage: sh $(basename "$0") [options]
 
   Description:
@@ -83,12 +83,12 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Networking config files
 ##############################################################################
 
-cat > "/etc/hostname.${INTERFACE}" <<-EOF
+cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-cat > /etc/resolv.conf <<-EOF
+cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
