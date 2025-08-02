@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# config/load-secrets.sh — Export variables from secrets.env for other scripts
+# Author: deadhedd
+# Version: 1.0.0
+# Updated: 2025-08-02
+#
+# Usage: . "$PROJECT_ROOT/config/load-secrets.sh"   # must be sourced
+#
+# Description:
+#   Ensures config/secrets.env exists (copies from example if missing) and then
+#   exports all KEY=VALUE pairs using `set -a`. Exits after creating the file
+#   so the caller can prompt the user to edit it.
+#
+# Deployment considerations:
+#   Handling secrets and private keys is more difficult when cloning the repo
+#   directly onto a freshly installed server instead of preparing it offline
+#   and mounting via USB. Some assumptions (like pre-editing secrets.env) may
+#   break in unattended remote install workflows.
+#
+# See also:
+#   - config/secrets.env.example
+
+##############################################################################
+# 0) Resolve paths
+##############################################################################
+
+PROJECT_ROOT="$(cd "$(dirname -- "$0")"/../.. && pwd)"
+CONFIG_DIR="$PROJECT_ROOT/config"
+
+EXAMPLE="$CONFIG_DIR/secrets.env.example"
+SECRETS="$CONFIG_DIR/secrets.env"
+
+##############################################################################
+# 1) Bootstrap secrets file if missing
+##############################################################################
+
+if [ ! -f "$SECRETS" ]; then
+  cp "$EXAMPLE" "$SECRETS"
+  echo "Created '$SECRETS' from example. Please edit it and re-run." >&2
+  exit 1
+fi
+
+##############################################################################
+# 2) Export all vars from secrets.env
+##############################################################################
+
+set -a
+# shellcheck source=/dev/null
+. "$SECRETS"
+set +a

@@ -1,290 +1,141 @@
-# openbsd-server
+# 🛠️ OpenBSD Toolkit
 
-A collection of modular scripts to configure and validate an OpenBSD server for hosting a Git-backed Obsidian vault, with support for GitHub deploy key integration and centralized secrets management via a `.env` file.
-
----
-
-## 🚀 v0.9.0 – Permissions & Hook Improvements (2025-07-18)
-
-* **Permissions & Git config**
-
-  * Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
-  * Created a shared Unix group for the `git` and `obsidian` users to streamline permissions.
-  * Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on directories).
-  * Added `sharedRepository = group` under `[core]` in the bare repo’s Git config for group-write support.
-* **Fixes**
-
-  * Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the `obsidian` user.
-* **Logging**
-
-  * Enhanced logging across both setup and test scripts for improved traceability.
+Modular shell scripts for automating system setup and tooling on OpenBSD, starting with a fully working Obsidian Git host. Built with security, maintainability, and automation in mind — with future plans to expand into general-purpose OpenBSD tools.
 
 ---
 
-## 🚀 v0.4.0 – Centralized Secrets Management (2025-07-06)
+## 🚀 Quick Start
 
-* **Secrets management**
-
-  * Introduced centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
-  * Bootstrap step: auto-generate `secrets.env` when missing, with user notification.
-  * All setup and test scripts now source configuration from `secrets.env` instead of hardcoded values.
-
----
-
-## 🚀 v0.3 – Configuration & Test Coverage Completion (2025-07-02)
-
-* **Test runner reliability**
-
-  * `test_all.sh` now continues through all suites even if one fails, so you get a full report in one run.
-
-* **test\_github additions**
-
-  * Verifies `/root/.ssh` exists.
-  * Confirms the repository is cloned into `$setup_dir/.git`.
-  * Checks `remote origin` in `$setup_dir/.git/config` matches `$GITHUB_REPO`.
-
-* **test\_system enhancements**
-
-  * Asserts `${INTERFACE}` is up with `${STATIC_IP}`.
-  * Ensures `PasswordAuthentication no` in `/etc/ssh/sshd_config`.
-  * Validates root’s `.profile` exports:
-
-    * `HISTFILE=/root/.ksh_history`
-    * `HISTSIZE=5000`
-    * `HISTCONTROL=ignoredups`
-
-* **History‑merge test**
-
-  * Confirms old‑history marker is merged into new history.
-  * Confirms new‑history marker remains intact.
-
-* **doas & package tests moved**
-
-  * Package installation and `doas.conf` permission/ownership tests are now in `test_obsidian_git.sh`.
-
-* **test\_obsidian\_git expanded**
-
-  * SSH service config (`AllowUsers`, daemon running).
-  * `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
-  * Vaults directories for both users.
-  * Bare repo HEAD, `safe.directory` entries, post‑receive hook shebang & content.
-  * Working‑clone verification (clone, remote URL, commit presence).
-  * Per‑user history settings in `.profile` and `master.passwd` (password removal or setting).
-
-* **Setup scripts aligned**
-
-  * Added or moved all corresponding configuration blocks into `setup_system.sh` and `setup_obsidian_git.sh` so new tests pass out-of-the-box.
-
----
-
-## 📋 Prerequisites
-
-* **OS:** OpenBSD (tested on 7.x)
-
----
-
-## ⚙️ Scripts Overview
-
-### Setup Scripts
-
-| Script                  | Purpose                                                                                               |
-| ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `setup_system.sh`       | Installs packages, creates users, sets up networking and doas, hardens SSH, configures user profiles. |
-| `setup_obsidian_git.sh` | Initializes the Git bare repo and working copy for Obsidian vault syncing.                            |
-| `setup_github.sh`       | Installs deploy key and bootstraps the GitHub repo clone for ongoing configuration management.        |
-| `setup_all.sh`          | Runs all of the above in sequence.                                                                    |
-
-### Test Suites
-
-| Script                 | Validates                                                         |
-| ---------------------- | ----------------------------------------------------------------- |
-| `test_system.sh`       | User setup, file permissions, doas, network, DNS, SSH security.   |
-| `test_obsidian_git.sh` | Git bare repo structure, safe.directory flags, post-receive hook. |
-| `test_github.sh`       | Deploy key presence and permission, GitHub in known\_hosts.       |
-| `test_all.sh`          | Runs all of the above in sequence, with optional logging.         |
-
----
-
-## 📝 Usage & Logging
-
-All setup and test scripts support optional logging flags:
-
-* **Force a log on every run**:
+The fastest way to get started is to run the installer directly from GitHub Pages:
 
 ```sh
-  ./script.sh --log
-  ./script.sh -l
+ftp -o - https://deadhedd.github.io/openbsd-toolkit/install.sh | sh
 ```
 
-* **Specify a custom logfile**:
+Alternatively, clone the repo manually:
 
 ```sh
-  ./script.sh --log=/path/to/my.log
+git clone https://github.com/deadhedd/openbsd-toolkit
+cd openbsd-toolkit
+sh install-modules.sh
 ```
 
-* **Default behavior**:
-
-  * Logs only on **failure**, written to `logs/<script>-YYYYMMDD_HHMMSS.log`.
-
-### Run all setup steps
+Use `--help` for options:
 
 ```sh
-sh setup_all.sh
+sh install-modules.sh --help
 ```
 
-Override defaults using environment variables:
+Then validate your setup:
 
 ```sh
-REG_USER=obsidian \
-GIT_USER=git \
-VAULT=myvault \
-INTERFACE=em0 \
-STATIC_IP=192.0.2.10 \
-NETMASK=255.255.255.0 \
-GATEWAY=192.0.2.1 \
-sh setup_all.sh
-```
-
-Or run individual setup phases:
-
-```sh
-sh setup_system.sh
-sh setup_obsidian_git.sh
-sh setup_github.sh
-```
-
-### Run all test suites
-
-```sh
-sh test_all.sh [--log[=FILE]]
-```
-
-Same environment variables apply.
-
----
-
-## 🔖 Releases & Tags
-
-Use version tags to snapshot working configurations:
-
-```sh
-git tag -a v0.8.0 -m "v0.8.0 – previous release"
-git tag -a v0.9.0 -m "v0.9.0 – Permissions & Hook Improvements"
-git push origin --tags
+sh test-all.sh
 ```
 
 ---
 
-## 📜 Changelog
+## 📦 Requirements
 
-## \[0.9.0] – 2025-07-18
-
-### Added
-
-* Configured Git’s `safe.directory` to allow operations in our bare repo without warnings.
-* Created a shared Unix group for the Obsidian and Git users to streamline permissions.
-* Improved logging throughout both the setup scripts and the test suite for better traceability.
-
-### Changed
-
-* Enforced proper file permissions and ownership on the bare repository (`git:obsidian` with `g+rwX` and `setgid` on dirs).
-* Added `sharedRepository = group` under `[core]` in the bare repo’s Git config to enable group-write operations.
-
-### Fixed
-
-* Corrected the post‑receive hook so that the commit SHA is captured literally and the working-tree checkout runs under the Obsidian user.
-
-*— incidental improvements to logging, no user‑facing behavior changes beyond the above.*
-
-### v0.4.0 – Centralized Secrets Management (2025-07-06)
-
-* **Secrets management**
-
-  * Centralized `.env`-style `secrets.env` support, loading defaults from `secrets.env.example`.
-  * Bootstrap step: auto-generate `secrets.env` if missing.
-  * All setup and test scripts now source configuration from `secrets.env`.
-
-### v0.3 – Configuration & Test Coverage Completion (2025-07-02)
-
-* **Test runner reliability**
-
-  * `test_all.sh` now continues through all suites even if one fails.
-
-* **test\_github additions**
-
-  * Verified `/root/.ssh` exists.
-  * Confirmed repo clone into `$setup_dir`.
-  * Checked `remote origin` URL in `.git/config`.
-
-* **test\_system enhancements**
-
-  * Asserted `${INTERFACE}` IP assignment.
-  * Ensured SSH disallows password auth.
-  * Root’s `.profile` now exports `HISTFILE`, `HISTSIZE`, and `HISTCONTROL`.
-
-* **History‑merge test**
-
-  * Old history merged into new.
-  * New history preserved.
-
-* **doas & package tests moved**
-
-  * Tests for package installation and `doas.conf` perms/ownership now live in `test_obsidian_git.sh`.
-
-* **test\_obsidian\_git expanded**
-
-  * SSHD config & daemon checks.
-  * `.ssh` and `authorized_keys` validation for both users.
-  * Vaults directory existence and permissions.
-  * Bare repo HEAD, `safe.directory`, post‑receive hook content.
-  * Working clone functionality (clone, remote URL, commit log).
-  * Per-user history and password‑field tests in `master.passwd`.
-
-*
-
-### 🚀 v0.2.1 – Usability Improvements (2025-06-28)
-
-* **Logging Enhancements**
-
-  * `--log[=FILE]` / `-l`: force writing a full log on every run.
-  * Sensible defaults: logs written to `logs/` with timestamped filenames.
-
-* **Expanded User Setup**
-
-  * Configures **both** `git` and `obsidian` users (instead of only `git`).
-  * Blank initial passwords assigned for both users (can be pulled from a secrets file).
-  * Fixed the bug in `setup_obsidian_git.sh` that this change introduced.
-
-* **Refactor Sync Code**
-
-  * Moved missing code blocks from `setup_all.sh` into `setup_obsidian_git.sh`.
-  * Mirrored those changes in the corresponding test scripts for consistency.
-
-### v0.2.0 – Modularization (2025-06-26)
-
-* **Split monolithic setup/test scripts** into:
-
-  * `setup_system.sh`
-  * `setup_obsidian_git.sh`
-  * `setup_github.sh`
-  * `test_system.sh`
-  * `test_obsidian_git.sh`
-  * `test_github.sh`
-* Added `setup_all.sh` and `test_all.sh` for convenience.
-
-### v0.1.1 – Test Enhancements (2025-06-23)
-
-* Added strict validation for network config files.
-* Anchored regex to prevent deprecated `netmask` lines.
-* Retained all core tests from v0.1.
-
-### v0.1 – Initial Release
-
-* Setup and validation for OpenBSD server configuration (users, SSH, network, Git).
+* OpenBSD 7.4+
+* Obsidian with the Git plugin (on your client)
+* Optional: SSH keys, GitHub repo for vault prefill
 
 ---
 
-## License
+## 🧠 Project Overview
 
-MIT OR 0BSD — see the LICENSE file.
+This toolkit currently includes:
+
+* A base-system setup module for configuring OpenBSD itself (users, doas, network, etc.)
+* A Git bare repo module to host an Obsidian-compatible vault with auto-deploy
+* A minimal GitHub module for immediate push capability after setup
+
+All modules are modular and extensible. The long-term vision includes additional OpenBSD automation tools for broader system management.
+
+---
+
+## 🧱 Architecture
+
+Directory layout:
+
+```
+openbsd-toolkit/
+├── config/           # Secrets and module selection
+├── logs/             # Contains logging.sh and generated log files
+├── modules/          # One folder per module
+│   └── <module>/
+│       ├── setup.sh  # Configures that module
+│       └── test.sh   # Verifies it works
+├── install-modules.sh  # Installs selected modules
+└── test-all.sh          # Runs all tests
+```
+
+Modules are declared in `config/enabled_modules.conf`. Each module’s `setup.sh` and `test.sh` can be run independently or as part of a full stack install/test.
+
+---
+
+## 🔧 Module Guide
+
+| Module              | Description                                                |
+| ------------------- | ---------------------------------------------------------- |
+| `base-system`       | Sets up OpenBSD base config (e.g. `doas.conf`, networking) |
+| `obsidian-git-host` | Creates the Git bare repo, vault, and deployment hook      |
+| `github` (optional) | Enables immediate GitHub push support for new setups       |
+
+Each module:
+
+* Can be run independently
+* Can be toggled via `enabled_modules.conf`
+* Supports logging flags and will generate a separate log file when run on its own
+* When run via `install-modules.sh` or `test-all.sh`, logs are combined into a single output file
+
+---
+
+## 🧪 Testing
+
+Test a single module:
+
+```sh
+sh modules/<module>/test.sh
+```
+
+Run full system tests:
+
+```sh
+sh test-all.sh
+```
+
+Logs are saved to the `logs/` directory. By default, logs are only saved when a test fails.
+
+Use `--debug[=FILE]` to enable verbose tracing and optionally direct output to a specific log file.
+
+Use `--log[=FILE]` to force a log file to be written even when all tests pass (only supported by test scripts).
+
+### Simplified logging helpers
+
+Scripts source `logs/logging.sh` and invoke one of these convenience functions:
+
+```sh
+. "$PROJECT_ROOT/logs/logging.sh"
+start_logging "$0" "$@"            # for test scripts
+# or
+start_logging_if_debug "setup-my-module" "$@"  # for setup scripts
+```
+
+`start_logging` automatically sets up logging, enables debug tracing when
+`--debug` is provided, and registers `finalize_logging` on exit.
+
+---
+
+## 🛡️ Security Notes
+
+* SSH keys and passwords are defined in `config/secrets.env`
+* The `--debug` option will include secrets and other sensitive data in the logs; take care when sharing debug output
+* All Git hooks run as limited users with appropriate `doas.conf` constraints
+
+---
+
+## 📜 License
+
+BSD 2-Clause License. See [`LICENSE`](LICENSE) for full details.
 
