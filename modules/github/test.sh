@@ -3,7 +3,7 @@
 # modules/github/test.sh — Verify GitHub deploy key & repo bootstrap
 # Author: deadhedd
 # Version: 1.0.0
-# Updated: 2025-07-28
+# Updated: 2025-08-02
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #

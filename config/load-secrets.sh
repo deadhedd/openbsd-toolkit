@@ -3,7 +3,7 @@
 # config/load-secrets.sh — Export variables from secrets.env for other scripts
 # Author: deadhedd
 # Version: 1.0.0
-# Updated: 2025-07-28
+# Updated: 2025-08-02
 #
 # Usage: . "$PROJECT_ROOT/config/load-secrets.sh"   # must be sourced
 #
