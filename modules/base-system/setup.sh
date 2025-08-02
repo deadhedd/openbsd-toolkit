@@ -3,7 +3,7 @@
 # modules/base-system/setup.sh — General system configuration for OpenBSD server
 # Author: deadhedd
 # Version: 1.0.0
-# Updated: 2025-07-28
+# Updated: 2025-08-02
 #
 # Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
