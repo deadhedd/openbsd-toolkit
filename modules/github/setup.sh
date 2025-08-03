@@ -91,7 +91,7 @@ mkdir -p /root/.ssh  # TODO: use state detection for idempotency
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519  # TODO: use state detection for idempotency
 chmod 600 /root/.ssh/id_ed25519
 
-ssh-keyscan github.com >> /root/.ssh/known_hosts  # TODO: use state detection for idempotency
+ssh-keyscan github.com >> /root/.ssh/known_hosts  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
 : "GITHUB_REPO=$GITHUB_REPO"   # ensure variable is set

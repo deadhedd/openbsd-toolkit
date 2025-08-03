@@ -83,13 +83,13 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Networking config files
 ##############################################################################
 
-# TODO: use state detection for idempotency
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-# TODO: use state detection for idempotency
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
@@ -107,15 +107,15 @@ route add default "${GATEWAY}"
 # 6) SSH hardening
 ##############################################################################
 
-sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum
+sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum
 rcctl restart sshd
 
 ##############################################################################
 # 7) Root history
 ##############################################################################
 
-# TODO: use state detection for idempotency
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000

@@ -108,7 +108,7 @@ usermod -G vault "$GIT_USER"
 # 6) doas config
 ##############################################################################
 
-# TODO: use state detection for idempotency
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 cat > /etc/doas.conf <<EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
@@ -123,9 +123,9 @@ chmod 0440 /etc/doas.conf
 
 # 7.1 SSH Service & Config
 if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
-  sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
+  sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum
 else
-  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config  # TODO: use state detection for idempotency
+  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 fi
 rcctl restart sshd
 
@@ -141,7 +141,7 @@ for u in "$OBS_USER" "$GIT_USER"; do
 done
 
 # 7.3 Known Hosts (OBS_USER only)
-ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"  # TODO: use state detection for idempotency
+ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
@@ -165,10 +165,10 @@ for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
   touch "$cfg"  # TODO: use state detection for idempotency
   if [ "$u" = "$GIT_USER" ]; then
-    git config --file "$cfg" --add safe.directory "$BARE_REPO"
-    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+    git config --file "$cfg" --add safe.directory "$BARE_REPO"  # TODO: ensure idempotency via Safe editing or replace+template with checksum
+    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"  # TODO: ensure idempotency via Safe editing or replace+template with checksum
   else
-    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+    git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"  # TODO: ensure idempotency via Safe editing or replace+template with checksum
   fi
   chown "$u:$u" "$cfg"
 done
@@ -180,7 +180,7 @@ done
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
 HOOK="$BARE_REPO/hooks/post-receive"
 
-# TODO: use state detection for idempotency
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
 cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
@@ -220,7 +220,7 @@ find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
-  # TODO: use state detection for idempotency
+  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
   cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
