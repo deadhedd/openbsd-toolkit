@@ -83,39 +83,39 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Networking config files
 ##############################################################################
 
-# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum); add rollback handling and dry-run mode
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum); add rollback handling and dry-run mode
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
-chmod 644 /etc/resolv.conf
+chmod 644 /etc/resolv.conf  # TODO: ensure idempotency via rollback handling and dry-run mode
 
 ##############################################################################
 # 5) Apply networking
 ##############################################################################
 
-ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
-route add default "${GATEWAY}"
+ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up  # TODO: ensure idempotency via rollback handling and dry-run mode
+route add default "${GATEWAY}"  # TODO: ensure idempotency via rollback handling and dry-run mode
 
 ##############################################################################
 # 6) SSH hardening
 ##############################################################################
 
-sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum
-sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum
-rcctl restart sshd
+sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum; add rollback handling and dry-run mode
+sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config  # TODO: ensure idempotency via Safe editing or replace+template with checksum; add rollback handling and dry-run mode
+rcctl restart sshd  # TODO: ensure idempotency via rollback handling and dry-run mode
 
 ##############################################################################
 # 7) Root history
 ##############################################################################
 
-# TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
+# TODO: use state detection for idempotency (Safe editing or replace+template with checksum); add rollback handling and dry-run mode
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
