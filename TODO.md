@@ -37,6 +37,7 @@
 - [ ] VM hosting module
 - [ ] DNS self-host module
 - [ ] NAS hub module
+- [ ] VPN endpoint module
 - [ ] Run local LLM/embedding server for search and assistant
 - [ ] Self-host Shortcuts API for automation and logging
 - [ ] Setup Moonlight/Sunshine retro game streaming
