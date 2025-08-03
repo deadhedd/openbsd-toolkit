@@ -34,3 +34,6 @@
 - [ ] obsidian daily note scripts
 - [ ] Build a custom ISO
 - [ ] recovery partition 
+- [ ] VM hosting module
+- [ ] DNS self-host module
+- [ ] NAS hub module
