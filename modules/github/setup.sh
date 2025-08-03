@@ -87,11 +87,11 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 # 4) SSH setup (keys & known_hosts)
 ##############################################################################
 
-mkdir -p /root/.ssh  # TODO: use state detection for idempotency
-cp "$DEPLOY_KEY" /root/.ssh/id_ed25519  # TODO: use state detection for idempotency
-chmod 600 /root/.ssh/id_ed25519
+mkdir -p /root/.ssh  # TODO: use state detection for idempotency; add rollback handling and dry-run mode
+cp "$DEPLOY_KEY" /root/.ssh/id_ed25519  # TODO: use state detection for idempotency; add rollback handling and dry-run mode
+chmod 600 /root/.ssh/id_ed25519  # TODO: ensure idempotency via rollback handling and dry-run mode
 
-ssh-keyscan github.com >> /root/.ssh/known_hosts  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum)
+ssh-keyscan github.com >> /root/.ssh/known_hosts  # TODO: use state detection for idempotency (Safe editing or replace+template with checksum); add rollback handling and dry-run mode
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
 : "GITHUB_REPO=$GITHUB_REPO"   # ensure variable is set
@@ -103,6 +103,6 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts  # TODO: use state detection fo
 # 5) Repo bootstrap
 ##############################################################################
 
-git clone "$GITHUB_REPO" "$LOCAL_DIR"  # TODO: use state detection for idempotency
+git clone "$GITHUB_REPO" "$LOCAL_DIR"  # TODO: use state detection for idempotency; add rollback handling and dry-run mode
 
 echo "github: GitHub configuration complete!"
