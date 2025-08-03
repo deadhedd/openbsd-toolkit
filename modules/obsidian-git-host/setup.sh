@@ -108,6 +108,7 @@ usermod -G vault "$GIT_USER"
 # 6) doas config
 ##############################################################################
 
+# TODO: use state detection for idempotency
 cat > /etc/doas.conf <<EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
@@ -124,7 +125,7 @@ chmod 0440 /etc/doas.conf
 if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
   sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
 else
-  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
+  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config  # TODO: use state detection for idempotency
 fi
 rcctl restart sshd
 
@@ -132,15 +133,15 @@ rcctl restart sshd
 for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
-  mkdir -p "$SSH_DIR"
+  mkdir -p "$SSH_DIR"  # TODO: use state detection for idempotency
   chmod 700 "$SSH_DIR"
-  touch "$SSH_DIR/authorized_keys"
+  touch "$SSH_DIR/authorized_keys"  # TODO: use state detection for idempotency
   chmod 600 "$SSH_DIR/authorized_keys"
   chown -R "$u:$u" "$SSH_DIR"
 done
 
 # 7.3 Known Hosts (OBS_USER only)
-ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
+ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"  # TODO: use state detection for idempotency
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
@@ -150,10 +151,10 @@ chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
 BARE_REPO="${VAULT_DIR}/${VAULT}.git"
-mkdir -p "$VAULT_DIR"
+mkdir -p "$VAULT_DIR"  # TODO: use state detection for idempotency
 chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 
-git init --bare "$BARE_REPO"
+git init --bare "$BARE_REPO"  # TODO: use state detection for idempotency
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
@@ -162,7 +163,7 @@ chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
-  touch "$cfg"
+  touch "$cfg"  # TODO: use state detection for idempotency
   if [ "$u" = "$GIT_USER" ]; then
     git config --file "$cfg" --add safe.directory "$BARE_REPO"
     git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
@@ -179,6 +180,7 @@ done
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
 HOOK="$BARE_REPO/hooks/post-receive"
 
+# TODO: use state detection for idempotency
 cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
@@ -193,8 +195,8 @@ chmod +x "$HOOK"
 # 11) Working copy clone & initial commit
 ##############################################################################
 
-mkdir -p "$(dirname "$WORK_DIR")"
-git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"
+mkdir -p "$(dirname "$WORK_DIR")"  # TODO: use state detection for idempotency
+git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"  # TODO: use state detection for idempotency
 chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
 
 git -C "$WORK_DIR" \
@@ -218,6 +220,7 @@ find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
+  # TODO: use state detection for idempotency
   cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000

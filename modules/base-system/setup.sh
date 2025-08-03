@@ -83,11 +83,13 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Networking config files
 ##############################################################################
 
+# TODO: use state detection for idempotency
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
+# TODO: use state detection for idempotency
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
@@ -113,6 +115,7 @@ rcctl restart sshd
 # 7) Root history
 ##############################################################################
 
+# TODO: use state detection for idempotency
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
