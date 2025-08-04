@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# modules/github/setup.sh — Configure deploy key & bootstrap local repo
+# modules/github/setup.sh — Configure GitHub SSH key & bootstrap local repo
 # Author: deadhedd
 # Version: 1.0.0
 # Updated: 2025-08-02
@@ -8,15 +8,16 @@
 # Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
 # Description:
-#   Copies the deploy key into /root/.ssh, hard-locks its permissions, adds
-#   GitHub to known_hosts, validates required secrets, and clones the remote
-#   repository to LOCAL_DIR for Git-backed Obsidian sync.
+#   Copies the SSH key files into /root/.ssh, hard-locks their permissions,
+#   adds GitHub to known_hosts, validates required secrets, and clones the
+#   remote repository to LOCAL_DIR for Git-backed Obsidian sync.
 #
 # Deployment considerations:
 #   Requires these variables (exported via config/load-secrets.sh):
-#     • LOCAL_DIR     — target clone path
-#     • GITHUB_REPO   — git@github.com:… or https://… URL
-#   Also expects config/deploy_key to exist before execution.
+#     • LOCAL_DIR                    — target clone path
+#     • GITHUB_REPO                  — git@github.com:… or https://… URL
+#     • GITHUB_SSH_PRIVATE_KEY_FILE — filename of private key in config/
+#     • GITHUB_SSH_PUBLIC_KEY_FILE  — filename of public key in config/
 #
 # Security note:
 #   Enabling the --debug flag will log all executed commands *and their expanded
@@ -95,7 +96,7 @@ show_help() {
   Usage: sh $(basename "$0") [options]
 
   Description:
-    Configure GitHub deploy key and initialize bare repo
+    Configure GitHub SSH keys and initialize bare repo
 
   Options:
     -h, --help        Show this help message and exit
@@ -129,9 +130,15 @@ start_logging_if_debug "setup-$module_name" "$@"
 ##############################################################################
 
 . "$PROJECT_ROOT/config/load-secrets.sh"
-DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 
-[ -f "$DEPLOY_KEY" ] || { echo "ERROR: deploy_key not found at $DEPLOY_KEY" >&2; exit 1; }
+CONFIG_DIR="$PROJECT_ROOT/config"
+PRIVATE_KEY_SRC="$CONFIG_DIR/$GITHUB_SSH_PRIVATE_KEY_FILE"
+PUBLIC_KEY_SRC="$CONFIG_DIR/$GITHUB_SSH_PUBLIC_KEY_FILE"
+
+[ -n "$GITHUB_SSH_PRIVATE_KEY_FILE" ] || { echo "ERROR: GITHUB_SSH_PRIVATE_KEY_FILE not set" >&2; exit 1; }
+[ -n "$GITHUB_SSH_PUBLIC_KEY_FILE" ] || { echo "ERROR: GITHUB_SSH_PUBLIC_KEY_FILE not set" >&2; exit 1; }
+[ -f "$PRIVATE_KEY_SRC" ] || { echo "ERROR: private key not found at $PRIVATE_KEY_SRC" >&2; exit 1; }
+[ -f "$PUBLIC_KEY_SRC" ] || { echo "ERROR: public key not found at $PUBLIC_KEY_SRC" >&2; exit 1; }
 
 ##############################################################################
 # 4) SSH setup (keys & known_hosts)
@@ -144,15 +151,26 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 # run_cmd "mkdir -p /root/.ssh" "rmdir /root/.ssh"
 mkdir -p /root/.ssh
 # Idempotency: state detection example
-# [ -f /root/.ssh/id_ed25519 ] || cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
+# [ -f /root/.ssh/id_ed25519 ] || cp "$PRIVATE_KEY_SRC" /root/.ssh/id_ed25519
 
 # Idempotency: rollback handling and dry-run mode example
-# run_cmd "cp \"$DEPLOY_KEY\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
-cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
+# run_cmd "cp \"$PRIVATE_KEY_SRC\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
+cp "$PRIVATE_KEY_SRC" /root/.ssh/id_ed25519
 
 # Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod 600 /root/.ssh/id_ed25519" "chmod 000 /root/.ssh/id_ed25519"
 chmod 600 /root/.ssh/id_ed25519
+
+# Idempotency: state detection example
+# [ -f /root/.ssh/id_ed25519.pub ] || cp "$PUBLIC_KEY_SRC" /root/.ssh/id_ed25519.pub
+
+# Idempotency: rollback handling and dry-run mode example
+# run_cmd "cp \"$PUBLIC_KEY_SRC\" /root/.ssh/id_ed25519.pub" "rm -f /root/.ssh/id_ed25519.pub"
+cp "$PUBLIC_KEY_SRC" /root/.ssh/id_ed25519.pub
+
+# Idempotency: rollback handling and dry-run mode example
+# run_cmd "chmod 644 /root/.ssh/id_ed25519.pub" "chmod 000 /root/.ssh/id_ed25519.pub"
+chmod 644 /root/.ssh/id_ed25519.pub
 
 # TODO: Idempotency: state detection
 

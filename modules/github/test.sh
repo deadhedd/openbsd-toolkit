@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# modules/github/test.sh — Verify GitHub deploy key & repo bootstrap
+# modules/github/test.sh — Verify GitHub SSH key & repo bootstrap
 # Author: deadhedd
 # Version: 1.0.0
 # Updated: 2025-08-02
@@ -9,7 +9,7 @@
 #
 # Description:
 #   Runs TAP-style checks against the GitHub sync setup: verifies that the SSH
-#   deploy key and known_hosts entries are present with correct permissions, and
+#   key pair and known_hosts entries are present with correct permissions, and
 #   that the local repository has been cloned with the expected remote origin.
 #
 # Deployment considerations:
@@ -50,7 +50,7 @@ show_help() {
   Usage: sh $(basename "$0") [options]
 
   Description:
-    Verify GitHub deploy key and repo bootstrap for Git sync
+    Verify GitHub SSH key and repo bootstrap for Git sync
 
   Options:
     -h, --help        Show this help message and exit
@@ -120,15 +120,19 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting github tests" >&2
-  echo "1..7"
+  echo "1..9"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 SSH setup" >&2
   run_test "[ -d /root/.ssh ]"                                                  "root .ssh directory exists" \
            "ls -ld /root/.ssh"
-  run_test "[ -f /root/.ssh/id_ed25519 ]"                                        "deploy key present" \
+  run_test "[ -f /root/.ssh/id_ed25519 ]"                                        "private key present" \
            "ls -l /root/.ssh/id_ed25519"
-  run_test "stat -f '%Lp' /root/.ssh/id_ed25519 | grep -q '^600$'"               "deploy key mode is 600" \
+  run_test "stat -f '%Lp' /root/.ssh/id_ed25519 | grep -q '^600$'"               "private key mode is 600" \
            "stat -f '%Sp' /root/.ssh/id_ed25519"
+  run_test "[ -f /root/.ssh/id_ed25519.pub ]"                                    "public key present" \
+           "ls -l /root/.ssh/id_ed25519.pub"
+  run_test "stat -f '%Lp' /root/.ssh/id_ed25519.pub | grep -q '^644$'"           "public key mode is 644" \
+           "stat -f '%Sp' /root/.ssh/id_ed25519.pub"
   run_test "[ -f /root/.ssh/known_hosts ]"                                       "known_hosts exists" \
            "ls -l /root/.ssh/known_hosts"
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                     "known_hosts contains GitHub" \

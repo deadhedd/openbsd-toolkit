@@ -17,6 +17,10 @@ All notable changes to this project will be documented in this file following [K
 * Root account `authorized_keys` now populated from `ROOT_SSH_PUBLIC_KEY_FILES`,
   enabling multiple keys to be provisioned during setup.
 
+### GitHub Module
+
+* GitHub module now reads SSH key filenames from `secrets.env` (`GITHUB_SSH_PRIVATE_KEY_FILE` and `GITHUB_SSH_PUBLIC_KEY_FILE`) instead of using a hardcoded deploy key.
+
 ## v1.0 – Initial Stable Release (2025-07-26)
 
 ### Setup and Tests
