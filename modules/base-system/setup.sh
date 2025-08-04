@@ -184,7 +184,7 @@ cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
-# TODO: Idempotency: Rollback handling and dry-run mode
+# TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "chmod 644 /etc/resolv.conf" "chmod 000 /etc/resolv.conf"
 chmod 644 /etc/resolv.conf
 
@@ -192,10 +192,10 @@ chmod 644 /etc/resolv.conf
 # 5) Apply networking
 ##############################################################################
 
-# TODO: Idempotency: Rollback handling and dry-run mode
+# TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "ifconfig ${INTERFACE} inet ${GIT_SERVER} netmask ${NETMASK} up" "ifconfig ${INTERFACE} inet delete"
 ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
-# TODO: Idempotency: Rollback handling and dry-run mode
+# TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "route add default ${GATEWAY}" "route delete default ${GATEWAY}"
 route add default "${GATEWAY}"
 
@@ -219,7 +219,7 @@ route add default "${GATEWAY}"
 # [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
 # rm -f "$tmp_cfg"
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-# TODO: Idempotency:replace+template with checksum
+# TODO: Idempotency: replace+template with checksum
 
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
@@ -227,7 +227,7 @@ sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # TODO: Idempotency: safe editing
 # safe_replace_line /etc/ssh/sshd_config '^#*PasswordAuthentication .*' 'PasswordAuthentication no'
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-# TODO: Idempotency: Rollback handling and dry-run mode
+# TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "rcctl restart sshd" "rcctl restart sshd"
 rcctl restart sshd
 
@@ -235,7 +235,7 @@ rcctl restart sshd
 # 7) Root history
 ##############################################################################
 
-# TODO: Idempotency: Use state detection
+# TODO: Idempotency: use state detection
 
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cat >> /root/.profile" "cp /root/.profile.bak /root/.profile"

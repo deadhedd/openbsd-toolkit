@@ -137,24 +137,24 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 # 4) SSH setup (keys & known_hosts)
 ##############################################################################
 
-# TODO: Idempotency: State detection
+# TODO: Idempotency: state detection
 # [ -d /root/.ssh ] || mkdir -p /root/.ssh
 
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "mkdir -p /root/.ssh" "rmdir /root/.ssh"
 mkdir -p /root/.ssh
-# TODO: Idempotency: State detection
+# TODO: Idempotency: state detection
 # [ -f /root/.ssh/id_ed25519 ] || cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp \"$DEPLOY_KEY\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 
-# TODO: Idempotency: Rollback handling and dry-run mode
+# TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "chmod 600 /root/.ssh/id_ed25519" "chmod 000 /root/.ssh/id_ed25519"
 chmod 600 /root/.ssh/id_ed25519
 
-# TODO: Idempotency: State detection
+# TODO: Idempotency: state detection
 
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan github.com >> /root/.ssh/known_hosts" "sed -i '/github.com/d' /root/.ssh/known_hosts"
@@ -182,7 +182,7 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 # 5) Repo bootstrap
 ##############################################################################
 
-# TODO: Idempotency: State detection
+# TODO: Idempotency: state detection
 # [ -d "$LOCAL_DIR/.git" ] || git clone "$GITHUB_REPO" "$LOCAL_DIR"  # example for TODO above
 
 # TODO: Idempotency: rollback handling and dry-run mode
