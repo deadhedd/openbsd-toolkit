@@ -36,6 +36,28 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# -----------------------------------------------------------------------------
+# Idempotency helpers (commented out until dry-run/rollback is implemented)
+# -----------------------------------------------------------------------------
+# DRY_RUN="false"
+# ROLLBACK_CMDS=""
+# run_cmd() {
+#   _cmd="$1"
+#   _rollback="$2"
+#   if [ "$DRY_RUN" = "true" ]; then
+#     printf '[DRY RUN] %s\n' "$_cmd"
+#   else
+#     eval "$_cmd"
+#     ROLLBACK_CMDS="$_rollback\n$ROLLBACK_CMDS"
+#   fi
+# }
+# rollback() {
+#   printf '%s' "$ROLLBACK_CMDS" | while IFS= read -r _rb; do
+#     [ -n "$_rb" ] && eval "$_rb"
+#   done
+# }
+# trap rollback EXIT
+
 ##############################################################################
 # 1) Help & banned flags prescan
 ##############################################################################
@@ -89,16 +111,20 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 
 # TODO: Idempotency: State detection
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "mkdir -p /root/.ssh" "rmdir /root/.ssh"
 mkdir -p /root/.ssh
 # TODO: Idempotency: State detection
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cp \"$DEPLOY_KEY\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 # TODO: Idempotency: Rollback handling and dry-run mode
+# run_cmd "chmod 600 /root/.ssh/id_ed25519" "chmod 000 /root/.ssh/id_ed25519"
 chmod 600 /root/.ssh/id_ed25519
 
 # TODO: Idempotency: State detection
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "ssh-keyscan github.com >> /root/.ssh/known_hosts" "sed -i '/github.com/d' /root/.ssh/known_hosts"
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
@@ -113,6 +139,7 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 # TODO: Idempotency: State detection
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "git clone \"$GITHUB_REPO\" \"$LOCAL_DIR\"" "rm -rf \"$LOCAL_DIR\""
 git clone "$GITHUB_REPO" "$LOCAL_DIR"
 
 echo "github: GitHub configuration complete!"

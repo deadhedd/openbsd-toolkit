@@ -34,6 +34,28 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# -----------------------------------------------------------------------------
+# Idempotency helpers (commented out until dry-run/rollback is implemented)
+# -----------------------------------------------------------------------------
+# DRY_RUN="false"
+# ROLLBACK_CMDS=""
+# run_cmd() {
+#   _cmd="$1"
+#   _rollback="$2"
+#   if [ "$DRY_RUN" = "true" ]; then
+#     printf '[DRY RUN] %s\n' "$_cmd"
+#   else
+#     eval "$_cmd"
+#     ROLLBACK_CMDS="$_rollback\n$ROLLBACK_CMDS"
+#   fi
+# }
+# rollback() {
+#   printf '%s' "$ROLLBACK_CMDS" | while IFS= read -r _rb; do
+#     [ -n "$_rb" ] && eval "$_rb"
+#   done
+# }
+# trap rollback EXIT
+
 ##############################################################################
 # 1) Help / banned flags prescan
 ##############################################################################
@@ -86,6 +108,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 # TODO: Idempotency: state detection
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cat > /etc/hostname.${INTERFACE}" "rm -f /etc/hostname.${INTERFACE}"
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
@@ -94,11 +117,13 @@ EOF
 # TODO: Idempotency: state detection
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cat > /etc/resolv.conf" "rm -f /etc/resolv.conf"
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
 # TODO: Idempotency: Rollback handling and dry-run mode
+# run_cmd "chmod 644 /etc/resolv.conf" "chmod 000 /etc/resolv.conf"
 chmod 644 /etc/resolv.conf
 
 ##############################################################################
@@ -106,8 +131,10 @@ chmod 644 /etc/resolv.conf
 ##############################################################################
 
 # TODO: Idempotency: Rollback handling and dry-run mode
+# run_cmd "ifconfig ${INTERFACE} inet ${GIT_SERVER} netmask ${NETMASK} up" "ifconfig ${INTERFACE} inet delete"
 ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
 # TODO: Idempotency: Rollback handling and dry-run mode
+# run_cmd "route add default ${GATEWAY}" "route delete default ${GATEWAY}"
 route add default "${GATEWAY}"
 
 ##############################################################################
@@ -116,11 +143,14 @@ route add default "${GATEWAY}"
 
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 # TODO: Idempotency: Rollback handling and dry-run mode
+# run_cmd "rcctl restart sshd" "rcctl restart sshd"
 rcctl restart sshd
 
 ##############################################################################
@@ -130,11 +160,13 @@ rcctl restart sshd
 # TODO: Idempotency: Use state detection
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
+# run_cmd "cat >> /root/.profile" "cp /root/.profile.bak /root/.profile"
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups
 EOF
+# run_cmd ". /root/.profile" ":"
 . /root/.profile # shellcheck will show an issue, but its expected and OK
 
 echo "base-system: system configuration complete!"
