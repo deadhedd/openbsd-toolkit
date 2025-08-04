@@ -176,6 +176,7 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 ##############################################################################
 
 # TODO: Idempotency: State detection
+# [ -d "$LOCAL_DIR/.git" ] || git clone "$GITHUB_REPO" "$LOCAL_DIR"  # example for TODO above
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "git clone \"$GITHUB_REPO\" \"$LOCAL_DIR\"" "rm -rf \"$LOCAL_DIR\""
 git clone "$GITHUB_REPO" "$LOCAL_DIR"
