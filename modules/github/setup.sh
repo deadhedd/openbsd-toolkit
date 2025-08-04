@@ -138,10 +138,12 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 ##############################################################################
 
 # TODO: Idempotency: State detection
+# [ -d /root/.ssh ] || mkdir -p /root/.ssh
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "mkdir -p /root/.ssh" "rmdir /root/.ssh"
 mkdir -p /root/.ssh
 # TODO: Idempotency: State detection
+# [ -f /root/.ssh/id_ed25519 ] || cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp \"$DEPLOY_KEY\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
