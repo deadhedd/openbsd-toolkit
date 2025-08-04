@@ -19,7 +19,8 @@ All notable changes to this project will be documented in this file following [K
 
 ### GitHub Module
 
-* GitHub module now reads SSH key filenames from `secrets.env` (`GITHUB_SSH_PRIVATE_KEY_FILE` and `GITHUB_SSH_PUBLIC_KEY_FILE`) instead of using a hardcoded deploy key.
+* GitHub module now reads the SSH private key filename from `secrets.env` (`GITHUB_SSH_PRIVATE_KEY_FILE`) instead of using a hardcoded deploy key.
+* Dropped support for the optional `GITHUB_SSH_PUBLIC_KEY_FILE`; the module now configures only the required private key.
 
 ## v1.0 – Initial Stable Release (2025-07-26)
 
