@@ -135,16 +135,16 @@ start_logging_if_debug "setup-$module_name" "$@"
 
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cat > /etc/hostname.${INTERFACE}" "rm -f /etc/hostname.${INTERFACE}"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_write "/etc/hostname.${INTERFACE}" <<EOF
 # inet ${GIT_SERVER} ${NETMASK}
 # !route add default ${GATEWAY}
 # EOF
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmpl="$(mktemp)"
 # cat > "$tmpl" <<EOF
 # inet ${GIT_SERVER} ${NETMASK}
@@ -161,16 +161,16 @@ EOF
 
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cat > /etc/resolv.conf" "rm -f /etc/resolv.conf"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_write /etc/resolv.conf <<EOF
 # nameserver ${DNS1}
 # nameserver ${DNS2}
 # EOF
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmpl="$(mktemp)"
 # cat > "$tmpl" <<EOF
 # nameserver ${DNS1}
@@ -184,7 +184,7 @@ cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
 EOF
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod 644 /etc/resolv.conf" "chmod 000 /etc/resolv.conf"
 chmod 644 /etc/resolv.conf
 
@@ -192,10 +192,10 @@ chmod 644 /etc/resolv.conf
 # 5) Apply networking
 ##############################################################################
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "ifconfig ${INTERFACE} inet ${GIT_SERVER} netmask ${NETMASK} up" "ifconfig ${INTERFACE} inet delete"
 ifconfig "${INTERFACE}" inet "${GIT_SERVER}" netmask "${NETMASK}" up
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "route add default ${GATEWAY}" "route delete default ${GATEWAY}"
 route add default "${GATEWAY}"
 
@@ -203,13 +203,13 @@ route add default "${GATEWAY}"
 # 6) SSH hardening
 ##############################################################################
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_replace_line /etc/ssh/sshd_config '^#*PermitRootLogin .*' 'PermitRootLogin no'
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_cfg="$(mktemp)"
 # cp /etc/ssh/sshd_config "$tmp_cfg"
 # sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' "$tmp_cfg"
@@ -221,13 +221,13 @@ route add default "${GATEWAY}"
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # TODO: Idempotency: replace+template with checksum
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_replace_line /etc/ssh/sshd_config '^#*PasswordAuthentication .*' 'PasswordAuthentication no'
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "rcctl restart sshd" "rcctl restart sshd"
 rcctl restart sshd
 
@@ -237,15 +237,15 @@ rcctl restart sshd
 
 # TODO: Idempotency: use state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cat >> /root/.profile" "cp /root/.profile.bak /root/.profile"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_append_line /root/.profile 'export HISTFILE=/root/.ksh_history'
 # safe_append_line /root/.profile 'export HISTSIZE=5000'
 # safe_append_line /root/.profile 'export HISTCONTROL=ignoredups'
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_profile="$(mktemp)"
 # cat /root/.profile > "$tmp_profile" 2>/dev/null || true
 # cat >> "$tmp_profile" <<'EOF'
@@ -262,7 +262,7 @@ export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups
 EOF
-# TODO: Idempotency: rollback handling and dry-run mode 
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd ". /root/.profile" ":"
 . /root/.profile # shellcheck will show an issue, but its expected and OK
 
