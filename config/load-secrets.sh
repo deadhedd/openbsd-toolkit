@@ -13,7 +13,7 @@
 #   so the caller can prompt the user to edit it.
 #
 # Deployment considerations:
-#   Handling secrets and private keys is more difficult when cloning the repo
+#   Handling secrets is more difficult when cloning the repo
 #   directly onto a freshly installed server instead of preparing it offline
 #   and mounting via USB. Some assumptions (like pre-editing secrets.env) may
 #   break in unattended remote install workflows.
