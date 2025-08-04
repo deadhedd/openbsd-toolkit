@@ -137,7 +137,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Packages
 ##############################################################################
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "pkg_add -v git" "pkg_delete git"
 pkg_add -v git
 
@@ -147,22 +147,22 @@ pkg_add -v git
 for u in "$OBS_USER" "$GIT_USER"; do
   shell_path=$([ "$u" = "$OBS_USER" ] && echo '/bin/ksh' || echo '/usr/local/bin/git-shell')
   if ! id "$u" >/dev/null 2>&1; then
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "useradd -m -s $shell_path $u" "userdel $u"
       useradd -m -s "$shell_path" "$u"
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "usermod -p '' $u" "passwd -l $u"
       usermod -p '' "$u"
   fi
 done
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "groupadd vault" "groupdel vault"
 groupadd vault || true
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "usermod -G vault $OBS_USER" "usermod -G '' $OBS_USER"
 usermod -G vault "$OBS_USER"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "usermod -G vault $GIT_USER" "usermod -G '' $GIT_USER"
 usermod -G vault "$GIT_USER"
 
@@ -173,7 +173,7 @@ usermod -G vault "$GIT_USER"
 # TODO: Idempotency: state detection
 # run_cmd "cat > /etc/doas.conf" "rm -f /etc/doas.conf"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # if ! grep -q "permit persist ${OBS_USER} as root" /etc/doas.conf 2>/dev/null; then
 # cat > /etc/doas.conf <<EOF
 cat > /etc/doas.conf <<EOF
@@ -182,10 +182,10 @@ permit nopass ${GIT_USER} as root cmd git*
 permit nopass ${GIT_USER} as ${OBS_USER} cmd git*
 EOF
 # fi
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown root:wheel /etc/doas.conf" "chown root:wheel /etc/doas.conf"
 chown root:wheel /etc/doas.conf
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod 0440 /etc/doas.conf" "chmod 0644 /etc/doas.conf"
 chmod 0440 /etc/doas.conf
 
@@ -195,13 +195,13 @@ chmod 0440 /etc/doas.conf
 
 # 7.1 SSH Service & Config
   if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i \"/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}\" /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
     
-    # TODO: Idempotency: safe editing
+    # Idempotency: safe editing example
     # safe_replace_line /etc/ssh/sshd_config '^AllowUsers ' "AllowUsers ${OBS_USER} ${GIT_USER}"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_cfg="$(mktemp)"
 # cp /etc/ssh/sshd_config "$tmp_cfg"
 # sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" "$tmp_cfg"
@@ -212,13 +212,13 @@ chmod 0440 /etc/doas.conf
     sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
   else
     
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "echo AllowUsers ${OBS_USER} ${GIT_USER} >> /etc/ssh/sshd_config" "sed -i '/AllowUsers ${OBS_USER} ${GIT_USER}/d' /etc/ssh/sshd_config"
     
-    # TODO: Idempotency: safe editing
+    # Idempotency: safe editing example
     # safe_append_line /etc/ssh/sshd_config "AllowUsers ${OBS_USER} ${GIT_USER}"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_cfg="$(mktemp)"
 # cp /etc/ssh/sshd_config "$tmp_cfg" 2>/dev/null || true
 # printf 'AllowUsers %s %s\n' "$OBS_USER" "$GIT_USER" >> "$tmp_cfg"
@@ -228,7 +228,7 @@ chmod 0440 /etc/doas.conf
 # rm -f "$tmp_cfg"
     echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
   fi
-  # TODO: Idempotency: rollback handling and dry-run mode
+  # Idempotency: rollback handling and dry-run mode example
   # run_cmd "rcctl restart sshd" "rcctl restart sshd"
   rcctl restart sshd
 
@@ -237,26 +237,26 @@ for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
     
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "mkdir -p $SSH_DIR" "rmdir $SSH_DIR"
     
-    # TODO: Idempotency: state detection
+    # Idempotency: state detection example
     # [ -d "$SSH_DIR" ] || mkdir -p "$SSH_DIR"
     mkdir -p "$SSH_DIR"
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "chmod 700 $SSH_DIR" "chmod 755 $SSH_DIR"
     chmod 700 "$SSH_DIR"
     
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "touch $SSH_DIR/authorized_keys" "rm -f $SSH_DIR/authorized_keys"
     
-    # TODO: Idempotency: state detection
+    # Idempotency: state detection example
     # [ -f "$SSH_DIR/authorized_keys" ] || touch "$SSH_DIR/authorized_keys"
     touch "$SSH_DIR/authorized_keys"
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "chmod 600 $SSH_DIR/authorized_keys" "chmod 644 $SSH_DIR/authorized_keys"
     chmod 600 "$SSH_DIR/authorized_keys"
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "chown -R $u:$u $SSH_DIR" "chown -R root:wheel $SSH_DIR"
     chown -R "$u:$u" "$SSH_DIR"
 done
@@ -264,13 +264,13 @@ done
 # 7.3 Known Hosts (OBS_USER only)
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "ssh-keyscan -H $GIT_SERVER >> /home/${OBS_USER}/.ssh/known_hosts" "sed -i '/$GIT_SERVER/d' /home/${OBS_USER}/.ssh/known_hosts"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_append_line "/home/${OBS_USER}/.ssh/known_hosts" "$(ssh-keyscan -H $GIT_SERVER)"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_hosts="$(mktemp)"
 # cat "/home/${OBS_USER}/.ssh/known_hosts" > "$tmp_hosts" 2>/dev/null || true
 # ssh-keyscan -H "$GIT_SERVER" >> "$tmp_hosts"
@@ -279,10 +279,10 @@ done
 # [ "$old_sum" = "$new_sum" ] || mv "$tmp_hosts" "/home/${OBS_USER}/.ssh/known_hosts"
 # rm -f "$tmp_hosts"
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod 644 /home/${OBS_USER}/.ssh/known_hosts" "chmod 600 /home/${OBS_USER}/.ssh/known_hosts"
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown ${OBS_USER}:${OBS_USER} /home/${OBS_USER}/.ssh/known_hosts" "chown root:wheel /home/${OBS_USER}/.ssh/known_hosts"
 chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
@@ -293,31 +293,31 @@ chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 VAULT_DIR="/home/${GIT_USER}/vaults"
 BARE_REPO="${VAULT_DIR}/${VAULT}.git"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "mkdir -p $VAULT_DIR" "rmdir $VAULT_DIR"
 
-# TODO: Idempotency: state detection
+# Idempotency: state detection example
 # [ -d "$VAULT_DIR" ] || mkdir -p "$VAULT_DIR"
 mkdir -p "$VAULT_DIR"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown ${GIT_USER}:${GIT_USER} $VAULT_DIR" "chown root:wheel $VAULT_DIR"
 
-# TODO: Idempotency: state detection
+# Idempotency: state detection example
 # [ "$(stat -f %Su \"$VAULT_DIR\" 2>/dev/null)" = "$GIT_USER" ] || chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "git init --bare $BARE_REPO" "rm -rf $BARE_REPO"
 
-# TODO: Idempotency: state detection
+# Idempotency: state detection example
 # [ -d "$BARE_REPO" ] || git init --bare "$BARE_REPO"
 git init --bare "$BARE_REPO"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown -R ${GIT_USER}:${GIT_USER} $BARE_REPO" "chown -R root:wheel $BARE_REPO"
 
-# TODO: Idempotency: state detection
+# Idempotency: state detection example
 # [ "$(stat -f %Su \"$BARE_REPO\" 2>/dev/null)" = "$GIT_USER" ] || chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
@@ -328,21 +328,21 @@ chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
     
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "touch $cfg" "rm -f $cfg"
     
-    # TODO: Idempotency: state detection
+    # Idempotency: state detection example
     # [ -f "$cfg" ] || touch "$cfg"
     touch "$cfg"
   if [ "$u" = "$GIT_USER" ]; then
       
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "git config --file $cfg --add safe.directory $BARE_REPO" "git config --file $cfg --unset-all safe.directory $BARE_REPO"
       
-      # TODO: Idempotency: safe editing
+      # Idempotency: safe editing example
       # git config --file "$cfg" --get-all safe.directory | grep -qx "$BARE_REPO" || git config --file "$cfg" --add safe.directory "$BARE_REPO"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_cfg="$(mktemp)"
 # cat > "$tmp_cfg" <<EOF
 # [safe]
@@ -355,24 +355,24 @@ for u in "$GIT_USER" "$OBS_USER"; do
 # rm -f "$tmp_cfg"
       git config --file "$cfg" --add safe.directory "$BARE_REPO"
       
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
       
-      # TODO: Idempotency: safe editing
+      # Idempotency: safe editing example
       # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
       
-      # TODO: Idempotency: replace+template with checksum
+      # Idempotency: replace+template with checksum example
       # (checksum template block above handles both safe.directory entries)
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   else
       
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
       
-      # TODO: Idempotency: safe editing
+      # Idempotency: safe editing example
       # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_cfg="$(mktemp)"
 # cat > "$tmp_cfg" <<EOF
 # [safe]
@@ -383,11 +383,11 @@ for u in "$GIT_USER" "$OBS_USER"; do
 # [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" "$cfg"
 # rm -f "$tmp_cfg"
       
-      # TODO: Idempotency: replace+template with checksum
+      # Idempotency: replace+template with checksum example
       # (checksum template block above handles safe.directory entry idempotently)
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   fi
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "chown $u:$u $cfg" "chown root:wheel $cfg"
     chown "$u:$u" "$cfg"
 done
@@ -401,10 +401,10 @@ HOOK="$BARE_REPO/hooks/post-receive"
 
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "cat > $HOOK" "rm -f $HOOK"
 
-# TODO: Idempotency: safe editing
+# Idempotency: safe editing example
 # safe_write "$HOOK" <<'EOF'
 # #!/bin/sh
 # SHA=$(cat "$BARE_REPO/refs/heads/master")
@@ -412,7 +412,7 @@ HOOK="$BARE_REPO/hooks/post-receive"
 # exit 0
 # EOF
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_hook="$(mktemp)"
 # cat > "$tmp_hook" <<'EOF'
 # #!/bin/sh
@@ -431,10 +431,10 @@ su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR
 exit 0
 EOF
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown ${GIT_USER}:${GIT_USER} $HOOK" "chown root:wheel $HOOK"
 chown "${GIT_USER}:${GIT_USER}" "$HOOK"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod +x $HOOK" "chmod -x $HOOK"
 chmod +x "$HOOK"
 
@@ -444,19 +444,19 @@ chmod +x "$HOOK"
 
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "mkdir -p $(dirname $WORK_DIR)" "rmdir $(dirname $WORK_DIR)"
 mkdir -p "$(dirname "$WORK_DIR")"
 # TODO: Idempotency: state detection
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "git -c safe.directory=$BARE_REPO clone $BARE_REPO $WORK_DIR" "rm -rf $WORK_DIR"
 git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown -R ${OBS_USER}:${OBS_USER} $WORK_DIR" "chown -R root:wheel $WORK_DIR"
 chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
   # run_cmd "git -C $WORK_DIR -c safe.directory=$WORK_DIR -c user.name='Obsidian User' -c user.email='obsidian@example.com' commit --allow-empty -m 'initial commit'" "git -C $WORK_DIR reset --hard HEAD~1"
   git -C "$WORK_DIR" \
       -c safe.directory="$WORK_DIR" \
@@ -468,16 +468,16 @@ chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
 # 12) Final perms on bare repo
 ##############################################################################
 
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "git --git-dir=$BARE_REPO config core.sharedRepository group" "git --git-dir=$BARE_REPO config --unset core.sharedRepository"
 git --git-dir="$BARE_REPO" config core.sharedRepository group
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown -R ${GIT_USER}:vault $BARE_REPO" "chown -R root:wheel $BARE_REPO"
 chown -R "${GIT_USER}:vault" "$BARE_REPO"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "chmod -R g+rwX $BARE_REPO" "chmod -R go-rwx $BARE_REPO"
 chmod -R g+rwX "$BARE_REPO"
-# TODO: Idempotency: rollback handling and dry-run mode
+# Idempotency: rollback handling and dry-run mode example
 # run_cmd "find $BARE_REPO -type d -exec chmod g+s {} +" "find $BARE_REPO -type d -exec chmod g-s {} +"
 find "$BARE_REPO" -type d -exec chmod g+s {} +
 
@@ -489,15 +489,15 @@ for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
       # TODO: Idempotency: state detection
       
-      # TODO: Idempotency: rollback handling and dry-run mode
+      # Idempotency: rollback handling and dry-run mode example
       # run_cmd "cat >> $PROFILE" "cp ${PROFILE}.bak $PROFILE"
 
-      # TODO: Idempotency: safe editing
+      # Idempotency: safe editing example
       # safe_append_line "$PROFILE" "export HISTFILE=/home/$u/.ksh_history"
       # safe_append_line "$PROFILE" "export HISTSIZE=5000"
       # safe_append_line "$PROFILE" "export HISTCONTROL=ignoredups"
 
-# TODO: Idempotency: replace+template with checksum
+# Idempotency: replace+template with checksum example
 # tmp_profile="$(mktemp)"
 # cat "$PROFILE" > "$tmp_profile" 2>/dev/null || true
 # cat >> "$tmp_profile" <<EOF
@@ -514,7 +514,7 @@ export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups
 EOF
-    # TODO: Idempotency: rollback handling and dry-run mode
+    # Idempotency: rollback handling and dry-run mode example
     # run_cmd "chown $u:$u $PROFILE" "chown root:wheel $PROFILE"
     chown "$u:$u" "$PROFILE"
 done
