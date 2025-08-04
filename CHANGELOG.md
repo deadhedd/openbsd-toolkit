@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file following [K
   continue to leverage `set -vx` for expanded command logging.
 * Added support for `--debug=FILE` to direct debug output to a custom log file.
 
+### Base System Setup
+
+* Root account `authorized_keys` now populated from `ROOT_SSH_PUBLIC_KEY_FILES`,
+  enabling multiple keys to be provisioned during setup.
+
 ## v1.0 – Initial Stable Release (2025-07-26)
 
 ### Setup and Tests
