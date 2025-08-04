@@ -36,6 +36,7 @@ SECRETS="$CONFIG_DIR/secrets.env"
 ##############################################################################
 
 if [ ! -f "$SECRETS" ]; then
+  # cmp -s "$EXAMPLE" "$SECRETS" || cp "$EXAMPLE" "$SECRETS"
   cp "$EXAMPLE" "$SECRETS"  # TODO: use state detection for idempotency
   echo "Created '$SECRETS' from example. Please edit it and re-run." >&2
   exit 1

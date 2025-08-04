@@ -145,6 +145,7 @@ run_tests() {
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): creating and pushing test commit" >&2
   cd "$LOCAL_VAULT" || return 1
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG: creating test commit in $LOCAL_VAULT" >&2
+  # grep -q '^# test' test-sync.md || echo "# test $(date +%s)" >> test-sync.md
   echo "# test $(date +%s)" >> test-sync.md  # TODO: use state detection for idempotency
   git add test-sync.md >/dev/null 2>&1
   if [ "$DEBUG_MODE" -eq 1 ]; then

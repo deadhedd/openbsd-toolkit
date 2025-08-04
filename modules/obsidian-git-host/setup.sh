@@ -145,11 +145,14 @@ usermod -G vault "$GIT_USER"
 # TODO: idempotency: state detection
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "cat > /etc/doas.conf" "rm -f /etc/doas.conf"
+# if ! grep -q "permit persist ${OBS_USER} as root" /etc/doas.conf 2>/dev/null; then
+# cat > /etc/doas.conf <<EOF
 cat > /etc/doas.conf <<EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
 permit nopass ${GIT_USER} as ${OBS_USER} cmd git*
 EOF
+# fi
 # TODO: Idempotency: Rollback handling and dry-run mode
 # run_cmd "chown root:wheel /etc/doas.conf" "chown root:wheel /etc/doas.conf"
 chown root:wheel /etc/doas.conf
@@ -184,6 +187,7 @@ for u in "$OBS_USER" "$GIT_USER"; do
     # TODO: idempotency: state detection
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "mkdir -p $SSH_DIR" "rmdir $SSH_DIR"
+    # [ -d "$SSH_DIR" ] || mkdir -p "$SSH_DIR"
     mkdir -p "$SSH_DIR"
     # TODO: Idempotency: Rollback handling and dry-run mode
     # run_cmd "chmod 700 $SSH_DIR" "chmod 755 $SSH_DIR"
@@ -191,6 +195,7 @@ for u in "$OBS_USER" "$GIT_USER"; do
     # TODO: idempotency: state detection
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "touch $SSH_DIR/authorized_keys" "rm -f $SSH_DIR/authorized_keys"
+    # [ -f "$SSH_DIR/authorized_keys" ] || touch "$SSH_DIR/authorized_keys"
     touch "$SSH_DIR/authorized_keys"
     # TODO: Idempotency: Rollback handling and dry-run mode
     # run_cmd "chmod 600 $SSH_DIR/authorized_keys" "chmod 644 $SSH_DIR/authorized_keys"
@@ -205,6 +210,7 @@ done
 # TODO: idempotency: Safe editing or replace+template with checksum
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan -H $GIT_SERVER >> /home/${OBS_USER}/.ssh/known_hosts" "sed -i '/$GIT_SERVER/d' /home/${OBS_USER}/.ssh/known_hosts"
+# grep -q "$GIT_SERVER" /home/${OBS_USER}/.ssh/known_hosts || ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 # TODO: idempotency rollback handling and dry-run mode
 # run_cmd "chmod 644 /home/${OBS_USER}/.ssh/known_hosts" "chmod 600 /home/${OBS_USER}/.ssh/known_hosts"
@@ -222,19 +228,23 @@ BARE_REPO="${VAULT_DIR}/${VAULT}.git"
 # TODO: idempotency: state detection
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "mkdir -p $VAULT_DIR" "rmdir $VAULT_DIR"
+# [ -d "$VAULT_DIR" ] || mkdir -p "$VAULT_DIR"
 mkdir -p "$VAULT_DIR"
 # TODO: idempotency: state detection
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "chown ${GIT_USER}:${GIT_USER} $VAULT_DIR" "chown root:wheel $VAULT_DIR"
+# [ "$(stat -f %Su \"$VAULT_DIR\" 2>/dev/null)" = "$GIT_USER" ] || chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 
 # TODO: idempotency: state detection
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "git init --bare $BARE_REPO" "rm -rf $BARE_REPO"
+# [ -d "$BARE_REPO" ] || git init --bare "$BARE_REPO"
 git init --bare "$BARE_REPO"
 # TODO: idempotency: state detection
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "chown -R ${GIT_USER}:${GIT_USER} $BARE_REPO" "chown -R root:wheel $BARE_REPO"
+# [ "$(stat -f %Su \"$BARE_REPO\" 2>/dev/null)" = "$GIT_USER" ] || chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
@@ -246,6 +256,7 @@ for u in "$GIT_USER" "$OBS_USER"; do
     # TODO: idempotency: state detection
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "touch $cfg" "rm -f $cfg"
+    # [ -f "$cfg" ] || touch "$cfg"
     touch "$cfg"
   if [ "$u" = "$GIT_USER" ]; then
       # TODO: idempotency: Safe editing or replace+template with checksum
