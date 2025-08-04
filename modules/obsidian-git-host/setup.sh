@@ -198,12 +198,26 @@ chmod 0440 /etc/doas.conf
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i \"/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}\" /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
     # safe_replace_line /etc/ssh/sshd_config '^AllowUsers ' "AllowUsers ${OBS_USER} ${GIT_USER}"
+# tmp_cfg="$(mktemp)"
+# cp /etc/ssh/sshd_config "$tmp_cfg"
+# sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" "$tmp_cfg"
+# old_sum="$(sha256 -q /etc/ssh/sshd_config 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_cfg")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
+# rm -f "$tmp_cfg"
     sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
   else
     # TODO: idempotency: Safe editing or replace+template with checksum
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "echo AllowUsers ${OBS_USER} ${GIT_USER} >> /etc/ssh/sshd_config" "sed -i '/AllowUsers ${OBS_USER} ${GIT_USER}/d' /etc/ssh/sshd_config"
     # safe_append_line /etc/ssh/sshd_config "AllowUsers ${OBS_USER} ${GIT_USER}"
+# tmp_cfg="$(mktemp)"
+# cp /etc/ssh/sshd_config "$tmp_cfg" 2>/dev/null || true
+# printf 'AllowUsers %s %s\n' "$OBS_USER" "$GIT_USER" >> "$tmp_cfg"
+# old_sum="$(sha256 -q /etc/ssh/sshd_config 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_cfg")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
+# rm -f "$tmp_cfg"
     echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
   fi
   # TODO: Idempotency: Rollback handling and dry-run mode
@@ -241,6 +255,13 @@ done
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan -H $GIT_SERVER >> /home/${OBS_USER}/.ssh/known_hosts" "sed -i '/$GIT_SERVER/d' /home/${OBS_USER}/.ssh/known_hosts"
 # safe_append_line "/home/${OBS_USER}/.ssh/known_hosts" "$(ssh-keyscan -H $GIT_SERVER)"
+# tmp_hosts="$(mktemp)"
+# cat "/home/${OBS_USER}/.ssh/known_hosts" > "$tmp_hosts" 2>/dev/null || true
+# ssh-keyscan -H "$GIT_SERVER" >> "$tmp_hosts"
+# old_sum="$(sha256 -q /home/${OBS_USER}/.ssh/known_hosts 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_hosts")"
+# [ "$old_sum" = "$new_sum" ] || mv "$tmp_hosts" "/home/${OBS_USER}/.ssh/known_hosts"
+# rm -f "$tmp_hosts"
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 # TODO: idempotency rollback handling and dry-run mode
 # run_cmd "chmod 644 /home/${OBS_USER}/.ssh/known_hosts" "chmod 600 /home/${OBS_USER}/.ssh/known_hosts"
@@ -293,17 +314,38 @@ for u in "$GIT_USER" "$OBS_USER"; do
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory $BARE_REPO" "git config --file $cfg --unset-all safe.directory $BARE_REPO"
       # git config --file "$cfg" --get-all safe.directory | grep -qx "$BARE_REPO" || git config --file "$cfg" --add safe.directory "$BARE_REPO"
+# tmp_cfg="$(mktemp)"
+# cat > "$tmp_cfg" <<EOF
+# [safe]
+#     directory = $BARE_REPO
+#     directory = /home/${OBS_USER}/vaults/${VAULT}
+# EOF
+# old_sum="$(sha256 -q "$cfg" 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_cfg")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" "$cfg"
+# rm -f "$tmp_cfg"
       git config --file "$cfg" --add safe.directory "$BARE_REPO"
       # TODO: idempotency: Safe editing or replace+template with checksum
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
       # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+      # (checksum template block above handles both safe.directory entries)
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   else
       # TODO: idempotency: Safe editing or replace+template with checksum
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
       # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
+# tmp_cfg="$(mktemp)"
+# cat > "$tmp_cfg" <<EOF
+# [safe]
+#     directory = /home/${OBS_USER}/vaults/${VAULT}
+# EOF
+# old_sum="$(sha256 -q "$cfg" 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_cfg")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" "$cfg"
+# rm -f "$tmp_cfg"
+      # (checksum template block above handles safe.directory entry idempotently)
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   fi
     # TODO: Idempotency: Rollback handling and dry-run mode
@@ -328,6 +370,17 @@ HOOK="$BARE_REPO/hooks/post-receive"
 # su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR checkout -f $SHA"
 # exit 0
 # EOF
+# tmp_hook="$(mktemp)"
+# cat > "$tmp_hook" <<'EOF'
+# #!/bin/sh
+# SHA=$(cat "$BARE_REPO/refs/heads/master")
+# su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR checkout -f $SHA"
+# exit 0
+# EOF
+# old_sum="$(sha256 -q "$HOOK" 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_hook")"
+# [ "$old_sum" = "$new_sum" ] || mv "$tmp_hook" "$HOOK"
+# rm -f "$tmp_hook"
 cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
@@ -396,6 +449,17 @@ for u in "$OBS_USER" "$GIT_USER"; do
       # safe_append_line "$PROFILE" "export HISTFILE=/home/$u/.ksh_history"
       # safe_append_line "$PROFILE" "export HISTSIZE=5000"
       # safe_append_line "$PROFILE" "export HISTCONTROL=ignoredups"
+# tmp_profile="$(mktemp)"
+# cat "$PROFILE" > "$tmp_profile" 2>/dev/null || true
+# cat >> "$tmp_profile" <<EOF
+# export HISTFILE=/home/$u/.ksh_history
+# export HISTSIZE=5000
+# export HISTCONTROL=ignoredups
+# EOF
+# old_sum="$(sha256 -q "$PROFILE" 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_profile")"
+# [ "$old_sum" = "$new_sum" ] || mv "$tmp_profile" "$PROFILE"
+# rm -f "$tmp_profile"
       cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000

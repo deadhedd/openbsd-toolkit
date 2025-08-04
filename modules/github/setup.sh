@@ -154,6 +154,13 @@ chmod 600 /root/.ssh/id_ed25519
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan github.com >> /root/.ssh/known_hosts" "sed -i '/github.com/d' /root/.ssh/known_hosts"
 # safe_append_line /root/.ssh/known_hosts "$(ssh-keyscan github.com)"
+# tmp_hosts="$(mktemp)"
+# cat /root/.ssh/known_hosts > "$tmp_hosts" 2>/dev/null || true
+# ssh-keyscan github.com >> "$tmp_hosts"
+# old_sum="$(sha256 -q /root/.ssh/known_hosts 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_hosts")"
+# [ "$old_sum" = "$new_sum" ] || mv "$tmp_hosts" /root/.ssh/known_hosts
+# rm -f "$tmp_hosts"
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set

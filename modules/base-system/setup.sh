@@ -141,6 +141,15 @@ start_logging_if_debug "setup-$module_name" "$@"
 # inet ${GIT_SERVER} ${NETMASK}
 # !route add default ${GATEWAY}
 # EOF
+# tmpl="$(mktemp)"
+# cat > "$tmpl" <<EOF
+# inet ${GIT_SERVER} ${NETMASK}
+# !route add default ${GATEWAY}
+# EOF
+# old_sum="$(sha256 -q /etc/hostname.${INTERFACE} 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmpl")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmpl" "/etc/hostname.${INTERFACE}"
+# rm -f "$tmpl"
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
@@ -154,6 +163,15 @@ EOF
 # nameserver ${DNS1}
 # nameserver ${DNS2}
 # EOF
+# tmpl="$(mktemp)"
+# cat > "$tmpl" <<EOF
+# nameserver ${DNS1}
+# nameserver ${DNS2}
+# EOF
+# old_sum="$(sha256 -q /etc/resolv.conf 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmpl")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmpl" /etc/resolv.conf
+# rm -f "$tmpl"
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
@@ -181,6 +199,14 @@ route add default "${GATEWAY}"
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
 # safe_replace_line /etc/ssh/sshd_config '^#*PermitRootLogin .*' 'PermitRootLogin no'
+# tmp_cfg="$(mktemp)"
+# cp /etc/ssh/sshd_config "$tmp_cfg"
+# sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' "$tmp_cfg"
+# sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' "$tmp_cfg"
+# old_sum="$(sha256 -q /etc/ssh/sshd_config 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_cfg")"
+# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
+# rm -f "$tmp_cfg"
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
@@ -202,6 +228,17 @@ rcctl restart sshd
 # safe_append_line /root/.profile 'export HISTFILE=/root/.ksh_history'
 # safe_append_line /root/.profile 'export HISTSIZE=5000'
 # safe_append_line /root/.profile 'export HISTCONTROL=ignoredups'
+# tmp_profile="$(mktemp)"
+# cat /root/.profile > "$tmp_profile" 2>/dev/null || true
+# cat >> "$tmp_profile" <<'EOF'
+# export HISTFILE=/root/.ksh_history
+# export HISTSIZE=5000
+# export HISTCONTROL=ignoredups
+# EOF
+# old_sum="$(sha256 -q /root/.profile 2>/dev/null || true)"
+# new_sum="$(sha256 -q "$tmp_profile")"
+# [ "$old_sum" = "$new_sum" ] || mv "$tmp_profile" /root/.profile
+# rm -f "$tmp_profile"
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
