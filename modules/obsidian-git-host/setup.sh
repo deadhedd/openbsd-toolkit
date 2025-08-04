@@ -114,7 +114,8 @@ usermod -G vault "$GIT_USER"
 # 6) doas config
 ##############################################################################
 
-# TODO: idempotency: state detection; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: rollback handling and dry-run mode
 cat > /etc/doas.conf <<EOF
 permit persist ${OBS_USER} as root
 permit nopass ${GIT_USER} as root cmd git*
@@ -131,10 +132,12 @@ chmod 0440 /etc/doas.conf
 
 # 7.1 SSH Service & Config
   if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
-    # TODO: idempotency: Safe editing or replace+template with checksum; rollback handling and dry-run mode
+    # TODO: idempotency: Safe editing or replace+template with checksum
+    # TODO: idempotency: rollback handling and dry-run mode
     sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
   else
-    # TODO: idempotency: Safe editing or replace+template with checksum; rollback handling and dry-run mode
+    # TODO: idempotency: Safe editing or replace+template with checksum
+    # TODO: idempotency: rollback handling and dry-run mode
     echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
   fi
   # TODO: Idempotency: Rollback handling and dry-run mode
@@ -144,11 +147,13 @@ chmod 0440 /etc/doas.conf
 for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
-    # TODO: idempotency: state detection; rollback handling and dry-run mode
+    # TODO: idempotency: state detection
+    # TODO: idempotency: rollback handling and dry-run mode
     mkdir -p "$SSH_DIR"
     # TODO: Idempotency: Rollback handling and dry-run mode
     chmod 700 "$SSH_DIR"
-    # TODO: idempotency: state detection; rollback handling and dry-run mode
+    # TODO: idempotency: state detection
+    # TODO: idempotency: rollback handling and dry-run mode
     touch "$SSH_DIR/authorized_keys"
     # TODO: Idempotency: Rollback handling and dry-run mode
     chmod 600 "$SSH_DIR/authorized_keys"
@@ -157,7 +162,9 @@ for u in "$OBS_USER" "$GIT_USER"; do
 done
 
 # 7.3 Known Hosts (OBS_USER only)
-# TODO: idempotency: state detection; Safe editing or replace+template with checksum; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: Safe editing or replace+template with checksum
+# TODO: idempotency: rollback handling and dry-run mode
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 # TODO: idempotency rollback handling and dry-run mode
 chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
@@ -170,14 +177,18 @@ chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
 BARE_REPO="${VAULT_DIR}/${VAULT}.git"
-# TODO: idempotency: state detection; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: rollback handling and dry-run mode
 mkdir -p "$VAULT_DIR"
-# TODO: idempotency: state detection; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: rollback handling and dry-run mode
 chown "${GIT_USER}:${GIT_USER}" "$VAULT_DIR"
 
-# TODO: idempotency: state detection; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: rollback handling and dry-run mode
 git init --bare "$BARE_REPO"
-# TODO: idempotency: state detection; rollback handling and dry-run mode
+# TODO: idempotency: state detection
+# TODO: idempotency: rollback handling and dry-run mode
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
@@ -186,15 +197,19 @@ chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 for u in "$GIT_USER" "$OBS_USER"; do
   cfg="/home/$u/.gitconfig"
-    # TODO: idempotency: state detection; rollback handling and dry-run mode
+    # TODO: idempotency: state detection
+    # TODO: idempotency: rollback handling and dry-run mode
     touch "$cfg"
   if [ "$u" = "$GIT_USER" ]; then
-      # TODO: idempotency: Safe editing or replace+template with checksum; rollback handling and dry-run mode
+      # TODO: idempotency: Safe editing or replace+template with checksum
+      # TODO: idempotency: rollback handling and dry-run mode
       git config --file "$cfg" --add safe.directory "$BARE_REPO"
-      # TODO: idempotency: Safe editing or replace+template with checksum; rollback handling and dry-run mode
+      # TODO: idempotency: Safe editing or replace+template with checksum
+      # TODO: idempotency: rollback handling and dry-run mode
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   else
-      # TODO: idempotency: Safe editing or replace+template with checksum; rollback handling and dry-run mode
+      # TODO: idempotency: Safe editing or replace+template with checksum
+      # TODO: idempotency: rollback handling and dry-run mode
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   fi
     # TODO: Idempotency: Rollback handling and dry-run mode
@@ -208,7 +223,9 @@ done
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
 HOOK="$BARE_REPO/hooks/post-receive"
 
-# TODO: Idempotency: state detection; Safe editing or replace+template with checksum; Rollback handling and dry-run mode
+# TODO: Idempotency: state detection
+# TODO: Idempotency: Safe editing or replace+template with checksum
+# TODO: Idempotency: Rollback handling and dry-run mode
 cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
@@ -225,9 +242,11 @@ chmod +x "$HOOK"
 # 11) Working copy clone & initial commit
 ##############################################################################
 
-# TODO: Idempotency: State detection; Rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: Rollback handling and dry-run mode
 mkdir -p "$(dirname "$WORK_DIR")"
-# TODO: Idempotency: State detection; Rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: Rollback handling and dry-run mode
 git -c safe.directory="$BARE_REPO" clone "$BARE_REPO" "$WORK_DIR"
 # TODO: Idempotency: rollback handling and dry-run mode
 chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
@@ -258,8 +277,10 @@ find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 for u in "$OBS_USER" "$GIT_USER"; do
   PROFILE="/home/$u/.profile"
-    # TODO: Idempotency: State detection; Safe editing or replace+template with checksum; Rollback handling and dry-run mode
-    cat <<EOF >> "$PROFILE"
+      # TODO: Idempotency: State detection
+      # TODO: Idempotency: Safe editing or replace+template with checksum
+      # TODO: Idempotency: Rollback handling and dry-run mode
+      cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
 export HISTCONTROL=ignoredups

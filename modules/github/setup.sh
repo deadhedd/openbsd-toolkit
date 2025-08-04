@@ -87,14 +87,18 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 # 4) SSH setup (keys & known_hosts)
 ##############################################################################
 
-# TODO: Idempotency: State detection; rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: rollback handling and dry-run mode
 mkdir -p /root/.ssh
-# TODO: Idempotency: State detection; rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: rollback handling and dry-run mode
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
 # TODO: Idempotency: Rollback handling and dry-run mode
 chmod 600 /root/.ssh/id_ed25519
 
-# TODO: Idempotency: State detection; safe editing or replace+template with checksum; rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: safe editing or replace+template with checksum
+# TODO: Idempotency: rollback handling and dry-run mode
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
@@ -107,7 +111,8 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 # 5) Repo bootstrap
 ##############################################################################
 
-# TODO: Idempotency: State detection; rollback handling and dry-run mode
+# TODO: Idempotency: State detection
+# TODO: Idempotency: rollback handling and dry-run mode
 git clone "$GITHUB_REPO" "$LOCAL_DIR"
 
 echo "github: GitHub configuration complete!"
