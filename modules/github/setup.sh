@@ -139,23 +139,30 @@ DEPLOY_KEY="$PROJECT_ROOT/config/deploy_key"
 
 # TODO: Idempotency: State detection
 # [ -d /root/.ssh ] || mkdir -p /root/.ssh
+
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "mkdir -p /root/.ssh" "rmdir /root/.ssh"
 mkdir -p /root/.ssh
 # TODO: Idempotency: State detection
 # [ -f /root/.ssh/id_ed25519 ] || cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
+
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp \"$DEPLOY_KEY\" /root/.ssh/id_ed25519" "rm -f /root/.ssh/id_ed25519"
 cp "$DEPLOY_KEY" /root/.ssh/id_ed25519
+
 # TODO: Idempotency: Rollback handling and dry-run mode
 # run_cmd "chmod 600 /root/.ssh/id_ed25519" "chmod 000 /root/.ssh/id_ed25519"
 chmod 600 /root/.ssh/id_ed25519
 
 # TODO: Idempotency: State detection
-# TODO: Idempotency: safe editing or replace+template with checksum
+
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan github.com >> /root/.ssh/known_hosts" "sed -i '/github.com/d' /root/.ssh/known_hosts"
+
+# TODO: Idempotency: safe editing
 # safe_append_line /root/.ssh/known_hosts "$(ssh-keyscan github.com)"
+
+# TODO: Idempotency: replace+template with checksum
 # tmp_hosts="$(mktemp)"
 # cat /root/.ssh/known_hosts > "$tmp_hosts" 2>/dev/null || true
 # ssh-keyscan github.com >> "$tmp_hosts"
@@ -177,6 +184,7 @@ ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 # TODO: Idempotency: State detection
 # [ -d "$LOCAL_DIR/.git" ] || git clone "$GITHUB_REPO" "$LOCAL_DIR"  # example for TODO above
+
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "git clone \"$GITHUB_REPO\" \"$LOCAL_DIR\"" "rm -rf \"$LOCAL_DIR\""
 git clone "$GITHUB_REPO" "$LOCAL_DIR"
