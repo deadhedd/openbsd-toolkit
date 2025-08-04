@@ -17,7 +17,6 @@
 #     • LOCAL_DIR                    — target clone path
 #     • GITHUB_REPO                  — git@github.com:… or https://… URL
 #     • GITHUB_SSH_PRIVATE_KEY_FILE — filename of private key in config/
-#     • (Optional) GITHUB_SSH_PUBLIC_KEY_FILE  — filename of public key in config/
 #
 # Security note:
 #   Enabling the --debug flag will log all executed commands *and their expanded
@@ -137,11 +136,6 @@ CONFIG_DIR="$PROJECT_ROOT/config"
 PRIVATE_KEY_SRC="$CONFIG_DIR/$GITHUB_SSH_PRIVATE_KEY_FILE"
 [ -f "$PRIVATE_KEY_SRC" ] || { echo "ERROR: private key not found at $PRIVATE_KEY_SRC" >&2; exit 1; }
 
-if [ -n "$GITHUB_SSH_PUBLIC_KEY_FILE" ]; then
-  PUBLIC_KEY_SRC="$CONFIG_DIR/$GITHUB_SSH_PUBLIC_KEY_FILE"
-  [ -f "$PUBLIC_KEY_SRC" ] || { echo "ERROR: public key not found at $PUBLIC_KEY_SRC" >&2; exit 1; }
-fi
-
 ##############################################################################
 # 4) SSH setup (keys & known_hosts)
 ##############################################################################
@@ -163,18 +157,6 @@ cp "$PRIVATE_KEY_SRC" /root/.ssh/id_ed25519
 # run_cmd "chmod 600 /root/.ssh/id_ed25519" "chmod 000 /root/.ssh/id_ed25519"
 chmod 600 /root/.ssh/id_ed25519
 
-# Idempotency: state detection example
-# [ -f /root/.ssh/id_ed25519.pub ] || cp "$PUBLIC_KEY_SRC" /root/.ssh/id_ed25519.pub
-
-# Idempotency: rollback handling and dry-run mode example
-# run_cmd "cp \"$PUBLIC_KEY_SRC\" /root/.ssh/id_ed25519.pub" "rm -f /root/.ssh/id_ed25519.pub"
-if [ -n "$GITHUB_SSH_PUBLIC_KEY_FILE" ]; then
-  cp "$PUBLIC_KEY_SRC" /root/.ssh/id_ed25519.pub
-
-  # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "chmod 644 /root/.ssh/id_ed25519.pub" "chmod 000 /root/.ssh/id_ed25519.pub"
-  chmod 644 /root/.ssh/id_ed25519.pub
-fi
 
 # TODO: Idempotency: state detection
 
