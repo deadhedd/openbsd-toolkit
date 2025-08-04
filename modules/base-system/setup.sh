@@ -83,13 +83,13 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 4) Networking config files
 ##############################################################################
 
-# TODO: Idempotency: Use state detection (safe editing or replace+template with checksum); rollback handling and dry-run mode
+# TODO: Idempotency: state detection; safe editing or replace+template with checksum; rollback handling and dry-run mode
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
 EOF
 
-# TODO: Idempotency: Use state detection (safe editing or replace+template with checksum); rollback handling and dry-run mode
+# TODO: Idempotency: state detection; safe editing or replace+template with checksum; rollback handling and dry-run mode
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
@@ -121,7 +121,7 @@ rcctl restart sshd
 # 7) Root history
 ##############################################################################
 
-# TODO: Idempotency: Use state detection (safe editing or replace+template with checksum); rollback handling and dry-run mode
+# TODO: Idempotency: Use state detection; safe editing or replace+template with checksum; rollback handling and dry-run mode
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000
