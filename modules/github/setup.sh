@@ -51,6 +51,34 @@ export PROJECT_ROOT
 #     ROLLBACK_CMDS="$_rollback\n$ROLLBACK_CMDS"
 #   fi
 # }
+# safe_append_line() {
+#   _file="$1"
+#   _line="$2"
+#   grep -Fqx "$_line" "$_file" 2>/dev/null && return 0
+#   _tmp="$(mktemp)"
+#   [ -f "$_file" ] && cp "$_file" "$_tmp"
+#   printf '%s\n' "$_line" >> "$_tmp"
+#   mv "$_tmp" "$_file"
+# }
+# safe_replace_line() {
+#   _file="$1"
+#   _pattern="$2"
+#   _replacement="$3"
+#   _tmp="$(mktemp)"
+#   sed "s|$_pattern|$_replacement|" "$_file" > "$_tmp"
+#   cmp -s "$_tmp" "$_file" || mv "$_tmp" "$_file"
+#   rm -f "$_tmp"
+# }
+# safe_write() {
+#   _file="$1"
+#   _tmp="$(mktemp)"
+#   cat > "$_tmp"
+#   if ! cmp -s "$_tmp" "$_file" 2>/dev/null; then
+#     mv "$_tmp" "$_file"
+#   else
+#     rm -f "$_tmp"
+#   fi
+# }
 # rollback() {
 #   printf '%s' "$ROLLBACK_CMDS" | while IFS= read -r _rb; do
 #     [ -n "$_rb" ] && eval "$_rb"
@@ -125,6 +153,7 @@ chmod 600 /root/.ssh/id_ed25519
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan github.com >> /root/.ssh/known_hosts" "sed -i '/github.com/d' /root/.ssh/known_hosts"
+# safe_append_line /root/.ssh/known_hosts "$(ssh-keyscan github.com)"
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 : "LOCAL_DIR=$LOCAL_DIR"       # ensure variable is set
