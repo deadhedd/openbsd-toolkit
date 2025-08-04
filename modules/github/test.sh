@@ -120,7 +120,11 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting github tests" >&2
-  echo "1..9"
+  total=7
+  if [ -n "$GITHUB_SSH_PUBLIC_KEY_FILE" ]; then
+    total=$((total + 2))
+  fi
+  echo "1..$total"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 SSH setup" >&2
   run_test "[ -d /root/.ssh ]"                                                  "root .ssh directory exists" \
@@ -129,10 +133,12 @@ run_tests() {
            "ls -l /root/.ssh/id_ed25519"
   run_test "stat -f '%Lp' /root/.ssh/id_ed25519 | grep -q '^600$'"               "private key mode is 600" \
            "stat -f '%Sp' /root/.ssh/id_ed25519"
-  run_test "[ -f /root/.ssh/id_ed25519.pub ]"                                    "public key present" \
-           "ls -l /root/.ssh/id_ed25519.pub"
-  run_test "stat -f '%Lp' /root/.ssh/id_ed25519.pub | grep -q '^644$'"           "public key mode is 644" \
-           "stat -f '%Sp' /root/.ssh/id_ed25519.pub"
+  if [ -n "$GITHUB_SSH_PUBLIC_KEY_FILE" ]; then
+    run_test "[ -f /root/.ssh/id_ed25519.pub ]"                                    "public key present" \
+             "ls -l /root/.ssh/id_ed25519.pub"
+    run_test "stat -f '%Lp' /root/.ssh/id_ed25519.pub | grep -q '^644$'"           "public key mode is 644" \
+             "stat -f '%Sp' /root/.ssh/id_ed25519.pub"
+  fi
   run_test "[ -f /root/.ssh/known_hosts ]"                                       "known_hosts exists" \
            "ls -l /root/.ssh/known_hosts"
   run_test "grep -q '^github\\.com ' /root/.ssh/known_hosts"                     "known_hosts contains GitHub" \
