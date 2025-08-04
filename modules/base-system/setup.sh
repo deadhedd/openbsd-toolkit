@@ -49,6 +49,34 @@ export PROJECT_ROOT
 #     ROLLBACK_CMDS="$_rollback\n$ROLLBACK_CMDS"
 #   fi
 # }
+# safe_append_line() {
+#   _file="$1"
+#   _line="$2"
+#   grep -Fqx "$_line" "$_file" 2>/dev/null && return 0
+#   _tmp="$(mktemp)"
+#   [ -f "$_file" ] && cp "$_file" "$_tmp"
+#   printf '%s\n' "$_line" >> "$_tmp"
+#   mv "$_tmp" "$_file"
+# }
+# safe_replace_line() {
+#   _file="$1"
+#   _pattern="$2"
+#   _replacement="$3"
+#   _tmp="$(mktemp)"
+#   sed "s|$_pattern|$_replacement|" "$_file" > "$_tmp"
+#   cmp -s "$_tmp" "$_file" || mv "$_tmp" "$_file"
+#   rm -f "$_tmp"
+# }
+# safe_write() {
+#   _file="$1"
+#   _tmp="$(mktemp)"
+#   cat > "$_tmp"
+#   if ! cmp -s "$_tmp" "$_file" 2>/dev/null; then
+#     mv "$_tmp" "$_file"
+#   else
+#     rm -f "$_tmp"
+#   fi
+# }
 # rollback() {
 #   printf '%s' "$ROLLBACK_CMDS" | while IFS= read -r _rb; do
 #     [ -n "$_rb" ] && eval "$_rb"
@@ -109,6 +137,10 @@ start_logging_if_debug "setup-$module_name" "$@"
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cat > /etc/hostname.${INTERFACE}" "rm -f /etc/hostname.${INTERFACE}"
+# safe_write "/etc/hostname.${INTERFACE}" <<EOF
+# inet ${GIT_SERVER} ${NETMASK}
+# !route add default ${GATEWAY}
+# EOF
 cat > "/etc/hostname.${INTERFACE}" <<EOF
 inet ${GIT_SERVER} ${NETMASK}
 !route add default ${GATEWAY}
@@ -118,6 +150,10 @@ EOF
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cat > /etc/resolv.conf" "rm -f /etc/resolv.conf"
+# safe_write /etc/resolv.conf <<EOF
+# nameserver ${DNS1}
+# nameserver ${DNS2}
+# EOF
 cat > /etc/resolv.conf <<EOF
 nameserver ${DNS1}
 nameserver ${DNS2}
@@ -144,10 +180,12 @@ route add default "${GATEWAY}"
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
+# safe_replace_line /etc/ssh/sshd_config '^#*PermitRootLogin .*' 'PermitRootLogin no'
 sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
+# safe_replace_line /etc/ssh/sshd_config '^#*PasswordAuthentication .*' 'PasswordAuthentication no'
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
 # TODO: Idempotency: Rollback handling and dry-run mode
 # run_cmd "rcctl restart sshd" "rcctl restart sshd"
@@ -161,6 +199,9 @@ rcctl restart sshd
 # TODO: Idempotency: safe editing or replace+template with checksum
 # TODO: Idempotency: rollback handling and dry-run mode
 # run_cmd "cat >> /root/.profile" "cp /root/.profile.bak /root/.profile"
+# safe_append_line /root/.profile 'export HISTFILE=/root/.ksh_history'
+# safe_append_line /root/.profile 'export HISTSIZE=5000'
+# safe_append_line /root/.profile 'export HISTCONTROL=ignoredups'
 cat << 'EOF' >> /root/.profile
 export HISTFILE=/root/.ksh_history
 export HISTSIZE=5000

@@ -49,6 +49,34 @@ export PROJECT_ROOT
 #     ROLLBACK_CMDS="$_rollback\n$ROLLBACK_CMDS"
 #   fi
 # }
+# safe_append_line() {
+#   _file="$1"
+#   _line="$2"
+#   grep -Fqx "$_line" "$_file" 2>/dev/null && return 0
+#   _tmp="$(mktemp)"
+#   [ -f "$_file" ] && cp "$_file" "$_tmp"
+#   printf '%s\n' "$_line" >> "$_tmp"
+#   mv "$_tmp" "$_file"
+# }
+# safe_replace_line() {
+#   _file="$1"
+#   _pattern="$2"
+#   _replacement="$3"
+#   _tmp="$(mktemp)"
+#   sed "s|$_pattern|$_replacement|" "$_file" > "$_tmp"
+#   cmp -s "$_tmp" "$_file" || mv "$_tmp" "$_file"
+#   rm -f "$_tmp"
+# }
+# safe_write() {
+#   _file="$1"
+#   _tmp="$(mktemp)"
+#   cat > "$_tmp"
+#   if ! cmp -s "$_tmp" "$_file" 2>/dev/null; then
+#     mv "$_tmp" "$_file"
+#   else
+#     rm -f "$_tmp"
+#   fi
+# }
 # rollback() {
 #   printf '%s' "$ROLLBACK_CMDS" | while IFS= read -r _rb; do
 #     [ -n "$_rb" ] && eval "$_rb"
@@ -169,11 +197,13 @@ chmod 0440 /etc/doas.conf
     # TODO: idempotency: Safe editing or replace+template with checksum
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i \"/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}\" /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
+    # safe_replace_line /etc/ssh/sshd_config '^AllowUsers ' "AllowUsers ${OBS_USER} ${GIT_USER}"
     sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
   else
     # TODO: idempotency: Safe editing or replace+template with checksum
     # TODO: idempotency: rollback handling and dry-run mode
     # run_cmd "echo AllowUsers ${OBS_USER} ${GIT_USER} >> /etc/ssh/sshd_config" "sed -i '/AllowUsers ${OBS_USER} ${GIT_USER}/d' /etc/ssh/sshd_config"
+    # safe_append_line /etc/ssh/sshd_config "AllowUsers ${OBS_USER} ${GIT_USER}"
     echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
   fi
   # TODO: Idempotency: Rollback handling and dry-run mode
@@ -210,7 +240,7 @@ done
 # TODO: idempotency: Safe editing or replace+template with checksum
 # TODO: idempotency: rollback handling and dry-run mode
 # run_cmd "ssh-keyscan -H $GIT_SERVER >> /home/${OBS_USER}/.ssh/known_hosts" "sed -i '/$GIT_SERVER/d' /home/${OBS_USER}/.ssh/known_hosts"
-# grep -q "$GIT_SERVER" /home/${OBS_USER}/.ssh/known_hosts || ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
+# safe_append_line "/home/${OBS_USER}/.ssh/known_hosts" "$(ssh-keyscan -H $GIT_SERVER)"
 ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
 # TODO: idempotency rollback handling and dry-run mode
 # run_cmd "chmod 644 /home/${OBS_USER}/.ssh/known_hosts" "chmod 600 /home/${OBS_USER}/.ssh/known_hosts"
@@ -262,15 +292,18 @@ for u in "$GIT_USER" "$OBS_USER"; do
       # TODO: idempotency: Safe editing or replace+template with checksum
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory $BARE_REPO" "git config --file $cfg --unset-all safe.directory $BARE_REPO"
+      # git config --file "$cfg" --get-all safe.directory | grep -qx "$BARE_REPO" || git config --file "$cfg" --add safe.directory "$BARE_REPO"
       git config --file "$cfg" --add safe.directory "$BARE_REPO"
       # TODO: idempotency: Safe editing or replace+template with checksum
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
+      # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   else
       # TODO: idempotency: Safe editing or replace+template with checksum
       # TODO: idempotency: rollback handling and dry-run mode
       # run_cmd "git config --file $cfg --add safe.directory /home/${OBS_USER}/vaults/${VAULT}" "git config --file $cfg --unset-all safe.directory /home/${OBS_USER}/vaults/${VAULT}"
+      # git config --file "$cfg" --get-all safe.directory | grep -qx "/home/${OBS_USER}/vaults/${VAULT}" || git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
       git config --file "$cfg" --add safe.directory "/home/${OBS_USER}/vaults/${VAULT}"
   fi
     # TODO: Idempotency: Rollback handling and dry-run mode
@@ -289,6 +322,12 @@ HOOK="$BARE_REPO/hooks/post-receive"
 # TODO: Idempotency: Safe editing or replace+template with checksum
 # TODO: Idempotency: Rollback handling and dry-run mode
 # run_cmd "cat > $HOOK" "rm -f $HOOK"
+# safe_write "$HOOK" <<'EOF'
+# #!/bin/sh
+# SHA=$(cat "$BARE_REPO/refs/heads/master")
+# su - $OBS_USER -c "/usr/local/bin/git --git-dir=$BARE_REPO --work-tree=$WORK_DIR checkout -f $SHA"
+# exit 0
+# EOF
 cat > "$HOOK" <<EOF
 #!/bin/sh
 SHA=\$(cat "$BARE_REPO/refs/heads/master")
@@ -354,6 +393,9 @@ for u in "$OBS_USER" "$GIT_USER"; do
       # TODO: Idempotency: Safe editing or replace+template with checksum
       # TODO: Idempotency: Rollback handling and dry-run mode
       # run_cmd "cat >> $PROFILE" "cp ${PROFILE}.bak $PROFILE"
+      # safe_append_line "$PROFILE" "export HISTFILE=/home/$u/.ksh_history"
+      # safe_append_line "$PROFILE" "export HISTSIZE=5000"
+      # safe_append_line "$PROFILE" "export HISTCONTROL=ignoredups"
       cat <<EOF >> "$PROFILE"
 export HISTFILE=/home/$u/.ksh_history
 export HISTSIZE=5000
