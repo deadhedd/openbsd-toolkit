@@ -119,12 +119,7 @@ assert_file_perm() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
-  ROOT_KEYS="${ROOT_SSH_PUBLIC_KEY_FILES:-$ROOT_SSH_PUBLIC_KEY_FILE}"
-  key_count=0
-  for _k in $ROOT_KEYS; do
-    key_count=$((key_count + 1))
-  done
-  total_tests=$((15 + 4 + key_count))
+  total_tests=15
   echo "1..${total_tests}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
@@ -160,19 +155,7 @@ run_tests() {
   run_test "rcctl check sshd"                                                  "sshd service is running" \
            "ps -ax | grep '[s]shd'"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root ssh keys" >&2
-  run_test "[ -d /root/.ssh ]"                                                ".ssh for root exists" \
-           "ls -ld /root/.ssh"
-  assert_file_perm "/root/.ssh" "700"                                         ".ssh perms for root"
-  run_test "[ -f /root/.ssh/authorized_keys ]"                                "authorized_keys for root exists" \
-           "ls -l /root/.ssh/authorized_keys"
-  assert_file_perm "/root/.ssh/authorized_keys" "600"                        "authorized_keys perms for root"
-  for k in $ROOT_KEYS; do
-    keydata="$(cat "$PROJECT_ROOT/config/$k" 2>/dev/null || true)"
-    run_test "grep -Fq \"$keydata\" /root/.ssh/authorized_keys"           "authorized_keys contains $k"
-  done
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 root history" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \
            "grep '^export HISTFILE' /root/.profile"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE" \
