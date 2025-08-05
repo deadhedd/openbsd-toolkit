@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file following [K
 
 * Removed management of root account `authorized_keys`; base-system no longer
   populates root SSH keys during setup.
+* Base-system now populates `authorized_keys` for `ADMIN_USER` using public
+  keys specified in `secrets.env`.
 
 ### GitHub Module
 

@@ -3,7 +3,7 @@
 # modules/base-system/test.sh — Verify base-system configuration (networking, SSH, history)
 # Author: deadhedd
 # Version: 1.0.0
-# Updated: 2025-08-02
+# Updated: 2025-08-05
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #
@@ -119,7 +119,7 @@ assert_file_perm() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
-  total_tests=15
+  total_tests=22
   echo "1..${total_tests}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
@@ -155,7 +155,25 @@ run_tests() {
   run_test "rcctl check sshd"                                                  "sshd service is running" \
            "ps -ax | grep '[s]shd'"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 admin ssh access" >&2
+  run_test "[ -d /home/${ADMIN_USER}/.ssh ]"                                  "ssh dir for ${ADMIN_USER} exists" \
+           "ls -ld /home/${ADMIN_USER}/.ssh"
+  assert_file_perm "/home/${ADMIN_USER}/.ssh" "700"                           "ssh dir perms for ${ADMIN_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh | grep -q '^${ADMIN_USER}:${ADMIN_USER}\$'" \
+           "ssh dir owner for ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh"
+  run_test "[ -f /home/${ADMIN_USER}/.ssh/authorized_keys ]"                   "authorized_keys for ${ADMIN_USER} exists" \
+           "ls -l /home/${ADMIN_USER}/.ssh/authorized_keys"
+  assert_file_perm "/home/${ADMIN_USER}/.ssh/authorized_keys" "600"          "authorized_keys perms for ${ADMIN_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys | grep -q '^${ADMIN_USER}:${ADMIN_USER}\$'" \
+           "authorized_keys owner for ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys"
+  admin_pub_key=$(tr -d '\n' < "$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE")
+  run_test "grep -Fq '$admin_pub_key' /home/${ADMIN_USER}/.ssh/authorized_keys" \
+           "authorized_keys contains admin public key" \
+           "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \
            "grep '^export HISTFILE' /root/.profile"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE" \

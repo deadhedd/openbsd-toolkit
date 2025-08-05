@@ -3,7 +3,7 @@
 # modules/base-system/setup.sh — General system configuration for OpenBSD server
 # Author: deadhedd
 # Version: 1.0.0
-# Updated: 2025-08-02
+# Updated: 2025-08-05
 #
 # Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
@@ -232,7 +232,34 @@ sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd
 rcctl restart sshd
 
 ##############################################################################
-# 7) Root history
+# 7) Admin SSH access
+##############################################################################
+
+CONFIG_DIR="$PROJECT_ROOT/config"
+[ -n "$ADMIN_USER" ] || { echo "ERROR: ADMIN_USER not set" >&2; exit 1; }
+SSH_KEY_VARS=$(env | awk -F= '/_SSH_PUBLIC_KEY_FILE=/{print $1}')
+[ -n "$SSH_KEY_VARS" ] || { echo "ERROR: no *_SSH_PUBLIC_KEY_FILE variables set" >&2; exit 1; }
+
+ADMIN_HOME="/home/$ADMIN_USER"
+SSH_DIR="$ADMIN_HOME/.ssh"
+AUTH_KEYS="$SSH_DIR/authorized_keys"
+mkdir -p "$SSH_DIR"
+chmod 700 "$SSH_DIR"
+: > "$AUTH_KEYS"
+for var in $SSH_KEY_VARS; do
+  key_file=$(eval echo "\$$var")
+  key_path="$CONFIG_DIR/$key_file"
+  if [ -f "$key_path" ]; then
+    cat "$key_path" >> "$AUTH_KEYS"
+  else
+    echo "WARNING: missing SSH public key file $key_path" >&2
+  fi
+done
+chmod 600 "$AUTH_KEYS"
+chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
+
+##############################################################################
+# 8) Root history
 ##############################################################################
 
 # TODO: Idempotency: use state detection
