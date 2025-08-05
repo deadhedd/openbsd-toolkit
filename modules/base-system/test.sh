@@ -75,7 +75,7 @@ start_logging "$SCRIPT_PATH" "$@"
 # 3) Load secrets
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 
 ##############################################################################
 # 4) Test helpers

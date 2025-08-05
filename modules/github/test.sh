@@ -79,7 +79,7 @@ start_logging "$SCRIPT_PATH" "$@"
 ##############################################################################
 
 # shellcheck source=config/load-secrets.sh
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "GitHub"
 
 ##############################################################################
 # 4) Test helpers

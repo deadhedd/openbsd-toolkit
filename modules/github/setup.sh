@@ -128,7 +128,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 3) Inputs (secrets & constants) + validation
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "GitHub"
 
 CONFIG_DIR="$PROJECT_ROOT/config"
 
