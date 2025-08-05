@@ -1,7 +1,7 @@
 # base-system
 
 ## Purpose
-Configures hostname, networking, SSH hardening, root SSH authorized keys, and root shell history on a fresh OpenBSD server.
+Configures hostname, networking, SSH hardening, and root shell history on a fresh OpenBSD server.
 
 ## Prerequisites
 - Run as root on OpenBSD 7.4+
@@ -15,7 +15,6 @@ Configures hostname, networking, SSH hardening, root SSH authorized keys, and ro
 | `NETMASK` | Network mask |
 | `GATEWAY` | Default gateway |
 | `DNS1`, `DNS2` | Resolver addresses |
-| `ROOT_SSH_PUBLIC_KEY_FILES` | Space-separated list of root SSH public key filenames |
 
 ## Setup
 ```sh

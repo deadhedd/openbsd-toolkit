@@ -14,8 +14,8 @@ All notable changes to this project will be documented in this file following [K
 
 ### Base System Setup
 
-* Root account `authorized_keys` now populated from `ROOT_SSH_PUBLIC_KEY_FILES`,
-  enabling multiple keys to be provisioned during setup.
+* Removed management of root account `authorized_keys`; base-system no longer
+  populates root SSH keys during setup.
 
 ### GitHub Module
 

@@ -232,37 +232,7 @@ sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd
 rcctl restart sshd
 
 ##############################################################################
-# 7) Root SSH authorized keys
-##############################################################################
-
-# TODO: Idempotency: state detection
-
-ROOT_KEYS="${ROOT_SSH_PUBLIC_KEY_FILES:-$ROOT_SSH_PUBLIC_KEY_FILE}"
-if [ -n "$ROOT_KEYS" ]; then
-  SRC_DIR="$PROJECT_ROOT/config"
-  SSH_DIR="/root/.ssh"
-  # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "mkdir -p $SSH_DIR" "rmdir $SSH_DIR"
-  mkdir -p "$SSH_DIR"
-  # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "chmod 700 $SSH_DIR" "chmod 755 $SSH_DIR"
-  chmod 700 "$SSH_DIR"
-  AUTH_FILE="$SSH_DIR/authorized_keys"
-  : > "$AUTH_FILE"
-  for key in $ROOT_KEYS; do
-    if [ -f "$SRC_DIR/$key" ]; then
-      cat "$SRC_DIR/$key" >> "$AUTH_FILE"
-    else
-      printf 'warning: root ssh key file "%s" not found in %s\n' "$key" "$SRC_DIR" >&2
-    fi
-  done
-  # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "chmod 600 $AUTH_FILE" "chmod 644 $AUTH_FILE"
-  chmod 600 "$AUTH_FILE"
-fi
-
-##############################################################################
-# 8) Root history
+# 7) Root history
 ##############################################################################
 
 # TODO: Idempotency: use state detection
