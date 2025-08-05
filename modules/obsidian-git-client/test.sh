@@ -66,7 +66,8 @@ start_logging "$SCRIPT_PATH" "$@"
 # 3) Load secrets
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"

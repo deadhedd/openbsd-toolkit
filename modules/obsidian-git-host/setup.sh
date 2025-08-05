@@ -127,7 +127,8 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 3) Secrets & required vars
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"

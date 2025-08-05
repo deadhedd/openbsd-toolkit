@@ -127,7 +127,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 # 3) Load secrets
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 
 ##############################################################################
 # 4) Networking config files
