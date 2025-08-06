@@ -119,7 +119,7 @@ assert_file_perm() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
-  total_tests=26
+  total_tests=31
   echo "1..${total_tests}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
@@ -189,6 +189,19 @@ run_tests() {
            "grep '^export HISTSIZE' /root/.profile"
   run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"           "root .profile sets HISTCONTROL" \
            "grep '^export HISTCONTROL' /root/.profile"
+
+  run_test "grep -q '^export HISTFILE=/home/${ADMIN_USER}/.ksh_history' /home/${ADMIN_USER}/.profile" \
+           "admin .profile sets HISTFILE" \
+           "grep '^export HISTFILE' /home/${ADMIN_USER}/.profile"
+  run_test "grep -q '^export HISTSIZE=5000' /home/${ADMIN_USER}/.profile"      "admin .profile sets HISTSIZE" \
+           "grep '^export HISTSIZE' /home/${ADMIN_USER}/.profile"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /home/${ADMIN_USER}/.profile" \
+           "admin .profile sets HISTCONTROL" \
+           "grep '^export HISTCONTROL' /home/${ADMIN_USER}/.profile"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.profile | grep -q '^${ADMIN_USER}:${ADMIN_USER}$'" \
+           "admin .profile owner ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.profile"
+  assert_file_perm "/home/${ADMIN_USER}/.profile" "644"                       "admin .profile mode is 644"
 }
 
 run_tests

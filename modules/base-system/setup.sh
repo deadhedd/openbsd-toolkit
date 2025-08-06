@@ -318,4 +318,17 @@ EOF
 # run_cmd ". /root/.profile" ":"
 . /root/.profile # shellcheck will show an issue, but its expected and OK
 
+#
+##############################################################################
+# 10) Admin history
+##############################################################################
+
+cat << EOF >> "$ADMIN_HOME/.profile"
+export HISTFILE=$ADMIN_HOME/.ksh_history
+export HISTSIZE=5000
+export HISTCONTROL=ignoredups
+EOF
+chown "$ADMIN_USER:$ADMIN_USER" "$ADMIN_HOME/.profile"
+chmod 644 "$ADMIN_HOME/.profile"
+
 echo "base-system: system configuration complete!"
