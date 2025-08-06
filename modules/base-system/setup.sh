@@ -242,6 +242,15 @@ if ! id "$ADMIN_USER" >/dev/null 2>&1; then
   # Idempotency: rollback handling and dry-run mode example
   # run_cmd "useradd -m -G wheel -s /bin/ksh $ADMIN_USER" "userdel $ADMIN_USER"
   useradd -m -G wheel -s /bin/ksh "$ADMIN_USER"
+fi
+
+# Set admin password if provided; otherwise lock the account
+if [ -n "$ADMIN_PASSWORD" ]; then
+  pw_hash="$(encrypt -b "$ADMIN_PASSWORD")"
+  # Idempotency: rollback handling and dry-run mode example
+  # run_cmd "usermod -p '$pw_hash' $ADMIN_USER" "passwd -u $ADMIN_USER"
+  usermod -p "$pw_hash" "$ADMIN_USER"
+else
   # Idempotency: rollback handling and dry-run mode example
   # run_cmd "usermod -p '*' $ADMIN_USER" "passwd -u $ADMIN_USER"
   usermod -p '*' "$ADMIN_USER"

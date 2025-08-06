@@ -158,8 +158,13 @@ run_tests() {
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 admin ssh access" >&2
   run_test "id ${ADMIN_USER} >/dev/null 2>&1"                                 "account ${ADMIN_USER} exists" \
            "id ${ADMIN_USER}"
-  run_test "grep -q '^${ADMIN_USER}:\\*:' /etc/master.passwd"                 "account ${ADMIN_USER} password locked" \
-           "grep '^${ADMIN_USER}:' /etc/master.passwd"
+  if [ -n "${ADMIN_PASSWORD}" ]; then
+    run_test "grep -q '^${ADMIN_USER}:[^*]' /etc/master.passwd"                "account ${ADMIN_USER} password set" \
+             "grep '^${ADMIN_USER}:' /etc/master.passwd"
+  else
+    run_test "grep -q '^${ADMIN_USER}:\\*:' /etc/master.passwd"               "account ${ADMIN_USER} password locked" \
+             "grep '^${ADMIN_USER}:' /etc/master.passwd"
+  fi
   run_test "[ -d /home/${ADMIN_USER}/.ssh ]"                                  "ssh dir for ${ADMIN_USER} exists" \
            "ls -ld /home/${ADMIN_USER}/.ssh"
   assert_file_perm "/home/${ADMIN_USER}/.ssh" "700"                           "ssh dir perms for ${ADMIN_USER}"

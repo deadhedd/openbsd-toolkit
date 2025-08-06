@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file following [K
   keys specified in `secrets.env`.
 * Base-system now creates the `ADMIN_USER` account and installs its SSH public
   key(s).
+* Base-system can optionally set the `ADMIN_USER` password from `secrets.env`
+  when `ADMIN_PASSWORD` is provided.
 
 ### GitHub Module
 
