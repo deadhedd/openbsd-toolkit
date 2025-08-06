@@ -15,6 +15,8 @@ Configures hostname, networking, SSH hardening, and root shell history on a fres
 | `NETMASK` | Network mask |
 | `GATEWAY` | Default gateway |
 | `DNS1`, `DNS2` | Resolver addresses |
+| `ADMIN_USER` | Admin account to create |
+| `ADMIN_SSH_PUBLIC_KEY_FILE` | SSH public key filename for `ADMIN_USER` (in `config/`) |
 
 ## Setup
 ```sh

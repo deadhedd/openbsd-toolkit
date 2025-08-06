@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file following [K
   populates root SSH keys during setup.
 * Base-system now populates `authorized_keys` for `ADMIN_USER` using public
   keys specified in `secrets.env`.
+* Base-system now creates the `ADMIN_USER` account and installs its SSH public
+  key(s).
 
 ### GitHub Module
 

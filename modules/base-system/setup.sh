@@ -232,11 +232,22 @@ sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd
 rcctl restart sshd
 
 ##############################################################################
-# 7) Admin SSH access
+# 7) Admin user & SSH access
 ##############################################################################
 
-CONFIG_DIR="$PROJECT_ROOT/config"
 [ -n "$ADMIN_USER" ] || { echo "ERROR: ADMIN_USER not set" >&2; exit 1; }
+
+# Create admin user if missing
+if ! id "$ADMIN_USER" >/dev/null 2>&1; then
+  # Idempotency: rollback handling and dry-run mode example
+  # run_cmd "useradd -m -G wheel -s /bin/ksh $ADMIN_USER" "userdel $ADMIN_USER"
+  useradd -m -G wheel -s /bin/ksh "$ADMIN_USER"
+  # Idempotency: rollback handling and dry-run mode example
+  # run_cmd "usermod -p '' $ADMIN_USER" "passwd -l $ADMIN_USER"
+  usermod -p '' "$ADMIN_USER"
+fi
+
+CONFIG_DIR="$PROJECT_ROOT/config"
 SSH_KEY_VARS=$(env | awk -F= '/_SSH_PUBLIC_KEY_FILE=/{print $1}')
 [ -n "$SSH_KEY_VARS" ] || { echo "ERROR: no *_SSH_PUBLIC_KEY_FILE variables set" >&2; exit 1; }
 
