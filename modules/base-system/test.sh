@@ -119,7 +119,7 @@ assert_file_perm() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
-  total_tests=23
+  total_tests=26
   echo "1..${total_tests}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
@@ -175,7 +175,14 @@ run_tests() {
            "authorized_keys contains admin public key" \
            "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 root history" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 doas configuration" >&2
+  run_test "grep -q '^permit persist ${ADMIN_USER} as root$' /etc/doas.conf"   "doas rule for ${ADMIN_USER}" \
+           "cat /etc/doas.conf"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel$'"         "doas.conf owner root:wheel" \
+           "stat -f '%Su:%Sg' /etc/doas.conf"
+  assert_file_perm "/etc/doas.conf" "440"                                     "doas.conf mode is 440"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \
            "grep '^export HISTFILE' /root/.profile"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE" \

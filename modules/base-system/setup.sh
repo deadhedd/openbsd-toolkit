@@ -270,7 +270,21 @@ chmod 600 "$AUTH_KEYS"
 chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
 
 ##############################################################################
-# 8) Root history
+# 8) Doas configuration
+##############################################################################
+
+DOAS_CONF="/etc/doas.conf"
+if [ -f "$DOAS_CONF" ]; then
+  grep -Fqx "permit persist ${ADMIN_USER} as root" "$DOAS_CONF" 2>/dev/null \
+    || echo "permit persist ${ADMIN_USER} as root" >> "$DOAS_CONF"
+else
+  echo "permit persist ${ADMIN_USER} as root" > "$DOAS_CONF"
+fi
+chown root:wheel "$DOAS_CONF"
+chmod 440 "$DOAS_CONF"
+
+##############################################################################
+# 9) Root history
 ##############################################################################
 
 # TODO: Idempotency: use state detection
