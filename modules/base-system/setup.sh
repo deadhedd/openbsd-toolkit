@@ -243,8 +243,8 @@ if ! id "$ADMIN_USER" >/dev/null 2>&1; then
   # run_cmd "useradd -m -G wheel -s /bin/ksh $ADMIN_USER" "userdel $ADMIN_USER"
   useradd -m -G wheel -s /bin/ksh "$ADMIN_USER"
   # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "usermod -p '' $ADMIN_USER" "passwd -l $ADMIN_USER"
-  usermod -p '' "$ADMIN_USER"
+  # run_cmd "usermod -p '*' $ADMIN_USER" "passwd -u $ADMIN_USER"
+  usermod -p '*' "$ADMIN_USER"
 fi
 
 CONFIG_DIR="$PROJECT_ROOT/config"
