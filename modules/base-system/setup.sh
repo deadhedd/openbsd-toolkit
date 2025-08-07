@@ -275,6 +275,7 @@ for var in $SSH_KEY_VARS; do
     echo "WARNING: missing SSH public key file $key_path" >&2
   fi
 done
+echo "AllowUsers ${ADMIN_USER}" >> /etc/ssh/sshd_config
 chmod 600 "$AUTH_KEYS"
 chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
 
