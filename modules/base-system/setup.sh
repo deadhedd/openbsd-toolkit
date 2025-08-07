@@ -34,6 +34,22 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# Merge unique tokens in a directive line without clobbering existing values.
+safe_replace_line() {
+  _file="$1"
+  _directive="$2"
+  shift 2
+  _values="$*"
+  if [ -f "$_file" ] && grep -q "^${_directive} " "$_file"; then
+    _existing="$(grep "^${_directive} " "$_file" | head -n1 | cut -d' ' -f2-)"
+    _combined="$(printf '%s\n%s\n' "$_existing" "$_values" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+    _combined="$(printf '%s' "$_combined" | sed 's/[[:space:]]*$//')"
+    sed -i "/^${_directive} /c\\${_directive} ${_combined}" "$_file"
+  else
+    echo "${_directive} ${_values}" >> "$_file"
+  fi
+}
+
 # -----------------------------------------------------------------------------
 # Idempotency helpers (commented out until dry-run/rollback is implemented)
 # -----------------------------------------------------------------------------
@@ -272,7 +288,7 @@ for var in $SSH_KEY_VARS; do
     echo "WARNING: missing SSH public key file $key_path" >&2
   fi
 done
-echo "AllowUsers ${ADMIN_USER}" >> /etc/ssh/sshd_config
+safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER}"
 chmod 600 "$AUTH_KEYS"
 chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
 rcctl restart sshd
