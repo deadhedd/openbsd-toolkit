@@ -171,18 +171,19 @@ usermod -G vault "$GIT_USER"
 # 6) doas config
 ##############################################################################
 
-# TODO: Idempotency: state detection
-# run_cmd "cat > /etc/doas.conf" "rm -f /etc/doas.conf"
+DOAS_CONF="/etc/doas.conf"
+touch "$DOAS_CONF"
 
-# Idempotency: rollback handling and dry-run mode example
-# if ! grep -q "permit persist ${OBS_USER} as root" /etc/doas.conf 2>/dev/null; then
-# cat > /etc/doas.conf <<EOF
-cat > /etc/doas.conf <<EOF
-permit persist ${OBS_USER} as root
-permit nopass ${GIT_USER} as root cmd git*
-permit nopass ${GIT_USER} as ${OBS_USER} cmd git*
-EOF
-# fi
+# Append module-specific rules only if they are missing
+if ! grep -Fqx "permit persist ${OBS_USER} as root" "$DOAS_CONF"; then
+  echo "permit persist ${OBS_USER} as root" >> "$DOAS_CONF"
+fi
+if ! grep -Fqx "permit nopass ${GIT_USER} as root cmd git*" "$DOAS_CONF"; then
+  echo "permit nopass ${GIT_USER} as root cmd git*" >> "$DOAS_CONF"
+fi
+if ! grep -Fqx "permit nopass ${GIT_USER} as ${OBS_USER} cmd git*" "$DOAS_CONF"; then
+  echo "permit nopass ${GIT_USER} as ${OBS_USER} cmd git*" >> "$DOAS_CONF"
+fi
 # Idempotency: rollback handling and dry-run mode example
 # run_cmd "chown root:wheel /etc/doas.conf" "chown root:wheel /etc/doas.conf"
 chown root:wheel /etc/doas.conf
