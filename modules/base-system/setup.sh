@@ -227,9 +227,6 @@ sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
 # Idempotency: safe editing example
 # safe_replace_line /etc/ssh/sshd_config '^#*PasswordAuthentication .*' 'PasswordAuthentication no'
 sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-# Idempotency: rollback handling and dry-run mode example
-# run_cmd "rcctl restart sshd" "rcctl restart sshd"
-rcctl restart sshd
 
 ##############################################################################
 # 7) Admin user & SSH access
@@ -278,6 +275,7 @@ done
 echo "AllowUsers ${ADMIN_USER}" >> /etc/ssh/sshd_config
 chmod 600 "$AUTH_KEYS"
 chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
+rcctl restart sshd
 
 ##############################################################################
 # 8) Doas configuration
