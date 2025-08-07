@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file following [K
   key(s).
 * Base-system can optionally set the `ADMIN_USER` password from `secrets.env`
   when `ADMIN_PASSWORD` is provided.
+* Restart `sshd` after adding the admin account to `AllowUsers` so configuration
+  changes take effect immediately.
 
 ### GitHub Module
 
