@@ -34,6 +34,22 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
 
+# Merge unique tokens in a directive line without clobbering existing values.
+safe_replace_line() {
+  _file="$1"
+  _directive="$2"
+  shift 2
+  _values="$*"
+  if [ -f "$_file" ] && grep -q "^${_directive} " "$_file"; then
+    _existing="$(grep "^${_directive} " "$_file" | head -n1 | cut -d' ' -f2-)"
+    _combined="$(printf '%s\n%s\n' "$_existing" "$_values" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+    _combined="$(printf '%s' "$_combined" | sed 's/[[:space:]]*$//')"
+    sed -i "/^${_directive} /c\\${_directive} ${_combined}" "$_file"
+  else
+    echo "${_directive} ${_values}" >> "$_file"
+  fi
+}
+
 # -----------------------------------------------------------------------------
 # Idempotency helpers (commented out until dry-run/rollback is implemented)
 # -----------------------------------------------------------------------------
@@ -129,6 +145,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
+: "${ADMIN_USER:?ADMIN_USER must be set in secrets}"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
@@ -195,43 +212,10 @@ chmod 0440 /etc/doas.conf
 ##############################################################################
 
 # 7.1 SSH Service & Config
-  if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
-    # Idempotency: rollback handling and dry-run mode example
-    # run_cmd "cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak && sed -i \"/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}\" /etc/ssh/sshd_config" "mv /etc/ssh/sshd_config.bak /etc/ssh/sshd_config"
-    
-    # Idempotency: safe editing example
-    # safe_replace_line /etc/ssh/sshd_config '^AllowUsers ' "AllowUsers ${OBS_USER} ${GIT_USER}"
-
-# Idempotency: replace+template with checksum example
-# tmp_cfg="$(mktemp)"
-# cp /etc/ssh/sshd_config "$tmp_cfg"
-# sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" "$tmp_cfg"
-# old_sum="$(sha256 -q /etc/ssh/sshd_config 2>/dev/null || true)"
-# new_sum="$(sha256 -q "$tmp_cfg")"
-# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
-# rm -f "$tmp_cfg"
-    sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
-  else
-    
-    # Idempotency: rollback handling and dry-run mode example
-    # run_cmd "echo AllowUsers ${OBS_USER} ${GIT_USER} >> /etc/ssh/sshd_config" "sed -i '/AllowUsers ${OBS_USER} ${GIT_USER}/d' /etc/ssh/sshd_config"
-    
-    # Idempotency: safe editing example
-    # safe_append_line /etc/ssh/sshd_config "AllowUsers ${OBS_USER} ${GIT_USER}"
-
-# Idempotency: replace+template with checksum example
-# tmp_cfg="$(mktemp)"
-# cp /etc/ssh/sshd_config "$tmp_cfg" 2>/dev/null || true
-# printf 'AllowUsers %s %s\n' "$OBS_USER" "$GIT_USER" >> "$tmp_cfg"
-# old_sum="$(sha256 -q /etc/ssh/sshd_config 2>/dev/null || true)"
-# new_sum="$(sha256 -q "$tmp_cfg")"
-# [ "$old_sum" = "$new_sum" ] || cp "$tmp_cfg" /etc/ssh/sshd_config
-# rm -f "$tmp_cfg"
-    echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
-  fi
-  # Idempotency: rollback handling and dry-run mode example
-  # run_cmd "rcctl restart sshd" "rcctl restart sshd"
-  rcctl restart sshd
+safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER} ${OBS_USER} ${GIT_USER}"
+# Idempotency: rollback handling and dry-run mode example
+# run_cmd "rcctl restart sshd" "rcctl restart sshd"
+rcctl restart sshd
 
 # 7.2 .ssh Directories and authorized users
 for u in "$OBS_USER" "$GIT_USER"; do
