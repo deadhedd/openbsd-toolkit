@@ -81,6 +81,7 @@ start_logging "$SCRIPT_PATH" "$@"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
+: "${ADMIN_USER:?ADMIN_USER must be set in secrets}"
 
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
@@ -140,9 +141,9 @@ check_entry() {
 # 5) Define & run tests
 ##############################################################################
 
-run_tests() {
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&2
-  echo "1..58"
+  run_tests() {
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&2
+    echo "1..59"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 packages" >&2
   run_test "command -v git"                                              "git is installed" "command -v git"
@@ -159,13 +160,16 @@ run_tests() {
   run_test "id -nG ${GIT_USER} | grep -qw vault"                         "user '${GIT_USER}' is in group 'vault'" \
            "id -nG ${GIT_USER}"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 doas config" >&2
+    [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 6 doas config" >&2
 
-  run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists" \
+    run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists" \
            "ls -l /etc/doas.conf"
-  run_test "grep -q \"^permit persist ${OBS_USER} as root\$\" /etc/doas.conf" \
-           "doas.conf allows persist ${OBS_USER}" \
-           "grep '\^permit' /etc/doas.conf"
+    run_test "grep -q \"^permit persist ${ADMIN_USER} as root\$\" /etc/doas.conf" \
+            "doas.conf retains admin rule for ${ADMIN_USER}" \
+            "grep '^permit persist' /etc/doas.conf"
+    run_test "grep -q \"^permit persist ${OBS_USER} as root\$\" /etc/doas.conf" \
+            "doas.conf allows persist ${OBS_USER}" \
+            "grep '\^permit' /etc/doas.conf"
   run_test "grep -q \"^permit nopass ${GIT_USER} as root cmd git\\*\\\$\" /etc/doas.conf" \
            "doas.conf allows nopass ${GIT_USER} for git" \
            "grep '${GIT_USER}' /etc/doas.conf"
