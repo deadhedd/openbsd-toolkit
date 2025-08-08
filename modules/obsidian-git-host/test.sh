@@ -182,11 +182,11 @@ check_entry() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.1 SSH service & config" >&2
 
-  run_test "awk '/^AllowUsers/{for(i=2;i<=NF;i++)u[\\$i]=1} END{exit !(u[\"${ADMIN_USER}\"] && u[\"${OBS_USER}\"] && u[\"${GIT_USER}\"])}' /etc/ssh/sshd_config" \
+  run_test "allow_line=\$(grep '^AllowUsers' /etc/ssh/sshd_config); echo \"\$allow_line\" | grep -qw ${ADMIN_USER} && echo \"\$allow_line\" | grep -qw ${OBS_USER} && echo \"\$allow_line\" | grep -qw ${GIT_USER}" \
            "sshd_config allows ${ADMIN_USER}, ${OBS_USER}, ${GIT_USER}" \
            "grep '^AllowUsers' /etc/ssh/sshd_config"
   run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
-           "pgrep -ax sshd || true"
+           "pgrep -x sshd || true"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 .ssh directories" >&2
 
