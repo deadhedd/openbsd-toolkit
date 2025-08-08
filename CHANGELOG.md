@@ -174,8 +174,7 @@ All notable changes to this project will be documented in this file following [K
 
 ### Obsidian Git Test Expansion
 
-* SSH service config (`AllowUsers`, daemon running).
-* `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
+* SSH service config restricts login to the admin account (`AllowUsers`, daemon running).
 * Vaults directories for both users.
 * Bare repo `HEAD`, `safe.directory` entries, `post-receive` hook shebang & content.
 * Working-clone verification (clone, remote URL, commit presence).
