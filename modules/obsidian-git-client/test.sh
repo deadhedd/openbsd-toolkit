@@ -8,10 +8,8 @@
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #
 # Description:
-#   Runs TAP-style checks against the local Obsidian vault used for Git-based
-#   synchronization. Ensures ssh-agent is loaded, known_hosts has the server,
-#   local repo is present, remote bare repo and hooks exist, and that pushing
-#   a test commit succeeds.
+#   Runs a minimal check against the local Obsidian vault used for Git-based
+#   synchronization. Verifies the vault is a Git repository.
 #
 # Security note:
 #   Enabling the --debug flag will log all executed commands (via `set -x`).
@@ -69,8 +67,6 @@ start_logging "$SCRIPT_PATH" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 
-BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
-WORK_TREE="/home/${OBS_USER}/vaults/${VAULT}"
 LOCAL_VAULT="$HOME/${VAULT}"
 
 ##############################################################################
@@ -117,47 +113,11 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
-  echo "1..7"
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
-
-  run_test "ssh-add -l | grep -q id_ed25519" \
-           "ssh-agent running and id_ed25519 loaded" \
-           "ssh-add -l"
-  run_test "grep -q \"${GIT_SERVER}\" ~/.ssh/known_hosts" \
-           "known_hosts contains ${GIT_SERVER}" \
-           "grep \"${GIT_SERVER}\" ~/.ssh/known_hosts"
-
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): checking local and remote repositories" >&2
+  echo "1..1"
 
   run_test "[ -d \"${LOCAL_VAULT}/.git\" ]" \
            "local vault is a Git repo" \
            "ls -ld \"${LOCAL_VAULT}/.git\""
-  run_test "ssh ${GIT_USER}@${GIT_SERVER} [ -d \"${BARE_REPO}\" ]" \
-           "remote bare repo exists" \
-           "ssh ${GIT_USER}@${GIT_SERVER} ls -ld \"${BARE_REPO}\""
-  run_test "ssh ${GIT_USER}@${GIT_SERVER} [ -x \"${BARE_REPO}/hooks/post-receive\" ]" \
-           "post-receive hook is present and executable" \
-           "ssh ${GIT_USER}@${GIT_SERVER} ls -l \"${BARE_REPO}/hooks/post-receive\""
-  run_test "git -C \"${LOCAL_VAULT}\" pull origin" \
-           "git pull succeeds over SSH" \
-           "git -C \"${LOCAL_VAULT}\" status -s"
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): creating and pushing test commit" >&2
-  cd "$LOCAL_VAULT" || return 1
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG: creating test commit in $LOCAL_VAULT" >&2
-  # grep -q '^# test' test-sync.md || echo "# test $(date +%s)" >> test-sync.md
-  echo "# test $(date +%s)" >> test-sync.md  # Idempotency: state detection example above
-  git add test-sync.md >/dev/null 2>&1
-  if [ "$DEBUG_MODE" -eq 1 ]; then
-    git commit -m "TDD sync test" >&2
-
-  else
-    git commit -m "TDD sync test" >/dev/null 2>&1
-  fi
-  run_test "git push origin HEAD" \
-           "git push succeeds over SSH" \
-           "git -C \"${LOCAL_VAULT}\" status -s"
 }
 
 run_tests

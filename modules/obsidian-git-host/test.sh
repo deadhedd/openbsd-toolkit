@@ -13,7 +13,7 @@
 #   configs (safe.directory/sharedRepository), perms, and history settings.
 #
 # Deployment considerations:
-#   Assumes OBS_USER, GIT_USER, VAULT, and GIT_SERVER are exported (via
+#   Assumes OBS_USER, GIT_USER, VAULT, and ADMIN_USER are exported (via
 #   config/load-secrets.sh). setup.sh is not required to run this test, but most
 #   checks will fail unless it (or equivalent steps) has been completed.
 #
@@ -80,7 +80,6 @@ start_logging "$SCRIPT_PATH" "$@"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
-: "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 : "${ADMIN_USER:?ADMIN_USER must be set in secrets}"
 
 OBS_HOME="/home/${OBS_USER}"
@@ -143,7 +142,7 @@ check_entry() {
 
   run_tests() {
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&2
-    echo "1..59"
+    echo "1..43"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 packages" >&2
   run_test "command -v git"                                              "git is installed" "command -v git"
@@ -180,57 +179,13 @@ check_entry() {
   run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel\$'"       "/etc/doas.conf owned by root:wheel" \
            "stat -f '%Su:%Sg' /etc/doas.conf"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.1 SSH service & config" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 SSH service & config" >&2
 
-  run_test "allow_line=\$(grep '^AllowUsers' /etc/ssh/sshd_config); echo \"\$allow_line\" | grep -qw ${ADMIN_USER} && echo \"\$allow_line\" | grep -qw ${OBS_USER} && echo \"\$allow_line\" | grep -qw ${GIT_USER}" \
-           "sshd_config allows ${ADMIN_USER}, ${OBS_USER}, ${GIT_USER}" \
+  run_test "allow_line=\$(grep '^AllowUsers' /etc/ssh/sshd_config); echo \"\$allow_line\" | grep -qw ${ADMIN_USER} && ! ( echo \"\$allow_line\" | grep -qw ${OBS_USER} ) && ! ( echo \"\$allow_line\" | grep -qw ${GIT_USER} )" \
+           "sshd_config allows only ${ADMIN_USER}" \
            "grep '^AllowUsers' /etc/ssh/sshd_config"
   run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
            "pgrep -x sshd || true"
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 .ssh directories" >&2
-
-  run_test "[ -d /home/${GIT_USER}/.ssh ]"                                  "ssh dir for ${GIT_USER} exists" \
-           "ls -ld /home/${GIT_USER}/.ssh"
-  assert_file_perm "/home/${GIT_USER}/.ssh" "700"                            "ssh dir perms for ${GIT_USER}"
-  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
-           "ssh dir owner for ${GIT_USER}" \
-           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh"
-  run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists" \
-           "ls -ld ${OBS_HOME}/.ssh"
-  assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"
-  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "ssh dir owner for ${OBS_USER}" \
-           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh"
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${GIT_USER}" >&2
-
-  run_test "[ -f /home/${GIT_USER}/.ssh/authorized_keys ]"                           "authorized_keys for ${GIT_USER} exists" \
-           "ls -l /home/${GIT_USER}/.ssh/authorized_keys"
-  assert_file_perm "/home/${GIT_USER}/.ssh/authorized_keys" "600"                     "authorized_keys perms for ${GIT_USER}"
-  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
-           "authorized_keys owner for ${GIT_USER}" \
-           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${OBS_USER}" >&2
-
-  run_test "[ -f ${OBS_HOME}/.ssh/authorized_keys ]"                                  "authorized_keys for ${OBS_USER} exists" \
-           "ls -l ${OBS_HOME}/.ssh/authorized_keys"
-  assert_file_perm "${OBS_HOME}/.ssh/authorized_keys"             "600"               "authorized_keys perms for ${OBS_USER}"
-  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "authorized_keys owner for ${OBS_USER}" \
-           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
-
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.3 known hosts for ${OBS_USER}" >&2
-
-  run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                                      "known_hosts for ${OBS_USER} exists" \
-           "ls -l ${OBS_HOME}/.ssh/known_hosts"
-  assert_file_perm "${OBS_HOME}/.ssh/known_hosts"               "644"                  "known_hosts perms for ${OBS_USER}"
-  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
-           "known_hosts owner for ${OBS_USER}" \
-           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts"
-  run_test "grep -q \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"                   "known_hosts contains entry for ${GIT_SERVER}" \
-           "grep \"${GIT_SERVER}\" ${OBS_HOME}/.ssh/known_hosts"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 repo paths & bare init" >&2
   run_test "[ -d ${BARE_REPO} ]"                                             "bare repository exists" \
