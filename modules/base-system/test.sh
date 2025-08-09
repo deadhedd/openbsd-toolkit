@@ -183,7 +183,7 @@ run_tests() {
            "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 doas configuration" >&2
-  run_test "grep -q '^permit persist ${ADMIN_USER} as root$' /etc/doas.conf"   "doas rule for ${ADMIN_USER}" \
+  run_test "grep -q '^permit nopass ${ADMIN_USER} as root$' /etc/doas.conf"   "doas rule for ${ADMIN_USER}" \
            "cat /etc/doas.conf"
   run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel$'"         "doas.conf owner root:wheel" \
            "stat -f '%Su:%Sg' /etc/doas.conf"

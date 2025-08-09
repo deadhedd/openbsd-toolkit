@@ -299,7 +299,7 @@ rcctl restart sshd
 
 DOAS_CONF="/etc/doas.conf"
 # TODO: Idempotency: implement checks to avoid duplicate entries
-echo "permit persist ${ADMIN_USER} as root" >> "$DOAS_CONF"
+echo "permit nopass ${ADMIN_USER} as root" >> "$DOAS_CONF"
 chown root:wheel "$DOAS_CONF"
 chmod 440 "$DOAS_CONF"
 

@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file following [K
   when `ADMIN_PASSWORD` is provided.
 * Restart `sshd` after adding the admin account to `AllowUsers` so configuration
   changes take effect immediately.
+* Configured `doas` to allow the `ADMIN_USER` account to run commands as root without a password.
 
 ### GitHub Module
 

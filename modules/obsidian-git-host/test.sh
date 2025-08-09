@@ -163,9 +163,9 @@ check_entry() {
 
     run_test "[ -f /etc/doas.conf ]"                                          "doas.conf exists" \
            "ls -l /etc/doas.conf"
-    run_test "grep -q \"^permit persist ${ADMIN_USER} as root\$\" /etc/doas.conf" \
+    run_test "grep -q \"^permit nopass ${ADMIN_USER} as root\$\" /etc/doas.conf" \
             "doas.conf retains admin rule for ${ADMIN_USER}" \
-            "grep '^permit persist' /etc/doas.conf"
+            "grep '^permit nopass' /etc/doas.conf"
     run_test "grep -q \"^permit persist ${OBS_USER} as root\$\" /etc/doas.conf" \
             "doas.conf allows persist ${OBS_USER}" \
             "grep '\^permit' /etc/doas.conf"
