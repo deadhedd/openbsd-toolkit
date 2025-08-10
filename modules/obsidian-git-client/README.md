@@ -1,21 +1,25 @@
 # obsidian-git-client
 
 ## Purpose
-Checks that a workstation's Obsidian vault is a Git repository.
+Checks that a workstation can pull and push an Obsidian vault over SSH.
 
 ## Prerequisites
-- Client with Git
+- Client with Git, ssh-agent and access to the remote server
 - `config/secrets.env` filled with connection details
 - Vault repository cloned locally at `$HOME/$VAULT`
 
 ## Key variables
 | Variable | Description |
 | --- | --- |
+| `GIT_USER` | Remote git service account |
+| `OBS_USER` | Remote Obsidian account |
 | `VAULT` | Vault/repository name |
+| `GIT_SERVER` | Hostname or IP of the git server |
 
 ## Setup
 1. Copy `config/secrets.env.example` to `config/secrets.env` and edit the values.
-2. Clone the vault to `$HOME/$VAULT`.
+2. Start `ssh-agent` and add your private key.
+3. Clone the remote vault to `$HOME/$VAULT`.
 
 ## Testing
 ```sh
