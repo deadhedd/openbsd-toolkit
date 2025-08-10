@@ -114,7 +114,31 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
-  echo "1..4"
+  echo "1..10"
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying Obsidian plugin installation" >&2
+
+  run_test "[ -d \"$HOME/.obsidian/plugins/obsidian-git\" ]" \
+           "obsidian-git plugin directory exists" \
+           "ls -ld \"$HOME/.obsidian/plugins/obsidian-git\""
+  run_test "grep -q 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\"" \
+           "obsidian-git listed in vault/.obsidian/plugins.json" \
+           "grep 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\""
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying auto-sync settings" >&2
+
+  run_test "grep -q \"Repository path.*${LOCAL_VAULT}\" \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\"" \
+           "Obsidian Git repo path points at ${LOCAL_VAULT}" \
+           "grep 'Repository path' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\""
+  run_test "grep -q 'autoCommit.*true' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\"" \
+           "auto-commit on file change enabled" \
+           "grep 'autoCommit' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\""
+  run_test "grep -q 'autoPushInterval.*[1-9]' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\"" \
+           "auto-push interval configured" \
+           "grep 'autoPushInterval' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\""
+  run_test "grep -q 'pullBeforePush.*true' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\"" \
+           "pull-before-push enabled" \
+           "grep 'pullBeforePush' \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git.json\""
+
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
 
   run_test "ssh-add -l | grep -q id_ed25519" \
@@ -129,8 +153,8 @@ run_tests() {
   run_test "[ -d \"${LOCAL_VAULT}/.git\" ]" \
            "local vault is a Git repo" \
            "ls -ld \"${LOCAL_VAULT}/.git\""
-  run_test "git -C \"${LOCAL_VAULT}\" remote get-url origin | grep -q \"${GIT_USER}@${GIT_SERVER}\"" \
-           "origin URL contains ${GIT_USER}@${GIT_SERVER}" \
+  run_test "git -C \"${LOCAL_VAULT}\" remote get-url origin | grep -q \"${GIT_SERVER}:/home/${GIT_USER}/vaults/${VAULT}.git\"" \
+           "git remote 'origin' correctly set" \
            "git -C \"${LOCAL_VAULT}\" remote -v"
 }
 
