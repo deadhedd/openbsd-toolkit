@@ -2,7 +2,7 @@
 #
 # logs/logging.sh — Centralized logging & debug helpers (sourced utility)
 # Author: deadhedd
-# Version: 1.0.1
+# Version: 1.0.2
 # Updated: 2025-08-10
 #
 # Usage:
@@ -104,7 +104,7 @@ start_logging() {
   else
     init_logging "$context"
   fi
-  trap finalize_logging EXIT
+  trap 'rc=$?; [ $rc -ne 0 ] && mark_test_failed; finalize_logging; exit $rc' EXIT
   [ "$DEBUG_MODE" -eq 1 ] && set -x
 }
 
