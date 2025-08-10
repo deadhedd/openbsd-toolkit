@@ -3,14 +3,14 @@
 # logs/logging.sh — Centralized logging & debug helpers (sourced utility)
 # Author: deadhedd
 # Version: 1.0.1
-# Updated: 2025-08-02
+# Updated: 2025-08-10
 #
 # Usage:
 #   . "$PROJECT_ROOT/logs/logging.sh"
-#   start_logging "<context-name>" "$@"        # for test scripts
+#   start_logging "<context-name>" "$@"        # for test scripts (auto-finalizes)
 #   start_logging_if_debug "<context-name>" "$@"  # for setup scripts
 #   ... your logic ...
-#   [tests only] finalize_logging
+#   # finalize_logging runs automatically; call explicitly only when using init_logging
 #
 # Description:
 #   Provides a common flag parser (--log/--debug), sets up stdout/stderr
