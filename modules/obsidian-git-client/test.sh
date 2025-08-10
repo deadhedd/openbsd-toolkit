@@ -67,8 +67,9 @@ start_logging "$SCRIPT_PATH" "$@"
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
 
-LOCAL_VAULT="$HOME/${VAULT}"
+LOCAL_VAULT="$HOME/${CLIENT_VAULT}"
 
 ##############################################################################
 # 4) Test helpers
