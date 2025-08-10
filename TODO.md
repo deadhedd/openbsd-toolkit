@@ -1,6 +1,6 @@
-- [ ] add logging to post receive hook for troubleshooting
 - [ ] add ssh keys handling for git host
 - [ ] make setup idempotent
+- [ ] implement idempotency checks for doas configuration
 - [ ] improve error handling
 - [ ] create client side obsidian git setup script 
 - [ ] add support for hints in test suite
@@ -13,3 +13,19 @@
 - [ ] obsidian daily note scripts
 - [ ] Build a custom ISO
 - [ ] recovery partition 
+- [ ] VM hosting module
+- [ ] DNS self-host module
+- [ ] NAS hub module
+- [ ] VPN endpoint module
+- [ ] Run local LLM/embedding server for search and assistant
+- [ ] Self-host Shortcuts API for automation and logging
+- [ ] Setup Moonlight/Sunshine retro game streaming
+- [ ] Deploy SearXNG private search
+- [ ] Media watch/transcode/sync pipeline
+- [ ] Self-host canary token server
+- [ ] Visualize Obsidian notes in Neo4j graph
+- [ ] Automate budgeting via finance APIs
+- [ ] Sync workout tracking to vault
+- [ ] Automate sleep data collection and summaries
+- [ ] Migrate routine scripts to server via SSH
+- [ ] Create Shortcuts to trigger server actions (reboot, note generation)

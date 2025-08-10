@@ -2,15 +2,15 @@
 #
 # logs/logging.sh — Centralized logging & debug helpers (sourced utility)
 # Author: deadhedd
-# Version: 1.0.0
-# Updated: 2025-08-02
+# Version: 1.0.1
+# Updated: 2025-08-10
 #
 # Usage:
 #   . "$PROJECT_ROOT/logs/logging.sh"
-#   start_logging "<context-name>" "$@"        # for test scripts
+#   start_logging "<context-name>" "$@"        # for test scripts (auto-finalizes)
 #   start_logging_if_debug "<context-name>" "$@"  # for setup scripts
 #   ... your logic ...
-#   [tests only] finalize_logging
+#   # finalize_logging runs automatically; call explicitly only when using init_logging
 #
 # Description:
 #   Provides a common flag parser (--log/--debug), sets up stdout/stderr
@@ -148,7 +148,8 @@ init_logging() {
 
   LOG_DIR="$PROJECT_ROOT/logs"
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): creating LOG_DIR='$LOG_DIR'" >&2
-  mkdir -p "$LOG_DIR"
+  # [ -d "$LOG_DIR" ] || mkdir -p "$LOG_DIR"
+  mkdir -p "$LOG_DIR"  # TODO: use state detection for idempotency
 
   if [ -z "$LOG_FILE" ]; then
     timestamp="$(date '+%Y%m%d_%H%M%S')"
@@ -172,12 +173,15 @@ init_logging() {
   if [ "$FORCE_LOG" -eq 1 ]; then
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): redirecting output to '$LOG_FILE'" >&2
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): enabling xtrace" >&2 && set -x
-    exec >>"$LOG_FILE" 2>&1
+    # [ "$(ls -l /proc/$$/fd/1 2>/dev/null | awk '{print $NF}')" = "$LOG_FILE" ] || exec >>"$LOG_FILE" 2>&1
+    exec >>"$LOG_FILE" 2>&1  # TODO: use state detection for idempotency
   else
-    LOG_TMP="$(mktemp /tmp/logtmp.XXXXXXXX)"
+    # [ -n "$LOG_TMP" ] || LOG_TMP="$(mktemp /tmp/logtmp.XXXXXXXX)"
+    LOG_TMP="$(mktemp /tmp/logtmp.XXXXXXXX)"  # TODO: use state detection for idempotency
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(init_logging): buffering into '$LOG_TMP'" >&2
     export LOG_TMP
-    exec >"$LOG_TMP" 2>&1
+    # [ "$(ls -l /proc/$$/fd/1 2>/dev/null | awk '{print $NF}')" = "$LOG_TMP" ] || exec >"$LOG_TMP" 2>&1
+    exec >"$LOG_TMP" 2>&1  # TODO: use state detection for idempotency
   fi
 
   export LOGGING_INITIALIZED=1
@@ -199,7 +203,8 @@ finalize_logging() {
   if [ "$DEBUG_MODE" -eq 1 ] || [ "$FORCE_LOG" -eq 1 ] || [ "$TEST_FAILED" -eq 1 ]; then
     if [ -n "$LOG_TMP" ] && [ -f "$LOG_TMP" ]; then
       [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): appending '$LOG_TMP' to '$LOG_FILE'" >&2
-      cat "$LOG_TMP" >>"$LOG_FILE"
+      # [ -s "$LOG_TMP" ] && cat "$LOG_TMP" >>"$LOG_FILE"
+      cat "$LOG_TMP" >>"$LOG_FILE"  # TODO: use state detection for idempotency
       rm -f "$LOG_TMP"
       [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(finalize_logging): removed temp file" >&2
     fi

@@ -1,7 +1,7 @@
 # base-system
 
 ## Purpose
-Configures hostname, networking, SSH hardening and root shell history on a fresh OpenBSD server.
+Configures hostname, networking, SSH hardening, and root shell history on a fresh OpenBSD server.
 
 ## Prerequisites
 - Run as root on OpenBSD 7.4+
@@ -15,6 +15,9 @@ Configures hostname, networking, SSH hardening and root shell history on a fresh
 | `NETMASK` | Network mask |
 | `GATEWAY` | Default gateway |
 | `DNS1`, `DNS2` | Resolver addresses |
+| `ADMIN_USER` | Admin account to create |
+| `ADMIN_SSH_PUBLIC_KEY_FILE` | SSH public key filename for `ADMIN_USER` (in `config/`) |
+| `ADMIN_PASSWORD` | Optional password for `ADMIN_USER`; if unset, password login is disabled |
 
 ## Setup
 ```sh

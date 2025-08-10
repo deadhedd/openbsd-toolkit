@@ -4,13 +4,37 @@ All notable changes to this project will be documented in this file following [K
 
 ---
 
-## Unreleased
+## v1.0.1 – TBD
 
-### Logging and Debugging
+### Added
 
-* Dropped `set -v` from test scripts, now using `set -x` while setup scripts
-  continue to leverage `set -vx` for expanded command logging.
-* Added support for `--debug=FILE` to direct debug output to a custom log file.
+* **Logging**: Introduced `--debug=FILE` for targeted debug output.
+* **Base System Setup**:
+  * Creates and configures `ADMIN_USER`, optionally setting its password.
+  * Restarts `sshd` after configuration updates.
+  * Grants passwordless root commands via `doas`.
+
+### Changed
+
+* **Logging**: Dropped `set -v` from tests to reduce noise.
+* **Core Configuration**:
+  * `load-secrets.sh` now accepts a module name and exports only that section's variables using `awk` filtering.
+  * `secrets.env.example` reorganized into per-module sections with admin SSH key and password fields.
+* **Base System Module**:
+  * Major refactor with helper functions, idempotency scaffolding, and per-user history setup.
+  * Expanded tests from 15 to 32 checks covering admin user creation, `doas` config, and history files.
+* **GitHub Module**:
+  * Reads `GITHUB_SSH_PRIVATE_KEY_FILE` from `secrets.env`.
+  * Removed optional public key file support and "deploy key" terminology.
+* **Obsidian Modules**:
+  * *Git Client*: README and tests simplified to only verify the local vault Git repo.
+  * *Git Host*: Setup supports service accounts without SSH; tests reduced from 58 to 43 in line with admin-only SSH policy.
+
+### Documentation
+
+* Added "Base System Setup" and "GitHub Module" sections to `CHANGELOG.md`; tightened SSH test requirements.
+* Reorganized `TODO.md` with additional module ideas.
+* Updated relevant `README.md` files to match refactors and new configuration options.
 
 ## v1.0 – Initial Stable Release (2025-07-26)
 
@@ -156,8 +180,7 @@ All notable changes to this project will be documented in this file following [K
 
 ### Obsidian Git Test Expansion
 
-* SSH service config (`AllowUsers`, daemon running).
-* `.ssh` directories and `authorized_keys` for both `git` and `obsidian` users (existence, perms, ownership).
+* SSH service config restricts login to the admin account (`AllowUsers`, daemon running).
 * Vaults directories for both users.
 * Bare repo `HEAD`, `safe.directory` entries, `post-receive` hook shebang & content.
 * Working-clone verification (clone, remote URL, commit presence).

@@ -2,8 +2,8 @@
 #
 # modules/base-system/test.sh — Verify base-system configuration (networking, SSH, history)
 # Author: deadhedd
-# Version: 1.0.0
-# Updated: 2025-08-02
+# Version: 1.0.1
+# Updated: 2025-08-10
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #
@@ -75,7 +75,7 @@ start_logging "$SCRIPT_PATH" "$@"
 # 3) Load secrets
 ##############################################################################
 
-. "$PROJECT_ROOT/config/load-secrets.sh"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 
 ##############################################################################
 # 4) Test helpers
@@ -119,7 +119,8 @@ assert_file_perm() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting base-system tests" >&2
-  echo "1..15"
+  total_tests=32
+  echo "1..${total_tests}"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 networking config files" >&2
 
@@ -154,14 +155,60 @@ run_tests() {
   run_test "rcctl check sshd"                                                  "sshd service is running" \
            "ps -ax | grep '[s]shd'"
 
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 admin ssh access" >&2
+  run_test "id ${ADMIN_USER} >/dev/null 2>&1"                                 "account ${ADMIN_USER} exists" \
+           "id ${ADMIN_USER}"
+  if [ -n "${ADMIN_PASSWORD}" ]; then
+    run_test "grep -q '^${ADMIN_USER}:[^*]' /etc/master.passwd"                "account ${ADMIN_USER} password set" \
+             "grep '^${ADMIN_USER}:' /etc/master.passwd"
+  else
+    run_test "grep -q '^${ADMIN_USER}:\\*:' /etc/master.passwd"               "account ${ADMIN_USER} password locked" \
+             "grep '^${ADMIN_USER}:' /etc/master.passwd"
+  fi
+  run_test "[ -d /home/${ADMIN_USER}/.ssh ]"                                  "ssh dir for ${ADMIN_USER} exists" \
+           "ls -ld /home/${ADMIN_USER}/.ssh"
+  assert_file_perm "/home/${ADMIN_USER}/.ssh" "700"                           "ssh dir perms for ${ADMIN_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh | grep -q '^${ADMIN_USER}:${ADMIN_USER}\$'" \
+           "ssh dir owner for ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh"
+  run_test "[ -f /home/${ADMIN_USER}/.ssh/authorized_keys ]"                   "authorized_keys for ${ADMIN_USER} exists" \
+           "ls -l /home/${ADMIN_USER}/.ssh/authorized_keys"
+  assert_file_perm "/home/${ADMIN_USER}/.ssh/authorized_keys" "600"          "authorized_keys perms for ${ADMIN_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys | grep -q '^${ADMIN_USER}:${ADMIN_USER}\$'" \
+           "authorized_keys owner for ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys"
+  admin_pub_key=$(tr -d '\n' < "$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE")
+  run_test "grep -Fq '$admin_pub_key' /home/${ADMIN_USER}/.ssh/authorized_keys" \
+           "authorized_keys contains admin public key" \
+           "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 root history" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 doas configuration" >&2
+  run_test "grep -q '^permit nopass ${ADMIN_USER} as root$' /etc/doas.conf"   "doas rule for ${ADMIN_USER}" \
+           "cat /etc/doas.conf"
+  run_test "stat -f '%Su:%Sg' /etc/doas.conf | grep -q '^root:wheel$'"         "doas.conf owner root:wheel" \
+           "stat -f '%Su:%Sg' /etc/doas.conf"
+  assert_file_perm "/etc/doas.conf" "440"                                     "doas.conf mode is 440"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 root history" >&2
   run_test "grep -q '^export HISTFILE=/root/.ksh_history' /root/.profile"      "root .profile sets HISTFILE" \
            "grep '^export HISTFILE' /root/.profile"
   run_test "grep -q '^export HISTSIZE=5000' /root/.profile"                    "root .profile sets HISTSIZE" \
            "grep '^export HISTSIZE' /root/.profile"
   run_test "grep -q '^export HISTCONTROL=ignoredups' /root/.profile"           "root .profile sets HISTCONTROL" \
            "grep '^export HISTCONTROL' /root/.profile"
+
+  run_test "grep -q '^export HISTFILE=/home/${ADMIN_USER}/.ksh_history' /home/${ADMIN_USER}/.profile" \
+           "admin .profile sets HISTFILE" \
+           "grep '^export HISTFILE' /home/${ADMIN_USER}/.profile"
+  run_test "grep -q '^export HISTSIZE=5000' /home/${ADMIN_USER}/.profile"      "admin .profile sets HISTSIZE" \
+           "grep '^export HISTSIZE' /home/${ADMIN_USER}/.profile"
+  run_test "grep -q '^export HISTCONTROL=ignoredups' /home/${ADMIN_USER}/.profile" \
+           "admin .profile sets HISTCONTROL" \
+           "grep '^export HISTCONTROL' /home/${ADMIN_USER}/.profile"
+  run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.profile | grep -q '^${ADMIN_USER}:${ADMIN_USER}$'" \
+           "admin .profile owner ${ADMIN_USER}" \
+           "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.profile"
+  assert_file_perm "/home/${ADMIN_USER}/.profile" "644"                       "admin .profile mode is 644"
 }
 
 run_tests
