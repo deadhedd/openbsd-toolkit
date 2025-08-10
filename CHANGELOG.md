@@ -4,32 +4,37 @@ All notable changes to this project will be documented in this file following [K
 
 ---
 
-## Unreleased
+## v1.0.1 – TBD
 
-### Logging and Debugging
+### Added
 
-* Dropped `set -v` from test scripts, now using `set -x` while setup scripts
-  continue to leverage `set -vx` for expanded command logging.
-* Added support for `--debug=FILE` to direct debug output to a custom log file.
+* **Logging**: Introduced `--debug=FILE` for targeted debug output.
+* **Base System Setup**:
+  * Creates and configures `ADMIN_USER`, optionally setting its password.
+  * Restarts `sshd` after configuration updates.
+  * Grants passwordless root commands via `doas`.
 
-### Base System Setup
+### Changed
 
-* Removed management of root account `authorized_keys`; base-system no longer
-  populates root SSH keys during setup.
-* Base-system now populates `authorized_keys` for `ADMIN_USER` using public
-  keys specified in `secrets.env`.
-* Base-system now creates the `ADMIN_USER` account and installs its SSH public
-  key(s).
-* Base-system can optionally set the `ADMIN_USER` password from `secrets.env`
-  when `ADMIN_PASSWORD` is provided.
-* Restart `sshd` after adding the admin account to `AllowUsers` so configuration
-  changes take effect immediately.
-* Configured `doas` to allow the `ADMIN_USER` account to run commands as root without a password.
+* **Logging**: Dropped `set -v` from tests to reduce noise.
+* **Core Configuration**:
+  * `load-secrets.sh` now accepts a module name and exports only that section's variables using `awk` filtering.
+  * `secrets.env.example` reorganized into per-module sections with admin SSH key and password fields.
+* **Base System Module**:
+  * Major refactor with helper functions, idempotency scaffolding, and per-user history setup.
+  * Expanded tests from 15 to 32 checks covering admin user creation, `doas` config, and history files.
+* **GitHub Module**:
+  * Reads `GITHUB_SSH_PRIVATE_KEY_FILE` from `secrets.env`.
+  * Removed optional public key file support and "deploy key" terminology.
+* **Obsidian Modules**:
+  * *Git Client*: README and tests simplified to only verify the local vault Git repo.
+  * *Git Host*: Setup supports service accounts without SSH; tests reduced from 58 to 43 in line with admin-only SSH policy.
 
-### GitHub Module
+### Documentation
 
-* GitHub module now reads the SSH private key filename from `secrets.env` (`GITHUB_SSH_PRIVATE_KEY_FILE`) instead of using a hardcoded deploy key.
-* Dropped support for the optional `GITHUB_SSH_PUBLIC_KEY_FILE`; the module now configures only the required private key.
+* Added "Base System Setup" and "GitHub Module" sections to `CHANGELOG.md`; tightened SSH test requirements.
+* Reorganized `TODO.md` with additional module ideas.
+* Updated relevant `README.md` files to match refactors and new configuration options.
 
 ## v1.0 – Initial Stable Release (2025-07-26)
 
