@@ -1,7 +1,7 @@
 #!/bin/sh
 # modules/obsidian-git-host/setup.sh — Git-backed Obsidian vault setup
 # Author: deadhedd
-# Version: 1.0.0
+# Version: 1.0.1
 # Updated: 2025-08-02
 #
 # Usage: sh setup.sh [--debug[=FILE]] [-h]

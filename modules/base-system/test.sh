@@ -2,7 +2,7 @@
 #
 # modules/base-system/test.sh — Verify base-system configuration (networking, SSH, history)
 # Author: deadhedd
-# Version: 1.0.0
+# Version: 1.0.1
 # Updated: 2025-08-05
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
