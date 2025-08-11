@@ -1,7 +1,7 @@
 #!/bin/sh
 # modules/obsidian-git-host/setup.sh — Git-backed Obsidian vault setup
 # Author: deadhedd
-# Version: 1.0.1
+# Version: 1.0.2
 # Updated: 2025-08-10
 #
 # Usage: sh setup.sh [--debug[=FILE]] [-h]
@@ -151,6 +151,14 @@ start_logging_if_debug "setup-$module_name" "$@"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
+ADMIN_PUB_KEY_PATH="$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE"
+if [ -f "$ADMIN_PUB_KEY_PATH" ]; then
+  ADMIN_PUB_KEY="$(cat "$ADMIN_PUB_KEY_PATH")"
+else
+  echo "WARNING: missing admin SSH public key file $ADMIN_PUB_KEY_PATH" >&2
+  ADMIN_PUB_KEY=""
+fi
+
 ##############################################################################
 # 4) Packages
 ##############################################################################
@@ -229,6 +237,10 @@ GIT_AUTH_KEYS="$GIT_SSH_DIR/authorized_keys"
 touch "$GIT_AUTH_KEYS"
 chmod 600 "$GIT_AUTH_KEYS"
 
+if [ -n "$ADMIN_PUB_KEY" ]; then
+  grep -Fqx "$ADMIN_PUB_KEY" "$GIT_AUTH_KEYS" || printf '%s\n' "$ADMIN_PUB_KEY" >> "$GIT_AUTH_KEYS"
+fi
+
 chown -R "${GIT_USER}:${GIT_USER}" "$GIT_SSH_DIR"
 
 ##############################################################################
@@ -245,6 +257,10 @@ AUTH_KEYS="$OBS_SSH_DIR/authorized_keys"
 # [ -f "$AUTH_KEYS" ] || touch "$AUTH_KEYS"
 touch "$AUTH_KEYS"
 chmod 600 "$AUTH_KEYS"
+
+if [ -n "$ADMIN_PUB_KEY" ]; then
+  grep -Fqx "$ADMIN_PUB_KEY" "$AUTH_KEYS" || printf '%s\n' "$ADMIN_PUB_KEY" >> "$AUTH_KEYS"
+fi
 
 KNOWN_HOSTS="$OBS_SSH_DIR/known_hosts"
 ssh-keyscan -H "$GIT_SERVER" >> "$KNOWN_HOSTS"
