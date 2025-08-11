@@ -2,7 +2,7 @@
 #
 # modules/obsidian-git-host/test.sh — Verify Obsidian vault sync configuration
 # Author: deadhedd
-# Version: 1.0.1
+# Version: 1.0.2
 # Updated: 2025-08-10
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
@@ -86,6 +86,8 @@ start_logging "$SCRIPT_PATH" "$@"
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="${OBS_HOME}/vaults/${VAULT}"
+
+admin_pub_key=$(tr -d '\n' < "$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE")
 
 ##############################################################################
 # 4) Test helpers
@@ -202,6 +204,9 @@ check_entry() {
   run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
            "authorized_keys owner for ${GIT_USER}" \
            "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
+  run_test "grep -Fq \"$admin_pub_key\" /home/${GIT_USER}/.ssh/authorized_keys" \
+           "authorized_keys for ${GIT_USER} contains admin public key" \
+           "cat /home/${GIT_USER}/.ssh/authorized_keys"
   run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists" \
            "ls -ld ${OBS_HOME}/.ssh"
   assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"
@@ -214,6 +219,9 @@ check_entry() {
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
            "authorized_keys owner for ${OBS_USER}" \
            "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
+  run_test "grep -Fq \"$admin_pub_key\" ${OBS_HOME}/.ssh/authorized_keys" \
+           "authorized_keys for ${OBS_USER} contains admin public key" \
+           "cat ${OBS_HOME}/.ssh/authorized_keys"
   run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                             "known_hosts for ${OBS_USER} exists" \
            "ls -l ${OBS_HOME}/.ssh/known_hosts"
   assert_file_perm "${OBS_HOME}/.ssh/known_hosts" "644"                    "known_hosts perms for ${OBS_USER}"
