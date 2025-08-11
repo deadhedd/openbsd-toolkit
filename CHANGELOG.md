@@ -28,7 +28,7 @@ All notable changes to this project will be documented in this file following [K
   * Removed optional public key file support and "deploy key" terminology.
 * **Obsidian Modules**:
   * *Git Client*: README and tests simplified to only verify the local vault Git repo.
-  * *Git Host*: Restores `.ssh` setup for `OBS_USER` while keeping `GIT_USER` without SSH; tests expanded from 43 to 54.
+* *Git Host*: Restores `.ssh` setup for `OBS_USER` and `GIT_USER`; tests expanded from 43 to 59.
 
 ### Documentation
 

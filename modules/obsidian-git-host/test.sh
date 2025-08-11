@@ -143,7 +143,7 @@ check_entry() {
 
   run_tests() {
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&2
-    echo "1..54"
+    echo "1..59"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 packages" >&2
   run_test "command -v git"                                              "git is installed" "command -v git"
@@ -182,16 +182,26 @@ check_entry() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7 SSH service & config" >&2
 
-  run_test "allow_line=\$(grep '^AllowUsers' /etc/ssh/sshd_config); echo \"\$allow_line\" | grep -qw ${ADMIN_USER} && ! ( echo \"\$allow_line\" | grep -qw ${OBS_USER} ) && ! ( echo \"\$allow_line\" | grep -qw ${GIT_USER} )" \
-           "sshd_config allows only ${ADMIN_USER}" \
+  run_test "allow_line=\$(grep '^AllowUsers' /etc/ssh/sshd_config); echo \"\$allow_line\" | grep -qw ${ADMIN_USER} && echo \"\$allow_line\" | grep -qw ${GIT_USER} && ! ( echo \"\$allow_line\" | grep -qw ${OBS_USER} )" \
+           "sshd_config allows ${ADMIN_USER} and ${GIT_USER}" \
            "grep '^AllowUsers' /etc/ssh/sshd_config"
   run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
            "pgrep -x sshd || true"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 user SSH setup" >&2
 
-  run_test "[ ! -e /home/${GIT_USER}/.ssh ]"                                "no ssh dir for ${GIT_USER}" \
-           "ls -ld /home/${GIT_USER}/.ssh 2>/dev/null || ls -ld /home/${GIT_USER}"
+  run_test "[ -d /home/${GIT_USER}/.ssh ]"                                  "ssh dir for ${GIT_USER} exists" \
+           "ls -ld /home/${GIT_USER}/.ssh"
+  assert_file_perm "/home/${GIT_USER}/.ssh" "700"                           "ssh dir perms for ${GIT_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
+           "ssh dir owner for ${GIT_USER}" \
+           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh"
+  run_test "[ -f /home/${GIT_USER}/.ssh/authorized_keys ]"                   "authorized_keys for ${GIT_USER} exists" \
+           "ls -l /home/${GIT_USER}/.ssh/authorized_keys"
+  assert_file_perm "/home/${GIT_USER}/.ssh/authorized_keys" "600"           "authorized_keys perms for ${GIT_USER}"
+  run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys | grep -q '^${GIT_USER}:${GIT_USER}\$'" \
+           "authorized_keys owner for ${GIT_USER}" \
+           "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
   run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists" \
            "ls -ld ${OBS_HOME}/.ssh"
   assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"

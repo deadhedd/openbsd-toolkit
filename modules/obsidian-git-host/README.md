@@ -1,7 +1,7 @@
 # obsidian-git-host
 
 ## Purpose
-Creates users and a shared bare Git repository so multiple accounts can sync an Obsidian vault. Service accounts do not have SSH access.
+Creates users and a shared bare Git repository so multiple accounts can sync an Obsidian vault. Service accounts have SSH access restricted to `git-shell`.
 
 ## Prerequisites
 - Run as root on OpenBSD 7.4+
