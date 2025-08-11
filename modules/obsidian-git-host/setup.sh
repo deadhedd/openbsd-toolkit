@@ -149,6 +149,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
+: "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
 ##############################################################################
 # 4) Packages
@@ -217,7 +218,28 @@ safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER}"
 rcctl restart sshd
 
 ##############################################################################
-# 8) Repo paths & bare init
+# 8) OBS_USER SSH setup
+##############################################################################
+
+OBS_SSH_DIR="/home/${OBS_USER}/.ssh"
+# Idempotency: state detection example
+# [ -d "$OBS_SSH_DIR" ] || mkdir -p "$OBS_SSH_DIR"
+mkdir -p "$OBS_SSH_DIR"
+chmod 700 "$OBS_SSH_DIR"
+
+AUTH_KEYS="$OBS_SSH_DIR/authorized_keys"
+# [ -f "$AUTH_KEYS" ] || touch "$AUTH_KEYS"
+touch "$AUTH_KEYS"
+chmod 600 "$AUTH_KEYS"
+
+KNOWN_HOSTS="$OBS_SSH_DIR/known_hosts"
+ssh-keyscan -H "$GIT_SERVER" >> "$KNOWN_HOSTS"
+chmod 644 "$KNOWN_HOSTS"
+
+chown -R "${OBS_USER}:${OBS_USER}" "$OBS_SSH_DIR"
+
+##############################################################################
+# 9) Repo paths & bare init
 ##############################################################################
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
@@ -252,7 +274,7 @@ git init --bare "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
-# 9) Git configs (safe.directory, sharedRepository)
+# 10) Git configs (safe.directory, sharedRepository)
 ##############################################################################
 
 for u in "$GIT_USER" "$OBS_USER"; do
@@ -323,7 +345,7 @@ for u in "$GIT_USER" "$OBS_USER"; do
 done
 
 ##############################################################################
-# 10) Post-receive hook
+# 11) Post-receive hook
 ##############################################################################
 
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
@@ -369,7 +391,7 @@ chown "${GIT_USER}:${GIT_USER}" "$HOOK"
 chmod +x "$HOOK"
 
 ##############################################################################
-# 11) Working copy clone & initial commit
+# 12) Working copy clone & initial commit
 ##############################################################################
 
 # TODO: Idempotency: state detection
@@ -395,7 +417,7 @@ chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
       commit --allow-empty -m 'initial commit'
 
 ##############################################################################
-# 12) Final perms on bare repo
+# 13) Final perms on bare repo
 ##############################################################################
 
 # Idempotency: rollback handling and dry-run mode example
@@ -412,7 +434,7 @@ chmod -R g+rwX "$BARE_REPO"
 find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 ##############################################################################
-# 13) History settings (.profile)
+# 14) History settings (.profile)
 ##############################################################################
 
 for u in "$OBS_USER" "$GIT_USER"; do
