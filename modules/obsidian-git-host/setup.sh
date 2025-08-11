@@ -212,13 +212,27 @@ chmod 0440 /etc/doas.conf
 # 7) SSH hardening
 ##############################################################################
 
-safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER}"
+safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER} ${GIT_USER}"
 # Idempotency: rollback handling and dry-run mode example
 # run_cmd "rcctl restart sshd" "rcctl restart sshd"
 rcctl restart sshd
 
 ##############################################################################
-# 8) OBS_USER SSH setup
+# 8) GIT_USER SSH setup
+##############################################################################
+
+GIT_SSH_DIR="/home/${GIT_USER}/.ssh"
+mkdir -p "$GIT_SSH_DIR"
+chmod 700 "$GIT_SSH_DIR"
+
+GIT_AUTH_KEYS="$GIT_SSH_DIR/authorized_keys"
+touch "$GIT_AUTH_KEYS"
+chmod 600 "$GIT_AUTH_KEYS"
+
+chown -R "${GIT_USER}:${GIT_USER}" "$GIT_SSH_DIR"
+
+##############################################################################
+# 9) OBS_USER SSH setup
 ##############################################################################
 
 OBS_SSH_DIR="/home/${OBS_USER}/.ssh"
@@ -239,7 +253,7 @@ chmod 644 "$KNOWN_HOSTS"
 chown -R "${OBS_USER}:${OBS_USER}" "$OBS_SSH_DIR"
 
 ##############################################################################
-# 9) Repo paths & bare init
+# 10) Repo paths & bare init
 ##############################################################################
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
