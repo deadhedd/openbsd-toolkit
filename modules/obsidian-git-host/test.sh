@@ -13,9 +13,9 @@
 #   configs (safe.directory/sharedRepository), perms, and history settings.
 #
 # Deployment considerations:
-#   Assumes OBS_USER, GIT_USER, VAULT, and ADMIN_USER are exported (via
-#   config/load-secrets.sh). setup.sh is not required to run this test, but most
-#   checks will fail unless it (or equivalent steps) has been completed.
+#   Assumes OBS_USER, GIT_USER, VAULT, ADMIN_USER, and GIT_SERVER are exported
+#   (via config/load-secrets.sh). setup.sh is not required to run this test, but
+#   most checks will fail unless it (or equivalent steps) has been completed.
 #
 # Security note:
 #   Enabling the --debug flag will log all executed commands (via `set -x`).
@@ -81,6 +81,7 @@ start_logging "$SCRIPT_PATH" "$@"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${ADMIN_USER:?ADMIN_USER must be set in secrets}"
+: "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
@@ -142,7 +143,7 @@ check_entry() {
 
   run_tests() {
     [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-host tests" >&2
-    echo "1..43"
+    echo "1..54"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 4 packages" >&2
   run_test "command -v git"                                              "git is installed" "command -v git"
@@ -187,11 +188,36 @@ check_entry() {
   run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
            "pgrep -x sshd || true"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 repo paths & bare init" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 user SSH setup" >&2
+
+  run_test "[ ! -e /home/${GIT_USER}/.ssh ]"                                "no ssh dir for ${GIT_USER}" \
+           "ls -ld /home/${GIT_USER}/.ssh 2>/dev/null || ls -ld /home/${GIT_USER}"
+  run_test "[ -d ${OBS_HOME}/.ssh ]"                                        "ssh dir for ${OBS_USER} exists" \
+           "ls -ld ${OBS_HOME}/.ssh"
+  assert_file_perm "${OBS_HOME}/.ssh" "700"                                 "ssh dir perms for ${OBS_USER}"
+  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
+           "ssh dir owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh"
+  run_test "[ -f ${OBS_HOME}/.ssh/authorized_keys ]"                        "authorized_keys for ${OBS_USER} exists" \
+           "ls -l ${OBS_HOME}/.ssh/authorized_keys"
+  assert_file_perm "${OBS_HOME}/.ssh/authorized_keys" "600"                 "authorized_keys perms for ${OBS_USER}"
+  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
+           "authorized_keys owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
+  run_test "[ -f ${OBS_HOME}/.ssh/known_hosts ]"                             "known_hosts for ${OBS_USER} exists" \
+           "ls -l ${OBS_HOME}/.ssh/known_hosts"
+  assert_file_perm "${OBS_HOME}/.ssh/known_hosts" "644"                    "known_hosts perms for ${OBS_USER}"
+  run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts | grep -q '^${OBS_USER}:${OBS_USER}\$'" \
+           "known_hosts owner for ${OBS_USER}" \
+           "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/known_hosts"
+  run_test "grep -q '${GIT_SERVER}' ${OBS_HOME}/.ssh/known_hosts"            "known_hosts contains entry for ${GIT_SERVER}" \
+           "grep '${GIT_SERVER}' ${OBS_HOME}/.ssh/known_hosts"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 repo paths & bare init" >&2
   run_test "[ -d ${BARE_REPO} ]"                                             "bare repository exists" \
            "ls -ld ${BARE_REPO}"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 9 git configs" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 10 git configs" >&2
 
   check_entry "/home/${GIT_USER}/.gitconfig"       "${BARE_REPO}"             "${GIT_USER}"
   check_entry "/home/${GIT_USER}/.gitconfig"       "${OBS_HOME}/vaults/${VAULT}" "${GIT_USER}"
@@ -203,7 +229,7 @@ check_entry() {
            "grep 'sharedRepository' ${BARE_REPO}/config"
 
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 10 post-receive hook" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 11 post-receive hook" >&2
 
   run_test "[ -x ${BARE_REPO}/hooks/post-receive ]"                          "post-receive hook executable" \
            "ls -l ${BARE_REPO}/hooks/post-receive"
@@ -219,7 +245,7 @@ check_entry() {
            "tail -n 1 ${BARE_REPO}/hooks/post-receive"
 
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 11 working copy clone" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 12 working copy clone" >&2
 
   run_test "[ -d ${OBS_HOME}/vaults/${VAULT}/.git ]"                          "working clone exists" \
            "ls -ld ${OBS_HOME}/vaults/${VAULT}/.git"
@@ -230,7 +256,7 @@ check_entry() {
            "initial commit present" \
            "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B\""
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 12 final perms on bare repo" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 final perms on bare repo" >&2
 
   run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'" \
            "stat -f '%Su:%Sg' ${BARE_REPO}"
@@ -252,7 +278,7 @@ check_entry() {
   run_test "! find ${BARE_REPO} -type d -not -perm -g+s -print | grep -q ."  "all directories under '${BARE_REPO}' have the setgid bit set" \
            "find ${BARE_REPO} -type d -not -perm -g+s -print | head -n 20"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 history settings" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 14 history settings" >&2
 
   run_test "grep -q '^export HISTFILE=/home/${OBS_USER}/.ksh_history\$' /home/${OBS_USER}/.profile" \
            "HISTFILE export in ${OBS_USER} .profile" \
