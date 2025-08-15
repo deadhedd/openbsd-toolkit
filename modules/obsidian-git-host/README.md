@@ -13,6 +13,7 @@ Creates users and a shared bare Git repository so multiple accounts can sync an 
 | `OBS_USER` | Local Obsidian user |
 | `GIT_USER` | Service account used for pushes |
 | `VAULT` | Vault name used for repository paths |
+| `GIT_SERVER` | Hostname or IP used for SSH known_hosts |
 
 ## Setup
 ```sh
