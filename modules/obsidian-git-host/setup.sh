@@ -217,59 +217,35 @@ chown root:wheel /etc/doas.conf
 chmod 0440 /etc/doas.conf
 
 ##############################################################################
-# 7) SSH hardening
+# 7) SSH hardening & per-user SSH dirs
 ##############################################################################
 
-safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER} ${GIT_USER}"
-# Idempotency: rollback handling and dry-run mode example
-# run_cmd "rcctl restart sshd" "rcctl restart sshd"
+# 7.1 SSH Service & Config
+if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
+  sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
+else
+  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
+fi
 rcctl restart sshd
 
-##############################################################################
-# 8) GIT_USER SSH setup
-##############################################################################
+# 7.2 .ssh Directories and authorized users
+for u in "$OBS_USER" "$GIT_USER"; do
+  HOME_DIR="/home/$u"
+  SSH_DIR="$HOME_DIR/.ssh"
+  mkdir -p "$SSH_DIR"
+  chmod 700 "$SSH_DIR"
+  touch "$SSH_DIR/authorized_keys"
+  chmod 600 "$SSH_DIR/authorized_keys"
+  chown -R "$u:$u" "$SSH_DIR"
+done
 
-GIT_SSH_DIR="/home/${GIT_USER}/.ssh"
-mkdir -p "$GIT_SSH_DIR"
-chmod 700 "$GIT_SSH_DIR"
-
-GIT_AUTH_KEYS="$GIT_SSH_DIR/authorized_keys"
-touch "$GIT_AUTH_KEYS"
-chmod 600 "$GIT_AUTH_KEYS"
-
-if [ -n "$ADMIN_PUB_KEY" ]; then
-  grep -Fqx "$ADMIN_PUB_KEY" "$GIT_AUTH_KEYS" || printf '%s\n' "$ADMIN_PUB_KEY" >> "$GIT_AUTH_KEYS"
-fi
-
-chown -R "${GIT_USER}:${GIT_USER}" "$GIT_SSH_DIR"
+# 7.3 Known Hosts (OBS_USER only)
+ssh-keyscan -H "$GIT_SERVER" >> "/home/${OBS_USER}/.ssh/known_hosts"
+chmod 644 "/home/${OBS_USER}/.ssh/known_hosts"
+chown "${OBS_USER}:${OBS_USER}" "/home/${OBS_USER}/.ssh/known_hosts"
 
 ##############################################################################
-# 9) OBS_USER SSH setup
-##############################################################################
-
-OBS_SSH_DIR="/home/${OBS_USER}/.ssh"
-# Idempotency: state detection example
-# [ -d "$OBS_SSH_DIR" ] || mkdir -p "$OBS_SSH_DIR"
-mkdir -p "$OBS_SSH_DIR"
-chmod 700 "$OBS_SSH_DIR"
-
-AUTH_KEYS="$OBS_SSH_DIR/authorized_keys"
-# [ -f "$AUTH_KEYS" ] || touch "$AUTH_KEYS"
-touch "$AUTH_KEYS"
-chmod 600 "$AUTH_KEYS"
-
-if [ -n "$ADMIN_PUB_KEY" ]; then
-  grep -Fqx "$ADMIN_PUB_KEY" "$AUTH_KEYS" || printf '%s\n' "$ADMIN_PUB_KEY" >> "$AUTH_KEYS"
-fi
-
-KNOWN_HOSTS="$OBS_SSH_DIR/known_hosts"
-ssh-keyscan -H "$GIT_SERVER" >> "$KNOWN_HOSTS"
-chmod 644 "$KNOWN_HOSTS"
-
-chown -R "${OBS_USER}:${OBS_USER}" "$OBS_SSH_DIR"
-
-##############################################################################
-# 10) Repo paths & bare init
+# 8) Repo paths & bare init
 ##############################################################################
 
 VAULT_DIR="/home/${GIT_USER}/vaults"
@@ -304,7 +280,7 @@ git init --bare "$BARE_REPO"
 chown -R "${GIT_USER}:${GIT_USER}" "$BARE_REPO"
 
 ##############################################################################
-# 10) Git configs (safe.directory, sharedRepository)
+# 9) Git configs (safe.directory, sharedRepository)
 ##############################################################################
 
 for u in "$GIT_USER" "$OBS_USER"; do
@@ -375,7 +351,7 @@ for u in "$GIT_USER" "$OBS_USER"; do
 done
 
 ##############################################################################
-# 11) Post-receive hook
+# 10) Post-receive hook
 ##############################################################################
 
 WORK_DIR="/home/${OBS_USER}/vaults/${VAULT}"
@@ -421,7 +397,7 @@ chown "${GIT_USER}:${GIT_USER}" "$HOOK"
 chmod +x "$HOOK"
 
 ##############################################################################
-# 12) Working copy clone & initial commit
+# 11) Working copy clone & initial commit
 ##############################################################################
 
 # TODO: Idempotency: state detection
@@ -447,7 +423,7 @@ chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
       commit --allow-empty -m 'initial commit'
 
 ##############################################################################
-# 13) Final perms on bare repo
+# 12) Final perms on bare repo
 ##############################################################################
 
 # Idempotency: rollback handling and dry-run mode example
@@ -464,7 +440,7 @@ chmod -R g+rwX "$BARE_REPO"
 find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 ##############################################################################
-# 14) History settings (.profile)
+# 13) History settings (.profile)
 ##############################################################################
 
 for u in "$OBS_USER" "$GIT_USER"; do
