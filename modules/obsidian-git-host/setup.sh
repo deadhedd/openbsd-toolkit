@@ -221,11 +221,7 @@ chmod 0440 /etc/doas.conf
 ##############################################################################
 
 # 7.1 SSH Service & Config
-if grep -q '^AllowUsers ' /etc/ssh/sshd_config; then
-  sed -i "/^AllowUsers /c\\AllowUsers ${OBS_USER} ${GIT_USER}" /etc/ssh/sshd_config
-else
-  echo "AllowUsers ${OBS_USER} ${GIT_USER}" >> /etc/ssh/sshd_config
-fi
+safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${OBS_USER}" "${GIT_USER}" "${ADMIN_USER}"
 rcctl restart sshd
 
 # 7.2 .ssh Directories and authorized users
