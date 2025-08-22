@@ -3,7 +3,7 @@
 # logs/logging.sh — Centralized logging & debug helpers (sourced utility)
 # Author: deadhedd
 # Version: 1.0.2
-# Updated: 2025-08-10
+# Updated: 2025-08-22
 #
 # Usage:
 #   . "$PROJECT_ROOT/logs/logging.sh"

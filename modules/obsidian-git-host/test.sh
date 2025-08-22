@@ -3,7 +3,7 @@
 # modules/obsidian-git-host/test.sh — Verify Obsidian vault sync configuration
 # Author: deadhedd
 # Version: 1.0.2
-# Updated: 2025-08-10
+# Updated: 2025-08-22
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #
@@ -182,11 +182,11 @@ check_entry() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.1 SSH service & config" >&2
 
-  run_test "grep -q \"^AllowUsers ${OBS_USER} ${GIT_USER}\\$\" /etc/ssh/sshd_config" \
-           "sshd_config has AllowUsers" \
-           "grep '^AllowUsers' /etc/ssh/sshd_config"
+  run_test "for u in ${OBS_USER} ${GIT_USER}; do grep '^AllowUsers' /etc/ssh/sshd_config | cut -d' ' -f2- | tr ' ' '\\n' | grep -Fxq \"$u\" || exit 1; done" \
+          "sshd_config has AllowUsers with obsidian and git users" \
+          "grep '^AllowUsers' /etc/ssh/sshd_config"
   run_test "pgrep -x sshd >/dev/null"                                       "sshd daemon running" \
-           "pgrep -ax sshd || true"
+          "pgrep -ax sshd || true"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 .ssh directories" >&2
 
