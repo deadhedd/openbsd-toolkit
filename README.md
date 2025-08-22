@@ -1,9 +1,8 @@
 # 🛠️ OpenBSD Toolkit
 
-Modular shell scripts for automating system setup and tooling on OpenBSD, starting with a fully working Obsidian Git host. Built with security, maintainability, and automation in mind — with future plans to expand into general-purpose OpenBSD tools.
+Modular shell scripts for automating system setup and tooling on OpenBSD, starting with a fully working Obsidian Git host. Built with security, maintainability, and automation in mind — with future plans to expand into general-purpose OpenBSD tools. This branch prepares for the v1.0.2 release, restoring `.ssh` setup for both `OBS_USER` and `GIT_USER`, improving logging with exit-code capture, and expanding the test suite to 59 checks. Refer to the [CHANGELOG](CHANGELOG.md) for details.
 
 ---
-
 ## 🚀 Quick Start
 
 The fastest way to get started is to run the installer directly from GitHub Pages:
@@ -49,6 +48,8 @@ This toolkit currently includes:
 * A base-system setup module for configuring OpenBSD itself (users, doas, network, etc.)
 * A Git bare repo module to host an Obsidian-compatible vault with auto-deploy
 * A minimal GitHub module for immediate push capability after setup
+
+The v1.0.2 update reinstates automatic `.ssh` configuration for both `OBS_USER` and `GIT_USER`, simplifying secure access.
 
 All modules are modular and extensible. The long-term vision includes additional OpenBSD automation tools for broader system management.
 
@@ -105,6 +106,8 @@ Run full system tests:
 sh test-all.sh
 ```
 
+The full suite currently covers 59 checks.
+
 Logs are saved to the `logs/` directory. By default, logs are only saved when a test fails.
 
 Use `--debug[=FILE]` to enable verbose tracing and optionally direct output to a specific log file.
@@ -122,7 +125,7 @@ start_logging "$0" "$@"            # for test scripts
 start_logging_if_debug "setup-my-module" "$@"  # for setup scripts
 ```
 
-`start_logging` automatically sets up logging, enables debug tracing when
+`start_logging` automatically sets up logging, captures exit codes via improved `trap` handling, enables debug tracing when
 `--debug` is provided, and registers `finalize_logging` on exit.
 
 ---
