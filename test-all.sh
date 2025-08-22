@@ -2,8 +2,8 @@
 #
 # test-all.sh — Run tests for specified modules, enabled_modules.conf, or all modules
 # Author: deadhedd
-# Version: 1.0.1
-# Updated: 2025-08-10
+# Version: 1.0.2
+# Updated: 2025-08-22
 #
 # Usage: sh test-all.sh [--log[=FILE]] [--debug[=FILE]] [-h] [module1 module2 ...]
 #

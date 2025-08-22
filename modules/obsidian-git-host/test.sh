@@ -3,7 +3,7 @@
 # modules/obsidian-git-host/test.sh — Verify Obsidian vault sync configuration
 # Author: deadhedd
 # Version: 1.0.2
-# Updated: 2025-08-10
+# Updated: 2025-08-22
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #

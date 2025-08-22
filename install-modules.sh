@@ -2,8 +2,8 @@
 #
 # install-modules.sh — Install specified modules, or all in enabled_modules.conf
 # Author: deadhedd
-# Version: 1.0.1
-# Updated: 2025-08-10
+# Version: 1.0.2
+# Updated: 2025-08-22
 #
 # Usage: sh install-modules.sh [--debug[=FILE]] [-h] [module1 module2 ...]
 #
