@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file following [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) principles.
 
 ---
+## v1.0.2 – 2025-08-22
+
+### Changed
+
+* **Obsidian Git Host Module**:
+  * Restored `.ssh` setup for `OBS_USER` and `GIT_USER` that was mistakenly removed.
+  * Reintroduction ensures proper authentication and connectivity.
+  * Tests expanded from 43 to 59.
+
+* **Logging**:
+  * Updated `logs/logging.sh` with enhanced `trap` handling.
+  * Captures exit codes, ensuring failures are marked before finalizing logs.
+
+### Added
+
+* **Configuration**:
+  * Expanded `secrets.env.example` with an *Obsidian Git Client* section.
+  * Added `CLIENT_VAULT` variable for local vault configuration.
+
+### Documentation
+
+* Added `AGENTS.md` detailing scope and expectations for shell scripts, including POSIX compliance and `shellcheck` usage.
 
 ## v1.0.1 – TBD
 
@@ -28,7 +50,6 @@ All notable changes to this project will be documented in this file following [K
   * Removed optional public key file support and "deploy key" terminology.
 * **Obsidian Modules**:
   * *Git Client*: README and tests simplified to only verify the local vault Git repo.
-* *Git Host*: Restores `.ssh` setup for `OBS_USER` and `GIT_USER`; tests expanded from 43 to 59.
 
 ### Documentation
 
