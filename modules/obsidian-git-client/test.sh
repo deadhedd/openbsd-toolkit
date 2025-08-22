@@ -3,7 +3,7 @@
 # modules/obsidian-git-client/test.sh — Verify client-side Obsidian Git sync
 # Author: deadhedd
 # Version: 1.0.2
-# Updated: 2025-08-11
+# Updated: 2025-08-22
 #
 # Usage: sh test.sh [--log[=FILE]] [--debug[=FILE]] [-h]
 #

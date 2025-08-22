@@ -2,8 +2,8 @@
 #
 # modules/github/setup.sh — Configure GitHub SSH key & bootstrap local repo
 # Author: deadhedd
-# Version: 1.0.1
-# Updated: 2025-08-10
+# Version: 1.0.2
+# Updated: 2025-08-22
 #
 # Usage: sh setup.sh [--debug[=FILE]] [-h]
 #
