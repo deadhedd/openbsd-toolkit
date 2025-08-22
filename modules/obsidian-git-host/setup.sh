@@ -151,13 +151,14 @@ start_logging_if_debug "setup-$module_name" "$@"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
-ADMIN_PUB_KEY_PATH="$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE"
-if [ -f "$ADMIN_PUB_KEY_PATH" ]; then
-  ADMIN_PUB_KEY="$(cat "$ADMIN_PUB_KEY_PATH")"
-else
-  echo "WARNING: missing admin SSH public key file $ADMIN_PUB_KEY_PATH" >&2
-  ADMIN_PUB_KEY=""
-fi
+# TODO: When SSH admin key handling is reintroduced, restore this block
+# ADMIN_PUB_KEY_PATH="$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE"
+# if [ -f "$ADMIN_PUB_KEY_PATH" ]; then
+#   ADMIN_PUB_KEY="$(cat "$ADMIN_PUB_KEY_PATH")"
+# else
+#   echo "WARNING: missing admin SSH public key file $ADMIN_PUB_KEY_PATH" >&2
+#   ADMIN_PUB_KEY=""
+# fi
 
 ##############################################################################
 # 4) Packages

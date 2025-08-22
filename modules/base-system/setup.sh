@@ -144,6 +144,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 ##############################################################################
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
+. "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
 
 ##############################################################################
 # 4) Networking config files
@@ -269,25 +270,44 @@ else
   usermod -p '*' "$ADMIN_USER"
 fi
 
-CONFIG_DIR="$PROJECT_ROOT/config"
-SSH_KEY_VARS=$(env | awk -F= '/_SSH_PUBLIC_KEY_FILE=/{print $1}')
-[ -n "$SSH_KEY_VARS" ] || { echo "ERROR: no *_SSH_PUBLIC_KEY_FILE variables set" >&2; exit 1; }
-
 ADMIN_HOME="/home/$ADMIN_USER"
 SSH_DIR="$ADMIN_HOME/.ssh"
 AUTH_KEYS="$SSH_DIR/authorized_keys"
 mkdir -p "$SSH_DIR"
 chmod 700 "$SSH_DIR"
 : > "$AUTH_KEYS"
-for var in $SSH_KEY_VARS; do
-  key_file=$(eval echo "\$$var")
-  key_path="$CONFIG_DIR/$key_file"
+
+key_dir="$PROJECT_ROOT/$SSH_KEY_DIR"
+admin_key_file="${SSH_ADMIN_PUBLIC:-$SSH_PUBLIC_KEY_DEFAULT}"
+if [ -n "$admin_key_file" ]; then
+  key_path="$key_dir/$admin_key_file"
   if [ -f "$key_path" ]; then
     cat "$key_path" >> "$AUTH_KEYS"
   else
     echo "WARNING: missing SSH public key file $key_path" >&2
   fi
-done
+fi
+
+if [ -n "$SSH_ADMIN_EXTRA_FILES" ]; then
+  for extra in $SSH_ADMIN_EXTRA_FILES; do
+    extra_path="$key_dir/$extra"
+    if [ -f "$extra_path" ]; then
+      cat "$extra_path" >> "$AUTH_KEYS"
+    else
+      echo "WARNING: missing SSH extra key file $extra_path" >&2
+    fi
+  done
+fi
+
+if [ "$SSH_ADMIN_EXTRA_FROM_DIR" = "true" ]; then
+  extra_dir="$key_dir/$SSH_EXTRA_KEYS_DIR"
+  if [ -d "$extra_dir" ]; then
+    cat "$extra_dir"/*.pub 2>/dev/null >> "$AUTH_KEYS"
+  else
+    echo "WARNING: missing extra keys directory $extra_dir" >&2
+  fi
+fi
+
 safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${ADMIN_USER}"
 chmod 600 "$AUTH_KEYS"
 chown -R "$ADMIN_USER:$ADMIN_USER" "$SSH_DIR"
