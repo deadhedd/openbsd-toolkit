@@ -16,7 +16,7 @@ Configures hostname, networking, SSH hardening, and root shell history on a fres
 | `GATEWAY` | Default gateway |
 | `DNS1`, `DNS2` | Resolver addresses |
 | `ADMIN_USER` | Admin account to create |
-| `ADMIN_SSH_PUBLIC_KEY_FILE` | SSH public key filename for `ADMIN_USER` (in `config/`) |
+| `SSH_ADMIN_PUBLIC` | Admin's SSH public key filename (relative to `SSH_KEY_DIR`; uses `SSH_PUBLIC_KEY_DEFAULT` if blank) |
 | `ADMIN_PASSWORD` | Optional password for `ADMIN_USER`; if unset, password login is disabled |
 
 ## Setup

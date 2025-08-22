@@ -76,6 +76,7 @@ start_logging "$SCRIPT_PATH" "$@"
 ##############################################################################
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
+. "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
 
 ##############################################################################
 # 4) Test helpers
@@ -177,10 +178,12 @@ run_tests() {
   run_test "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys | grep -q '^${ADMIN_USER}:${ADMIN_USER}\$'" \
            "authorized_keys owner for ${ADMIN_USER}" \
            "stat -f '%Su:%Sg' /home/${ADMIN_USER}/.ssh/authorized_keys"
-  admin_pub_key=$(tr -d '\n' < "$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE")
-  run_test "grep -Fq '$admin_pub_key' /home/${ADMIN_USER}/.ssh/authorized_keys" \
-           "authorized_keys contains admin public key" \
-           "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
+    key_dir="$PROJECT_ROOT/$SSH_KEY_DIR"
+    admin_key_file="${SSH_ADMIN_PUBLIC:-$SSH_PUBLIC_KEY_DEFAULT}"
+    admin_pub_key=$(tr -d '\n' < "$key_dir/$admin_key_file")
+    run_test "grep -Fq '$admin_pub_key' /home/${ADMIN_USER}/.ssh/authorized_keys" \
+            "authorized_keys contains admin public key" \
+            "cat /home/${ADMIN_USER}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 8 doas configuration" >&2
   run_test "grep -q '^permit nopass ${ADMIN_USER} as root$' /etc/doas.conf"   "doas rule for ${ADMIN_USER}" \
