@@ -77,6 +77,7 @@ start_logging "$SCRIPT_PATH" "$@"
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
+. "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
@@ -86,6 +87,7 @@ start_logging "$SCRIPT_PATH" "$@"
 OBS_HOME="/home/${OBS_USER}"
 BARE_REPO="/home/${GIT_USER}/vaults/${VAULT}.git"
 WORK_TREE="${OBS_HOME}/vaults/${VAULT}"
+KEY_DIR="$PROJECT_ROOT/$SSH_KEY_DIR"
 
 ##############################################################################
 # 4) Test helpers
@@ -211,6 +213,11 @@ check_entry() {
   run_test "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys | grep -q '^${GIT_USER}:${GIT_USER}\\$'" \
            "authorized_keys owner for ${GIT_USER}" \
            "stat -f '%Su:%Sg' /home/${GIT_USER}/.ssh/authorized_keys"
+  git_key_file="${SSH_GIT_PUBLIC:-$SSH_PUBLIC_KEY_DEFAULT}"
+  git_pub_key=$(tr -d '\n' < "$KEY_DIR/$git_key_file")
+  run_test "grep -Fq '$git_pub_key' /home/${GIT_USER}/.ssh/authorized_keys" \
+           "authorized_keys contains git public key" \
+           "cat /home/${GIT_USER}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.2 authorized_keys for ${OBS_USER}" >&2
 
@@ -220,6 +227,11 @@ check_entry() {
   run_test "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys | grep -q '^${OBS_USER}:${OBS_USER}\\$'" \
            "authorized_keys owner for ${OBS_USER}" \
            "stat -f '%Su:%Sg' ${OBS_HOME}/.ssh/authorized_keys"
+  obs_key_file="${SSH_OBSIDIAN_PUBLIC:-$SSH_PUBLIC_KEY_DEFAULT}"
+  obs_pub_key=$(tr -d '\n' < "$KEY_DIR/$obs_key_file")
+  run_test "grep -Fq '$obs_pub_key' ${OBS_HOME}/.ssh/authorized_keys" \
+           "authorized_keys contains obsidian public key" \
+           "cat ${OBS_HOME}/.ssh/authorized_keys"
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 7.3 known hosts for ${OBS_USER}" >&2
 
