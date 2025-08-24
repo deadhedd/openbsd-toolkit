@@ -1,6 +1,6 @@
 # 🛠️ OpenBSD Toolkit
 
-Modular shell scripts for automating system setup and tooling on OpenBSD, starting with a fully working Obsidian Git host. Built with security, maintainability, and automation in mind — with future plans to expand into general-purpose OpenBSD tools. This branch prepares for the v1.0.2 release, restoring `.ssh` setup for both `OBS_USER` and `GIT_USER`, improving logging with exit-code capture, and expanding the test suite to 59 checks. Refer to the [CHANGELOG](CHANGELOG.md) for details.
+Modular shell scripts for automating system setup and tooling on OpenBSD, starting with a fully working Obsidian Git host. Built with security, maintainability, and automation in mind — with future plans to expand into general-purpose OpenBSD tools. This branch prepares for the v1.0.3 release, restoring `.ssh` setup for both `OBS_USER` and `GIT_USER`, improving logging with exit-code capture, and expanding the test suite to 59 checks. Refer to the [CHANGELOG](CHANGELOG.md) for details.
 
 ---
 ## 🚀 Quick Start
@@ -49,7 +49,7 @@ This toolkit currently includes:
 * A Git bare repo module to host an Obsidian-compatible vault with auto-deploy
 * A minimal GitHub module for immediate push capability after setup
 
-The v1.0.2 update reinstates automatic `.ssh` configuration for both `OBS_USER` and `GIT_USER`, simplifying secure access.
+The v1.0.3 update reinstates automatic `.ssh` configuration for both `OBS_USER` and `GIT_USER`, simplifying secure access.
 
 All modules are modular and extensible. The long-term vision includes additional OpenBSD automation tools for broader system management.
 
