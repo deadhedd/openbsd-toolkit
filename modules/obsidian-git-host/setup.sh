@@ -145,19 +145,21 @@ start_logging_if_debug "setup-$module_name" "$@"
 
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
+. "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
 : "${ADMIN_USER:?ADMIN_USER must be set in secrets}"
 : "${OBS_USER:?OBS_USER must be set in secrets}"
 : "${GIT_USER:?GIT_USER must be set in secrets}"
 : "${VAULT:?VAULT must be set in secrets}"
 : "${GIT_SERVER:?GIT_SERVER must be set in secrets}"
 
-ADMIN_PUB_KEY_PATH="$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE"
-if [ -f "$ADMIN_PUB_KEY_PATH" ]; then
-  ADMIN_PUB_KEY="$(cat "$ADMIN_PUB_KEY_PATH")"
-else
-  echo "WARNING: missing admin SSH public key file $ADMIN_PUB_KEY_PATH" >&2
-  ADMIN_PUB_KEY=""
-fi
+# TODO: When SSH admin key handling is reintroduced, restore this block
+# ADMIN_PUB_KEY_PATH="$PROJECT_ROOT/config/$ADMIN_SSH_PUBLIC_KEY_FILE"
+# if [ -f "$ADMIN_PUB_KEY_PATH" ]; then
+#   ADMIN_PUB_KEY="$(cat "$ADMIN_PUB_KEY_PATH")"
+# else
+#   echo "WARNING: missing admin SSH public key file $ADMIN_PUB_KEY_PATH" >&2
+#   ADMIN_PUB_KEY=""
+# fi
 
 ##############################################################################
 # 4) Packages
@@ -225,13 +227,53 @@ safe_replace_line /etc/ssh/sshd_config "AllowUsers" "${OBS_USER}" "${GIT_USER}" 
 rcctl restart sshd
 
 # 7.2 .ssh Directories and authorized users
+key_dir="$PROJECT_ROOT/$SSH_KEY_DIR"
 for u in "$OBS_USER" "$GIT_USER"; do
   HOME_DIR="/home/$u"
   SSH_DIR="$HOME_DIR/.ssh"
+  AUTH_KEYS="$SSH_DIR/authorized_keys"
   mkdir -p "$SSH_DIR"
   chmod 700 "$SSH_DIR"
-  touch "$SSH_DIR/authorized_keys"
-  chmod 600 "$SSH_DIR/authorized_keys"
+  : > "$AUTH_KEYS"
+
+  upper=$(echo "$u" | tr '[:lower:]' '[:upper:]')
+  public_var="SSH_${upper}_PUBLIC"
+  eval key_file="${$public_var:-}"
+  [ -n "$key_file" ] || key_file="$SSH_PUBLIC_KEY_DEFAULT"
+  if [ -n "$key_file" ]; then
+    key_path="$key_dir/$key_file"
+    if [ -f "$key_path" ]; then
+      cat "$key_path" >> "$AUTH_KEYS"
+    else
+      echo "WARNING: missing SSH public key file $key_path" >&2
+    fi
+  fi
+
+  extra_var="SSH_${upper}_EXTRA_FILES"
+  eval extra_files="${$extra_var:-}"
+  if [ -n "$extra_files" ]; then
+    for extra in $extra_files; do
+      extra_path="$key_dir/$extra"
+      if [ -f "$extra_path" ]; then
+        cat "$extra_path" >> "$AUTH_KEYS"
+      else
+        echo "WARNING: missing SSH extra key file $extra_path" >&2
+      fi
+    done
+  fi
+
+  dir_flag_var="SSH_${upper}_EXTRA_FROM_DIR"
+  eval extra_from_dir="${$dir_flag_var:-}"
+  if [ "$extra_from_dir" = "true" ]; then
+    extra_dir="$key_dir/$SSH_EXTRA_KEYS_DIR"
+    if [ -d "$extra_dir" ]; then
+      cat "$extra_dir"/*.pub 2>/dev/null >> "$AUTH_KEYS"
+    else
+      echo "WARNING: missing extra keys directory $extra_dir" >&2
+    fi
+  fi
+
+  chmod 600 "$AUTH_KEYS"
   chown -R "$u:$u" "$SSH_DIR"
 done
 
