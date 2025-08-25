@@ -2,8 +2,17 @@
 # obsidian-client-ubuntu-setup.sh
 # v0.5.0 — install Obsidian .deb, side-load obsidian-git, wire Git remote, SSH key “just works”
 # Author: deadhedd
-set -ex
+set -e
 [ -n "$BASH_VERSION" ] || { echo "Please run with bash: sudo bash $0 ..." >&2; exit 1; }
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+export PROJECT_ROOT
+
+# shellcheck source=logs/logging.sh
+. "$PROJECT_ROOT/logs/logging.sh"
+module_name="$(basename "$SCRIPT_DIR")"
+start_logging_if_debug "setup-$module_name" "$@"
 
 # -------------------- config (via flags) --------------------
 VAULT_PATH=""
@@ -347,6 +356,8 @@ Options:
   --ssh-copy-id           Copy the public key to the remote (user/host from remote URL)
   --push-initial          If repo is empty, make an initial commit and push -u origin <branch>
   --initial-sync MODE     First sync policy: remote-wins | local-wins | merge | none
+  --debug[=FILE]          Enable debug logging (writes log to FILE if provided)
+  --log[=FILE]            Force logging even without debug mode
 EOF
         exit 0 ;;
       *) echo "Unknown arg: $1" >&2; exit 9 ;;
