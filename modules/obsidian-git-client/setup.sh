@@ -5,16 +5,68 @@
 set -e
 [ -n "$BASH_VERSION" ] || { echo "Please run with bash: sudo bash $0 ..." >&2; exit 1; }
 
+##############################################################################
+# 0) Resolve paths
+##############################################################################
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export PROJECT_ROOT
+
+##############################################################################
+# 1) Help & banned flags prescan
+##############################################################################
+
+show_help() {
+  cat <<EOF
+Usage: sudo bash $(basename "$0") --vault /path/to/Vault --owner USER --remote-url <ssh_url> [options]
+
+Required:
+  --vault PATH            Vault directory (created if missing)
+  --owner USER            Files will be created/edited as this user
+  --remote-url URL        Git remote (e.g. git@server:/home/git/vaults/Main.git)
+
+Options:
+  --branch NAME           Branch name to use if initializing (default: main)
+  --ssh-host HOST         SSH host for known_hosts (auto-derived from remote if omitted)
+  --ssh-port PORT         SSH port (default: 22; auto-derived from ssh:// URL if present)
+  --no-accept-hostkey     Skip ssh-keyscan/known_hosts pinning
+  --ssh-key-path PATH     SSH private key path (default: /home/<owner>/.ssh/id_ed25519)
+  --ssh-generate          Generate an ed25519 key at the path if missing (no passphrase)
+  --ssh-copy-id           Copy the public key to the remote (user/host from remote URL)
+  --push-initial          If repo is empty, make an initial commit and push -u origin <branch>
+  --initial-sync MODE     First sync policy: remote-wins | local-wins | merge | none
+  --debug[=FILE]          Enable debug logging (writes log to FILE if provided)
+  --log[=FILE]            Force logging even without debug mode
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -l|--log|-l=*|--log=*)
+      printf '%s\n' "This script no longer supports --log. Did you mean --debug?" >&2
+      exit 2
+      ;;
+  esac
+done
+
+##############################################################################
+# 2) Logging init
+##############################################################################
 
 # shellcheck source=logs/logging.sh
 . "$PROJECT_ROOT/logs/logging.sh"
 module_name="$(basename "$SCRIPT_DIR")"
 start_logging_if_debug "setup-$module_name" "$@"
 
-# -------------------- secrets --------------------
+##############################################################################
+# 3) Inputs (secrets & constants) + validation
+##############################################################################
+
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
@@ -22,7 +74,6 @@ start_logging_if_debug "setup-$module_name" "$@"
 : "${CLIENT_OWNER:?CLIENT_OWNER must be set in secrets}"
 : "${CLIENT_REMOTE_URL:?CLIENT_REMOTE_URL must be set in secrets}"
 
-# -------------------- config (via flags) --------------------
 VAULT_PATH="/home/$CLIENT_OWNER/$CLIENT_VAULT"
 OWNER_USER="$CLIENT_OWNER"
 REMOTE_URL="$CLIENT_REMOTE_URL"
@@ -39,7 +90,9 @@ SSH_COPY_ID="${CLIENT_SSH_COPY_ID:-0}"     # --ssh-copy-id to copy pubkey to rem
 PUSH_INITIAL="${CLIENT_PUSH_INITIAL:-0}"    # --push-initial to seed a first commit/push if empty
 INITIAL_SYNC="${CLIENT_INITIAL_SYNC:-none}" # --initial-sync: none | remote-wins | local-wins | merge
 
-# -------------------- helpers --------------------
+##############################################################################
+# Helpers
+##############################################################################
 require_root() {
   if [ "${EUID:-$(id -u)}" -ne 0 ]; then
     echo "Please run as root: sudo $0" >&2
@@ -329,7 +382,9 @@ copy_ssh_key_to_remote() {
   su_exec "$owner" ssh-copy-id -i "${key_path}.pub" -p "$port" "$user_at_host"
 }
 
-# -------------------- args --------------------
+##############################################################################
+# Argument parsing
+##############################################################################
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
@@ -346,29 +401,13 @@ parse_args() {
       --push-initial) PUSH_INITIAL="1"; shift ;;
       --initial-sync) INITIAL_SYNC="${2:-}"; shift 2 ;;
       --help|-h)
-        cat <<EOF
-Usage: sudo bash $0 --vault /path/to/Vault --owner USER --remote-url <ssh_url> [options]
-
-Required:
-  --vault PATH            Vault directory (created if missing)
-  --owner USER            Files will be created/edited as this user
-  --remote-url URL        Git remote (e.g. git@server:/home/git/vaults/Main.git)
-
-Options:
-  --branch NAME           Branch name to use if initializing (default: main)
-  --ssh-host HOST         SSH host for known_hosts (auto-derived from remote if omitted)
-  --ssh-port PORT         SSH port (default: 22; auto-derived from ssh:// URL if present)
-  --no-accept-hostkey     Skip ssh-keyscan/known_hosts pinning
-  --ssh-key-path PATH     SSH private key path (default: /home/<owner>/.ssh/id_ed25519)
-  --ssh-generate          Generate an ed25519 key at the path if missing (no passphrase)
-  --ssh-copy-id           Copy the public key to the remote (user/host from remote URL)
-  --push-initial          If repo is empty, make an initial commit and push -u origin <branch>
-  --initial-sync MODE     First sync policy: remote-wins | local-wins | merge | none
-  --debug[=FILE]          Enable debug logging (writes log to FILE if provided)
-  --log[=FILE]            Force logging even without debug mode
-EOF
-        exit 0 ;;
-      *) echo "Unknown arg: $1" >&2; exit 9 ;;
+        show_help
+        exit 0
+        ;;
+      *)
+        echo "Unknown arg: $1" >&2
+        exit 9
+        ;;
     esac
   done
 
@@ -381,65 +420,65 @@ EOF
     SSH_KEY_PATH="/home/$OWNER_USER/.ssh/id_ed25519"
   fi
 }
+require_root
+parse_args "$@"
 
-# -------------------- main --------------------
-main() {
-  require_root
-  parse_args "$@"
-  install_prereqs
+##############################################################################
+# 4) Packages
+##############################################################################
 
-  # Create vault as the owner
-  create_vault_if_missing "$VAULT_PATH" "$OWNER_USER"
+install_prereqs
 
-  # Install Obsidian if needed
-  if ! already_installed_obsidian; then
-    arch="$(detect_arch)"
-    deburl="$(fetch_latest_obsidian_deb_url "$arch")"
-    [ -n "$deburl" ] && [ "$deburl" != "null" ] || { echo "Could not find matching Obsidian .deb for '$arch'." >&2; exit 3; }
-    install_obsidian_deb "$deburl"
-    echo "✅ Obsidian installed."
-  else
-    echo "Obsidian already installed; skipping."
+if ! already_installed_obsidian; then
+  arch="$(detect_arch)"
+  deburl="$(fetch_latest_obsidian_deb_url "$arch")"
+  [ -n "$deburl" ] && [ "$deburl" != "null" ] || { echo "Could not find matching Obsidian .deb for '$arch'." >&2; exit 3; }
+  install_obsidian_deb "$deburl"
+  echo "✅ Obsidian installed."
+else
+  echo "Obsidian already installed; skipping."
+fi
+
+##############################################################################
+# 5) Vault & plugin
+##############################################################################
+
+create_vault_if_missing "$VAULT_PATH" "$OWNER_USER"
+install_obsidian_git_plugin "$VAULT_PATH" "$OWNER_USER"
+
+##############################################################################
+# 6) SSH setup
+##############################################################################
+
+if [ -z "$SSH_HOST" ]; then
+  SSH_HOST="$(derive_host_from_remote "$REMOTE_URL")"
+fi
+if [[ "$REMOTE_URL" =~ ^ssh://[^/]+:[0-9]+/ ]]; then
+  SSH_PORT="$(printf '%s' "$REMOTE_URL" | sed -E 's#^ssh://[^@]+@?[^:]+:([0-9]+)/.*#\1#')"
+fi
+remote_user="$(derive_user_from_remote "$REMOTE_URL")"
+[ -n "$remote_user" ] || remote_user="git"
+user_at_host="${remote_user}@${SSH_HOST}"
+
+add_hostkey_if_needed "$OWNER_USER" "$SSH_HOST" "$SSH_PORT"
+
+if [ "$SSH_GENERATE" = "1" ] || [ "$SSH_COPY_ID" = "1" ]; then
+  ensure_ssh_key "$OWNER_USER" "$SSH_KEY_PATH" || true
+  if [ "$SSH_COPY_ID" = "1" ]; then
+    copy_ssh_key_to_remote "$OWNER_USER" "$SSH_KEY_PATH" "$user_at_host" "$SSH_PORT"
   fi
+fi
 
-  # Install & enable obsidian-git
-  install_obsidian_git_plugin "$VAULT_PATH" "$OWNER_USER"
+write_ssh_config_entry "$OWNER_USER" "$SSH_HOST" "$remote_user" "$SSH_PORT" "$SSH_KEY_PATH"
 
-  # Derive SSH user/host/port if not provided
-  if [ -z "$SSH_HOST" ]; then
-    SSH_HOST="$(derive_host_from_remote "$REMOTE_URL")"
-  fi
-  if [[ "$REMOTE_URL" =~ ^ssh://[^/]+:[0-9]+/ ]]; then
-    SSH_PORT="$(printf '%s' "$REMOTE_URL" | sed -E 's#^ssh://[^@]+@?[^:]+:([0-9]+)/.*#\1#')"
-  fi
-  remote_user="$(derive_user_from_remote "$REMOTE_URL")"
-  [ -n "$remote_user" ] || remote_user="git"
-  user_at_host="${remote_user}@${SSH_HOST}"
+##############################################################################
+# 7) Git wiring
+##############################################################################
 
-  # Host key pinning (optional but convenient)
-  add_hostkey_if_needed "$OWNER_USER" "$SSH_HOST" "$SSH_PORT"
+ensure_repo_and_remote "$OWNER_USER" "$VAULT_PATH" "$REMOTE_URL" "$BRANCH"
+set_git_local_push_defaults "$OWNER_USER" "$VAULT_PATH"
+maybe_initial_push "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
+ensure_upstream "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
 
-  # Ensure SSH key exists (if asked), and optionally copy it to server
-  if [ "$SSH_GENERATE" = "1" ] || [ "$SSH_COPY_ID" = "1" ]; then
-    ensure_ssh_key "$OWNER_USER" "$SSH_KEY_PATH" || true
-    if [ "$SSH_COPY_ID" = "1" ]; then
-      copy_ssh_key_to_remote "$OWNER_USER" "$SSH_KEY_PATH" "$user_at_host" "$SSH_PORT"
-    fi
-  fi
-
-  # Add/merge SSH config entry so ssh uses the specified key automatically
-  write_ssh_config_entry "$OWNER_USER" "$SSH_HOST" "$remote_user" "$SSH_PORT" "$SSH_KEY_PATH"
-
-  # Wire repo + remote and verify reachability (using the key)
-  ensure_repo_and_remote "$OWNER_USER" "$VAULT_PATH" "$REMOTE_URL" "$BRANCH"
-
-  # Local push defaults + upstream guarantees + initial sync policy
-  set_git_local_push_defaults "$OWNER_USER" "$VAULT_PATH"
-  maybe_initial_push "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
-  ensure_upstream "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
-
-  echo "✅ Git remote set to: $REMOTE_URL (branch: $BRANCH)"
-  echo "All done."
-}
-
-main "$@"
+echo "✅ Git remote set to: $REMOTE_URL (branch: $BRANCH)"
+echo "All done."
