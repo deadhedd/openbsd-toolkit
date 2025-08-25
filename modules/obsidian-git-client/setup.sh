@@ -14,22 +14,30 @@ export PROJECT_ROOT
 module_name="$(basename "$SCRIPT_DIR")"
 start_logging_if_debug "setup-$module_name" "$@"
 
+# -------------------- secrets --------------------
+. "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
+. "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
+: "${CLIENT_VAULT:?CLIENT_VAULT must be set in secrets}"
+: "${CLIENT_OWNER:?CLIENT_OWNER must be set in secrets}"
+: "${CLIENT_REMOTE_URL:?CLIENT_REMOTE_URL must be set in secrets}"
+
 # -------------------- config (via flags) --------------------
-VAULT_PATH=""
-OWNER_USER=""
-REMOTE_URL=""
-BRANCH="main"
+VAULT_PATH="/home/$CLIENT_OWNER/$CLIENT_VAULT"
+OWNER_USER="$CLIENT_OWNER"
+REMOTE_URL="$CLIENT_REMOTE_URL"
+BRANCH="${CLIENT_BRANCH:-main}"
 
-SSH_HOST=""         # optional; auto-derived from REMOTE_URL if omitted
-SSH_PORT="22"
-ACCEPT_HOSTKEY="1"  # --no-accept-hostkey to skip ssh-keyscan
+SSH_HOST="$CLIENT_SSH_HOST"         # optional; auto-derived from REMOTE_URL if omitted
+SSH_PORT="${CLIENT_SSH_PORT:-22}"
+ACCEPT_HOSTKEY="${CLIENT_ACCEPT_HOSTKEY:-1}"  # --no-accept-hostkey to skip ssh-keyscan
 
-SSH_KEY_PATH=""     # default -> /home/<owner>/.ssh/id_ed25519
-SSH_GENERATE="0"    # --ssh-generate to create key if missing
-SSH_COPY_ID="0"     # --ssh-copy-id to copy pubkey to remote
+SSH_KEY_PATH="$CLIENT_SSH_KEY_PATH"     # default -> /home/<owner>/.ssh/id_ed25519
+SSH_GENERATE="${CLIENT_SSH_GENERATE:-0}"    # --ssh-generate to create key if missing
+SSH_COPY_ID="${CLIENT_SSH_COPY_ID:-0}"     # --ssh-copy-id to copy pubkey to remote
 
-PUSH_INITIAL="0"    # --push-initial to seed a first commit/push if empty
-INITIAL_SYNC="none" # --initial-sync: none | remote-wins | local-wins | merge
+PUSH_INITIAL="${CLIENT_PUSH_INITIAL:-0}"    # --push-initial to seed a first commit/push if empty
+INITIAL_SYNC="${CLIENT_INITIAL_SYNC:-none}" # --initial-sync: none | remote-wins | local-wins | merge
 
 # -------------------- helpers --------------------
 require_root() {
