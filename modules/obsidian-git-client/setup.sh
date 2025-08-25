@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # obsidian-client-ubuntu-setup.sh
-# v0.4.0 — install Obsidian .deb, side-load obsidian-git, wire Git remote, and SSH key setup (owner-safe)
+# v0.5.0 — install Obsidian .deb, side-load obsidian-git, wire Git remote, SSH key “just works”
 # Author: deadhedd
 set -ex
+[ -n "$BASH_VERSION" ] || { echo "Please run with bash: sudo bash $0 ..." >&2; exit 1; }
 
 # -------------------- config (via flags) --------------------
 VAULT_PATH=""
@@ -19,6 +20,7 @@ SSH_GENERATE="0"    # --ssh-generate to create key if missing
 SSH_COPY_ID="0"     # --ssh-copy-id to copy pubkey to remote
 
 PUSH_INITIAL="0"    # --push-initial to seed a first commit/push if empty
+INITIAL_SYNC="none" # --initial-sync: none | remote-wins | local-wins | merge
 
 # -------------------- helpers --------------------
 require_root() {
@@ -141,21 +143,18 @@ derive_host_from_remote() {
 
 derive_user_from_remote() {
   local url="$1"
-  local user=""
   if [[ "$url" =~ ^ssh:// ]]; then
-    user="$(printf '%s' "$url" | sed -E 's#^ssh://([^@]+)@[^:/]+(:[0-9]+)?/.*#\1#')"
-    echo "$user"
+    printf '%s' "$url" | sed -E 's#^ssh://([^@]+)@[^:/]+(:[0-9]+)?/.*#\1#'
     return 0
   fi
-  # scp-like: user@host:path or host:path (no user)
   if [[ "$url" =~ @ ]]; then
-    user="$(printf '%s' "$url" | sed -E 's#^([^@]+)@[^:]+:.*#\1#')"
-    echo "$user"
+    printf '%s' "$url" | sed -E 's#^([^@]+)@[^:]+:.*#\1#'
     return 0
   fi
-  echo ""  # unknown
+  echo ""
 }
 
+# Add known_hosts for the server
 add_hostkey_if_needed() {
   local owner="$1" host="$2" port="$3"
   [ -n "$host" ] || return 0
@@ -167,6 +166,34 @@ add_hostkey_if_needed() {
 
   if ! su_exec "$owner" ssh-keygen -F "$host" >/dev/null; then
     su_exec "$owner" bash -c "ssh-keyscan -p '$port' -t rsa,ecdsa,ed25519 '$host' >> /home/$owner/.ssh/known_hosts"
+  fi
+}
+
+# NEW: write SSH config so this repo uses your specified key automatically
+write_ssh_config_entry() {
+  local owner="$1" host="$2" user="$3" port="$4" key="$5"
+  [ -n "$key" ] || return 0
+  su_exec "$owner" mkdir -p "/home/$owner/.ssh"
+  su_exec "$owner" chmod 700 "/home/$owner/.ssh"
+  su_exec "$owner" bash -c "umask 077; touch /home/$owner/.ssh/config"
+  su_exec "$owner" bash -c "grep -qE '^[Hh]ost(\\s|\\s.*\\s)$host(\\s|\$)' /home/$owner/.ssh/config || cat >> /home/$owner/.ssh/config <<'CFG'
+Host $host
+  HostName $host
+  User $user
+  Port $port
+  IdentityFile $key
+  IdentitiesOnly yes
+CFG"
+  su_exec "$owner" chmod 600 "/home/$owner/.ssh/config"
+}
+
+# Force Git to use a specific key/port for SSH calls
+git_ssh_env() {
+  local key="$1" port="$2"
+  if [ -n "$key" ]; then
+    echo "ssh -i '$key' -o IdentitiesOnly=yes -p '$port'"
+  else
+    echo "ssh -p '$port'"
   fi
 }
 
@@ -184,7 +211,18 @@ ensure_repo_and_remote() {
     su_exec "$owner" git -C "$vault" remote add origin "$remote"
   fi
 
-  su_exec "$owner" git -C "$vault" ls-remote --heads origin >/dev/null
+  # Verify connectivity using the specified key/port if provided
+  if ! su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+       git -C "$vault" ls-remote --heads origin >/dev/null 2>&1; then
+    echo "Remote not reachable or not a repo. Double-check --remote-url (must point to an existing *bare* repo, usually ends with .git)." >&2
+    exit 10
+  fi
+}
+
+set_git_local_push_defaults() {
+  local owner="$1" vault="$2"
+  su_exec "$owner" git -C "$vault" config push.default current
+  su_exec "$owner" git -C "$vault" config --add --bool push.autoSetupRemote true
 }
 
 maybe_initial_push() {
@@ -193,30 +231,57 @@ maybe_initial_push() {
 
   if ! su_exec "$owner" git -C "$vault" rev-parse --verify HEAD >/dev/null 2>&1; then
     if ! su_exec "$owner" git -C "$vault" config user.email >/dev/null 2>&1; then
-      echo "Skipping initial push: set local Git identity first (git -C \"$vault\" config user.name 'Name'; git config user.email you@example.com)."
+      echo "Skipping initial push: set local Git identity first (git -C \"$vault\" config user.name 'Name'; git -C \"$vault\" config user.email you@example.com)."
       return 0
     fi
     su_exec "$owner" bash -c "git -C \"$vault\" add -A && git -C \"$vault\" commit -m 'Initial commit' || true"
   fi
 
-  su_exec "$owner" git -C "$vault" push -u origin "$branch" || true
+  su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+    git -C "$vault" push -u origin "$branch" || true
 }
 
+# UPDATED: fetches before setting upstream; supports initial sync policy
 ensure_upstream() {
   local owner="$1" vault="$2" branch="$3"
 
   local curr
   curr="$(su_exec "$owner" git -C "$vault" rev-parse --abbrev-ref HEAD)"
 
+  # If upstream already set, we're done.
   if su_exec "$owner" git -C "$vault" rev-parse --abbrev-ref --symbolic-full-name "@{u}" >/dev/null 2>&1; then
     return 0
   fi
 
-  if su_exec "$owner" git -C "$vault" ls-remote --exit-code --heads origin "refs/heads/$curr" >/dev/null 2>&1; then
+  # Does the remote branch exist? (networked check)
+  if su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+       git -C "$vault" ls-remote --exit-code --heads origin "refs/heads/$curr" >/dev/null 2>&1; then
+    # Make sure origin/$curr exists locally, then set upstream
+    su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+      git -C "$vault" fetch origin "$curr"
     su_exec "$owner" git -C "$vault" branch --set-upstream-to="origin/$curr" "$curr"
-  else
-    su_exec "$owner" git -C "$vault" push -u origin "$curr"
+
+    case "$INITIAL_SYNC" in
+      remote-wins)
+        su_exec "$owner" git -C "$vault" reset --hard "origin/$curr"
+        ;;
+      local-wins)
+        su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+          git -C "$vault" push --force-with-lease -u origin "$curr"
+        ;;
+      merge)
+        su_exec "$owner" git -C "$vault" merge --allow-unrelated-histories "origin/$curr" || true
+        su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+          git -C "$vault" push || true
+        ;;
+      *) : ;;
+    esac
+    return 0
   fi
+
+  # Remote branch does not exist → create it and set upstream in one go
+  su_exec "$owner" env GIT_SSH_COMMAND="$(git_ssh_env "$SSH_KEY_PATH" "$SSH_PORT")" \
+    git -C "$vault" push -u origin "$curr"
 }
 
 # -------------------- SSH key management --------------------
@@ -234,10 +299,8 @@ ensure_ssh_key() {
       echo "No SSH key at $key_path. Pass --ssh-generate to create one." >&2
       return 1
     fi
-    # generate ed25519 key with no passphrase (simple automation default)
     su_exec "$owner" ssh-keygen -t ed25519 -N "" -f "$key_path" -C "${owner}@obsidian-client"
   fi
-  # Tighten perms just in case
   su_exec "$owner" chmod 600 "$key_path"
   su_exec "$owner" chmod 644 "${key_path}.pub" 2>/dev/null || true
 }
@@ -246,7 +309,6 @@ copy_ssh_key_to_remote() {
   local owner="$1" key_path="$2" user_at_host="$3" port="$4"
   [ -n "$user_at_host" ] || { echo "Cannot copy key: user@host unknown." >&2; return 1; }
   ensure_ssh_dir "$owner"
-  # ssh-copy-id uses -i for the public key and -p for port
   su_exec "$owner" ssh-copy-id -i "${key_path}.pub" -p "$port" "$user_at_host"
 }
 
@@ -265,25 +327,26 @@ parse_args() {
       --ssh-generate) SSH_GENERATE="1"; shift ;;
       --ssh-copy-id) SSH_COPY_ID="1"; shift ;;
       --push-initial) PUSH_INITIAL="1"; shift ;;
+      --initial-sync) INITIAL_SYNC="${2:-}"; shift 2 ;;
       --help|-h)
         cat <<EOF
-Usage: sudo $0 --vault /path/to/Vault --owner USER --remote-url <ssh_url> [options]
+Usage: sudo bash $0 --vault /path/to/Vault --owner USER --remote-url <ssh_url> [options]
 
 Required:
   --vault PATH            Vault directory (created if missing)
   --owner USER            Files will be created/edited as this user
-  --remote-url URL        Git remote (e.g. git@server:obsidian/main.git or ssh://git@server:2222/repos/main.git)
+  --remote-url URL        Git remote (e.g. git@server:/home/git/vaults/Main.git)
 
 Options:
-  --branch NAME           Default branch name (default: main)
+  --branch NAME           Branch name to use if initializing (default: main)
   --ssh-host HOST         SSH host for known_hosts (auto-derived from remote if omitted)
   --ssh-port PORT         SSH port (default: 22; auto-derived from ssh:// URL if present)
   --no-accept-hostkey     Skip ssh-keyscan/known_hosts pinning
-  --ssh-key-path PATH     SSH key path (default: /home/<owner>/.ssh/id_ed25519)
-  --ssh-generate          Generate an ed25519 key if missing (no passphrase)
-  --ssh-copy-id           Copy the public key to remote (user/host derived from remote URL)
+  --ssh-key-path PATH     SSH private key path (default: /home/<owner>/.ssh/id_ed25519)
+  --ssh-generate          Generate an ed25519 key at the path if missing (no passphrase)
+  --ssh-copy-id           Copy the public key to the remote (user/host from remote URL)
   --push-initial          If repo is empty, make an initial commit and push -u origin <branch>
-
+  --initial-sync MODE     First sync policy: remote-wins | local-wins | merge | none
 EOF
         exit 0 ;;
       *) echo "Unknown arg: $1" >&2; exit 9 ;;
@@ -295,7 +358,6 @@ EOF
   id "$OWNER_USER" >/dev/null 2>&1 || { echo "User '$OWNER_USER' does not exist" >&2; exit 8; }
   [ -n "$REMOTE_URL" ] || { echo "Missing required --remote-url" >&2; exit 8; }
 
-  # Defaults that depend on owner
   if [ -z "$SSH_KEY_PATH" ]; then
     SSH_KEY_PATH="/home/$OWNER_USER/.ssh/id_ed25519"
   fi
@@ -332,8 +394,8 @@ main() {
     SSH_PORT="$(printf '%s' "$REMOTE_URL" | sed -E 's#^ssh://[^@]+@?[^:]+:([0-9]+)/.*#\1#')"
   fi
   remote_user="$(derive_user_from_remote "$REMOTE_URL")"
-  user_at_host="$SSH_HOST"
-  [ -n "$remote_user" ] && user_at_host="${remote_user}@${SSH_HOST}"
+  [ -n "$remote_user" ] || remote_user="git"
+  user_at_host="${remote_user}@${SSH_HOST}"
 
   # Host key pinning (optional but convenient)
   add_hostkey_if_needed "$OWNER_USER" "$SSH_HOST" "$SSH_PORT"
@@ -346,17 +408,18 @@ main() {
     fi
   fi
 
-  # Wire repo + remote and verify reachability
+  # Add/merge SSH config entry so ssh uses the specified key automatically
+  write_ssh_config_entry "$OWNER_USER" "$SSH_HOST" "$remote_user" "$SSH_PORT" "$SSH_KEY_PATH"
+
+  # Wire repo + remote and verify reachability (using the key)
   ensure_repo_and_remote "$OWNER_USER" "$VAULT_PATH" "$REMOTE_URL" "$BRANCH"
 
-  # Optional first push, then guarantee upstream is set
+  # Local push defaults + upstream guarantees + initial sync policy
+  set_git_local_push_defaults "$OWNER_USER" "$VAULT_PATH"
   maybe_initial_push "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
   ensure_upstream "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
 
   echo "✅ Git remote set to: $REMOTE_URL (branch: $BRANCH)"
-  if [ "$SSH_COPY_ID" = "1" ]; then
-    echo "✅ SSH key copied to: $user_at_host (port $SSH_PORT)"
-  fi
   echo "All done."
 }
 
