@@ -18,9 +18,28 @@ Checks that a workstation can pull and push an Obsidian vault over SSH.
 | `GIT_SERVER` | Hostname or IP of the git server |
 
 ## Setup
-1. Copy `config/secrets.env.example` to `config/secrets.env` and edit the values.
-2. Start `ssh-agent` and add your private key.
-3. Clone the remote vault to `$HOME/$CLIENT_VAULT`.
+Run the setup script with the required options:
+
+```sh
+cd modules/obsidian-git-client
+sudo bash setup.sh --vault /path/to/Vault --owner USER --remote-url git@server:/path/to/vault.git [options]
+```
+
+### Options
+| Option | Description | Default |
+| --- | --- | --- |
+| `--vault PATH` | Vault directory (created if missing) | required |
+| `--owner USER` | Local user that owns the vault | required |
+| `--remote-url URL` | Git remote for the vault | required |
+| `--branch NAME` | Branch name to use if initializing | `main` |
+| `--ssh-host HOST` | SSH host for known_hosts | derived from remote |
+| `--ssh-port PORT` | SSH port | `22` |
+| `--no-accept-hostkey` | Skip ssh-keyscan/known_hosts pinning | host key pinned |
+| `--ssh-key-path PATH` | SSH private key path | `/home/<owner>/.ssh/id_ed25519` |
+| `--ssh-generate` | Generate key at the path if missing | off |
+| `--ssh-copy-id` | Copy the public key to the remote | off |
+| `--push-initial` | Seed a first commit and push if repo is empty | off |
+| `--initial-sync MODE` | First sync policy: `remote-wins`, `local-wins`, `merge`, or `none` | `none` |
 
 ## Testing
 ```sh
