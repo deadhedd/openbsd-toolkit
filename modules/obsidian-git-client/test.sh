@@ -117,7 +117,7 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
-  echo "1..10"
+  echo "1..12"
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying Obsidian plugin installation" >&2
 
   run_test "[ -d \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\" ]" \
@@ -159,6 +159,12 @@ run_tests() {
   run_test "git -C \"${LOCAL_VAULT}\" remote get-url origin | grep -q \"${GIT_SERVER}:/home/${GIT_USER}/vaults/${VAULT}.git\"" \
            "git remote 'origin' correctly set" \
            "git -C \"${LOCAL_VAULT}\" remote -v"
+  run_test "git -C \"${LOCAL_VAULT}\" config --get push.default | grep -q '^current$'" \
+           "git push.default is set to 'current'" \
+           "git -C \"${LOCAL_VAULT}\" config --get push.default"
+  run_test "git -C \"${LOCAL_VAULT}\" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1" \
+           "current branch tracks an upstream" \
+           "git -C \"${LOCAL_VAULT}\" rev-parse --abbrev-ref --symbolic-full-name '@{u}'"
 }
 
 run_tests
