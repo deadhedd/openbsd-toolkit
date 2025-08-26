@@ -118,9 +118,9 @@ run_tests() {
   echo "1..10"
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying Obsidian plugin installation" >&2
 
-  run_test "[ -d \"$HOME/.obsidian/plugins/obsidian-git\" ]" \
+  run_test "[ -d \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\" ]" \
            "obsidian-git plugin directory exists" \
-           "ls -ld \"$HOME/.obsidian/plugins/obsidian-git\""
+           "ls -ld \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\""
   run_test "grep -q 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\"" \
            "obsidian-git listed in vault/.obsidian/plugins.json" \
            "grep 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\""
