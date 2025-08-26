@@ -18,7 +18,7 @@ Checks that a workstation can pull and push an Obsidian vault over SSH.
 | `GIT_SERVER` | Hostname or IP of the git server |
 
 ## Setup
-After populating the `Obsidian Git Client` section in `config/secrets.env`, run:
+After populating the `Obsidian Git Client` and `SSH` sections in `config/secrets.env`, run:
 
 ```sh
 cd modules/obsidian-git-client
@@ -38,7 +38,7 @@ still override any of these settings:
 | `--ssh-host HOST` | SSH host for known_hosts | `$CLIENT_SSH_HOST` or derived from remote |
 | `--ssh-port PORT` | SSH port | `$CLIENT_SSH_PORT` or `22` |
 | `--no-accept-hostkey` | Skip ssh-keyscan/known_hosts pinning | use secrets or host key pinned |
-| `--ssh-key-path PATH` | SSH private key path | `$CLIENT_SSH_KEY_PATH` or `/home/<owner>/.ssh/id_ed25519` |
+| `--ssh-key-path PATH` | SSH private key path | `$CLIENT_SSH_KEY_PATH` or key from SSH module (`$SSH_KEY_DIR/$SSH_PRIVATE_KEY_DEFAULT`) |
 | `--ssh-generate` | Generate key at the path if missing | `$CLIENT_SSH_GENERATE` or off |
 | `--ssh-copy-id` | Copy the public key to the remote | `$CLIENT_SSH_COPY_ID` or off |
 | `--push-initial` | Seed a first commit and push if repo is empty | `$CLIENT_PUSH_INITIAL` or off |
