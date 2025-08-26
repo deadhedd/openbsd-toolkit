@@ -70,6 +70,8 @@ start_logging "$SCRIPT_PATH" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
 
 LOCAL_VAULT="$HOME/${CLIENT_VAULT}"
+SSH_KEY_FILE="${CLIENT_SSH_KEY_PATH:-$HOME/.ssh/id_ed25519}"
+SSH_KEY_BASENAME="$(basename "$SSH_KEY_FILE")"
 
 ##############################################################################
 # 4) Test helpers
@@ -142,9 +144,9 @@ run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
 
-  run_test "ssh-add -l | grep -q id_ed25519" \
-           "ssh-agent running and id_ed25519 loaded" \
-           "ssh-add -l"
+  run_test ". \"$HOME/.ssh/agent.env\" 2>/dev/null; ssh-add -l | grep -q \"$SSH_KEY_BASENAME\"" \
+           "ssh-agent running and $SSH_KEY_BASENAME loaded" \
+           ". \"$HOME/.ssh/agent.env\" 2>/dev/null; ssh-add -l"
   run_test "grep -q \"${GIT_SERVER}\" ~/.ssh/known_hosts" \
            "known_hosts contains ${GIT_SERVER}" \
            "grep \"${GIT_SERVER}\" ~/.ssh/known_hosts"
