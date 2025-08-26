@@ -70,6 +70,7 @@ start_logging_if_debug "setup-$module_name" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
+. "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
 : "${CLIENT_VAULT:?CLIENT_VAULT must be set in secrets}"
 : "${CLIENT_OWNER:?CLIENT_OWNER must be set in secrets}"
 : "${CLIENT_REMOTE_URL:?CLIENT_REMOTE_URL must be set in secrets}"
@@ -83,7 +84,10 @@ SSH_HOST="$CLIENT_SSH_HOST"         # optional; auto-derived from REMOTE_URL if 
 SSH_PORT="${CLIENT_SSH_PORT:-22}"
 ACCEPT_HOSTKEY="${CLIENT_ACCEPT_HOSTKEY:-1}"  # --no-accept-hostkey to skip ssh-keyscan
 
-SSH_KEY_PATH="$CLIENT_SSH_KEY_PATH"     # default -> /home/<owner>/.ssh/id_ed25519
+SSH_KEY_PATH="$CLIENT_SSH_KEY_PATH"     # default -> from SSH module
+if [ -z "$SSH_KEY_PATH" ]; then
+  SSH_KEY_PATH="$PROJECT_ROOT/$SSH_KEY_DIR/$SSH_PRIVATE_KEY_DEFAULT"
+fi
 SSH_GENERATE="${CLIENT_SSH_GENERATE:-0}"    # --ssh-generate to create key if missing
 SSH_COPY_ID="${CLIENT_SSH_COPY_ID:-0}"     # --ssh-copy-id to copy pubkey to remote
 
