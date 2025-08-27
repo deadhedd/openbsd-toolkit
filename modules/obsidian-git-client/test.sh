@@ -70,6 +70,8 @@ start_logging "$SCRIPT_PATH" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
 
 LOCAL_VAULT="$HOME/${CLIENT_VAULT}"
+SSH_KEY_FILE="${CLIENT_SSH_KEY_PATH:-$HOME/.ssh/id_ed25519}"
+SSH_KEY_BASENAME="$(basename "$SSH_KEY_FILE")"
 
 ##############################################################################
 # 4) Test helpers
@@ -115,12 +117,12 @@ run_test() {
 run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): starting obsidian-git-client tests" >&2
-  echo "1..10"
+  echo "1..12"
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying Obsidian plugin installation" >&2
 
-  run_test "[ -d \"$HOME/.obsidian/plugins/obsidian-git\" ]" \
+  run_test "[ -d \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\" ]" \
            "obsidian-git plugin directory exists" \
-           "ls -ld \"$HOME/.obsidian/plugins/obsidian-git\""
+           "ls -ld \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\""
   run_test "grep -q 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/community-plugins.json\"" \
            "obsidian-git listed in vault/.obsidian/community-plugins.json" \
            "grep 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/community-plugins.json\""
@@ -142,9 +144,9 @@ run_tests() {
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying SSH agent and known hosts" >&2
 
-  run_test "ssh-add -l | grep -q id_ed25519" \
-           "ssh-agent running and id_ed25519 loaded" \
-           "ssh-add -l"
+  run_test ". \"$HOME/.ssh/agent.env\" 2>/dev/null; ssh-add -l | grep -q \"$SSH_KEY_BASENAME\"" \
+           "ssh-agent running and $SSH_KEY_BASENAME loaded" \
+           ". \"$HOME/.ssh/agent.env\" 2>/dev/null; ssh-add -l"
   run_test "grep -q \"${GIT_SERVER}\" ~/.ssh/known_hosts" \
            "known_hosts contains ${GIT_SERVER}" \
            "grep \"${GIT_SERVER}\" ~/.ssh/known_hosts"
@@ -157,6 +159,12 @@ run_tests() {
   run_test "git -C \"${LOCAL_VAULT}\" remote get-url origin | grep -q \"${GIT_SERVER}:/home/${GIT_USER}/vaults/${VAULT}.git\"" \
            "git remote 'origin' correctly set" \
            "git -C \"${LOCAL_VAULT}\" remote -v"
+  run_test "git -C \"${LOCAL_VAULT}\" config --get push.default | grep -q '^current$'" \
+           "git push.default is set to 'current'" \
+           "git -C \"${LOCAL_VAULT}\" config --get push.default"
+  run_test "git -C \"${LOCAL_VAULT}\" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1" \
+           "current branch tracks an upstream" \
+           "git -C \"${LOCAL_VAULT}\" rev-parse --abbrev-ref --symbolic-full-name '@{u}'"
 }
 
 run_tests

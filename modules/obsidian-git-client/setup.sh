@@ -379,6 +379,22 @@ ensure_ssh_key() {
   su_exec "$owner" chmod 644 "${key_path}.pub" 2>/dev/null || true
 }
 
+ensure_ssh_agent() {
+  local owner="$1" key_path="$2" home="/home/$1"
+  su_exec "$owner" env SSH_KEY_PATH="$key_path" HOME_DIR="$home" sh -s <<'EOF'
+home="$HOME_DIR"
+key="$SSH_KEY_PATH"
+envfile="$home/.ssh/agent.env"
+[ -r "$envfile" ] && . "$envfile" >/dev/null 2>&1
+if ! ssh-add -l >/dev/null 2>&1; then
+  eval "$(ssh-agent -s)"
+  printf 'SSH_AUTH_SOCK=%s\nSSH_AGENT_PID=%s\nexport SSH_AUTH_SOCK SSH_AGENT_PID\n' "$SSH_AUTH_SOCK" "$SSH_AGENT_PID" > "$envfile"
+  chmod 600 "$envfile"
+fi
+ssh-add "$key" >/dev/null
+EOF
+}
+
 copy_ssh_key_to_remote() {
   local owner="$1" key_path="$2" user_at_host="$3" port="$4"
   [ -n "$user_at_host" ] || { echo "Cannot copy key: user@host unknown." >&2; return 1; }
@@ -468,6 +484,7 @@ add_hostkey_if_needed "$OWNER_USER" "$SSH_HOST" "$SSH_PORT"
 
 if [ "$SSH_GENERATE" = "1" ] || [ "$SSH_COPY_ID" = "1" ]; then
   ensure_ssh_key "$OWNER_USER" "$SSH_KEY_PATH" || true
+  ensure_ssh_agent "$OWNER_USER" "$SSH_KEY_PATH"
   if [ "$SSH_COPY_ID" = "1" ]; then
     copy_ssh_key_to_remote "$OWNER_USER" "$SSH_KEY_PATH" "$user_at_host" "$SSH_PORT"
   fi
