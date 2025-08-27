@@ -206,6 +206,22 @@ create_vault_if_missing() {
   fi
 }
 
+register_vault_with_obsidian() {
+  local vault="$1" owner="$2"
+  su_exec "$owner" sh -s "$vault" <<'EOF'
+vault="$1"
+config_dir="$HOME/.config/obsidian"
+config_file="$config_dir/obsidian.json"
+mkdir -p "$config_dir"
+if [ ! -f "$config_file" ]; then
+  printf '{\n  "vaults": {}\n}\n' > "$config_file"
+fi
+tmp="$(mktemp)"
+jq --arg path "$vault" '.vaults[$path] //= {"open": true}' "$config_file" > "$tmp"
+mv "$tmp" "$config_file"
+EOF
+}
+
 # -------------------- Git wiring --------------------
 derive_host_from_remote() {
   local url="$1"
@@ -467,6 +483,7 @@ fi
 ##############################################################################
 
 create_vault_if_missing "$VAULT_PATH" "$OWNER_USER"
+register_vault_with_obsidian "$VAULT_PATH" "$OWNER_USER"
 install_obsidian_git_plugin "$VAULT_PATH" "$OWNER_USER"
 
 ##############################################################################
