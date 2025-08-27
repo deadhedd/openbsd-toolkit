@@ -36,6 +36,8 @@ Options:
   --ssh-copy-id           Copy the public key to the remote (user/host from remote URL)
   --push-initial          If repo is empty, make an initial commit and push -u origin <branch>
   --initial-sync MODE     First sync policy: remote-wins | local-wins | merge | none
+  --launch                Launch Obsidian once to register the vault (default)
+  --no-launch             Skip launching Obsidian; prints command to run manually
   --debug[=FILE]          Enable debug logging (writes log to FILE if provided)
   --log[=FILE]            Force logging even without debug mode
 EOF
@@ -96,6 +98,7 @@ SSH_COPY_ID="${CLIENT_SSH_COPY_ID:-0}"     # --ssh-copy-id to copy pubkey to rem
 
 PUSH_INITIAL="${CLIENT_PUSH_INITIAL:-0}"    # --push-initial to seed a first commit/push if empty
 INITIAL_SYNC="${CLIENT_INITIAL_SYNC:-none}" # --initial-sync: none | remote-wins | local-wins | merge
+LAUNCH="${CLIENT_LAUNCH:-1}"            # --no-launch to skip opening Obsidian once
 
 ##############################################################################
 # Helpers
@@ -204,22 +207,6 @@ create_vault_if_missing() {
   if [ ! -d "$vault" ]; then
     install -d -m 0755 -o "$owner" -g "$owner" "$vault"
   fi
-}
-
-register_vault_with_obsidian() {
-  local vault="$1" owner="$2"
-  su_exec "$owner" sh -s "$vault" <<'EOF'
-vault="$1"
-config_dir="$HOME/.config/obsidian"
-config_file="$config_dir/obsidian.json"
-mkdir -p "$config_dir"
-if [ ! -f "$config_file" ]; then
-  printf '{\n  "vaults": {}\n}\n' > "$config_file"
-fi
-tmp="$(mktemp)"
-jq --arg path "$vault" '.vaults[$path] //= {"open": true}' "$config_file" > "$tmp"
-mv "$tmp" "$config_file"
-EOF
 }
 
 # -------------------- Git wiring --------------------
@@ -439,6 +426,8 @@ parse_args() {
       --ssh-copy-id) SSH_COPY_ID="1"; shift ;;
       --push-initial) PUSH_INITIAL="1"; shift ;;
       --initial-sync) INITIAL_SYNC="${2:-}"; shift 2 ;;
+      --launch) LAUNCH="1"; shift ;;
+      --no-launch) LAUNCH="0"; shift ;;
       --help|-h)
         show_help
         exit 0
@@ -483,7 +472,6 @@ fi
 ##############################################################################
 
 create_vault_if_missing "$VAULT_PATH" "$OWNER_USER"
-register_vault_with_obsidian "$VAULT_PATH" "$OWNER_USER"
 install_obsidian_git_plugin "$VAULT_PATH" "$OWNER_USER"
 
 ##############################################################################
@@ -522,4 +510,13 @@ maybe_initial_push "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
 ensure_upstream "$OWNER_USER" "$VAULT_PATH" "$BRANCH"
 
 echo "✅ Git remote set to: $REMOTE_URL (branch: $BRANCH)"
+if [ "$LAUNCH" = "1" ]; then
+  su_exec "$OWNER_USER" bash -lc "obsidian \"$VAULT_PATH\" --disable-gpu >/dev/null 2>&1 || true"
+else
+  cat <<EOF
+Reminder: run the following command once to register the vault with Obsidian:
+  su_exec "$OWNER_USER" bash -lc 'obsidian "$VAULT_PATH" --disable-gpu >/dev/null 2>&1 || true'
+EOF
+fi
+
 echo "All done."
