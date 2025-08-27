@@ -71,11 +71,14 @@ start_logging_if_debug "setup-$module_name" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
 . "$PROJECT_ROOT/config/load-secrets.sh" "SSH"
-: "${CLIENT_VAULT:?CLIENT_VAULT must be set in secrets}"
 : "${CLIENT_OWNER:?CLIENT_OWNER must be set in secrets}"
 : "${CLIENT_REMOTE_URL:?CLIENT_REMOTE_URL must be set in secrets}"
-
-VAULT_PATH="/home/$CLIENT_OWNER/$CLIENT_VAULT"
+if [ -n "${CLIENT_VAULT_PATH:-}" ]; then
+  VAULT_PATH="$CLIENT_VAULT_PATH"
+else
+  : "${CLIENT_VAULT:?CLIENT_VAULT must be set in secrets}"
+  VAULT_PATH="/home/$CLIENT_OWNER/$CLIENT_VAULT"
+fi
 OWNER_USER="$CLIENT_OWNER"
 REMOTE_URL="$CLIENT_REMOTE_URL"
 BRANCH="${CLIENT_BRANCH:-main}"
