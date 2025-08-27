@@ -6,7 +6,7 @@ Checks that a workstation can pull and push an Obsidian vault over SSH.
 ## Prerequisites
 - Client with Git, ssh-agent and access to the remote server
 - `config/secrets.env` filled with connection details
-- Vault repository cloned locally at `$HOME/$CLIENT_VAULT`
+- Vault repository cloned locally at `$CLIENT_VAULT_PATH` (defaults to `/home/$CLIENT_OWNER/$CLIENT_VAULT`)
 
 ## Key variables
 | Variable | Description |
@@ -14,7 +14,8 @@ Checks that a workstation can pull and push an Obsidian vault over SSH.
 | `GIT_USER` | Remote git service account |
 | `OBS_USER` | Remote Obsidian account |
 | `VAULT` | Vault/repository name |
-| `CLIENT_VAULT` | Local vault directory name |
+| `CLIENT_VAULT_PATH` | Local vault directory path (optional) |
+| `CLIENT_VAULT` | Local vault directory name (used if `CLIENT_VAULT_PATH` unset) |
 | `GIT_SERVER` | Hostname or IP of the git server |
 
 ## Setup
@@ -31,7 +32,7 @@ still override any of these settings:
 ### Options
 | Option | Description | Default |
 | --- | --- | --- |
-| `--vault PATH` | Vault directory (created if missing) | `/home/$CLIENT_OWNER/$CLIENT_VAULT` |
+| `--vault PATH` | Vault directory (created if missing) | `$CLIENT_VAULT_PATH` or `/home/$CLIENT_OWNER/$CLIENT_VAULT` |
 | `--owner USER` | Local user that owns the vault | `$CLIENT_OWNER` |
 | `--remote-url URL` | Git remote for the vault | `$CLIENT_REMOTE_URL` |
 | `--branch NAME` | Branch name to use if initializing | `$CLIENT_BRANCH` or `main` |

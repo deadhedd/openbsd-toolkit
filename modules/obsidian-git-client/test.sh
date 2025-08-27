@@ -68,8 +68,11 @@ start_logging "$SCRIPT_PATH" "$@"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Base System"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Host"
 . "$PROJECT_ROOT/config/load-secrets.sh" "Obsidian Git Client"
-
-LOCAL_VAULT="$HOME/${CLIENT_VAULT}"
+if [ -n "${CLIENT_VAULT_PATH:-}" ]; then
+  LOCAL_VAULT="$CLIENT_VAULT_PATH"
+else
+  LOCAL_VAULT="$HOME/${CLIENT_VAULT:?CLIENT_VAULT must be set in secrets}"
+fi
 SSH_KEY_FILE="${CLIENT_SSH_KEY_PATH:-$HOME/.ssh/id_ed25519}"
 SSH_KEY_BASENAME="$(basename "$SSH_KEY_FILE")"
 
