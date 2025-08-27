@@ -123,9 +123,9 @@ run_tests() {
   run_test "[ -d \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\" ]" \
            "obsidian-git plugin directory exists" \
            "ls -ld \"${LOCAL_VAULT}/.obsidian/plugins/obsidian-git\""
-  run_test "grep -q 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\"" \
-           "obsidian-git listed in vault/.obsidian/plugins.json" \
-           "grep 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/plugins.json\""
+  run_test "grep -q 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/community-plugins.json\"" \
+           "obsidian-git listed in vault/.obsidian/community-plugins.json" \
+           "grep 'obsidian-git' \"${LOCAL_VAULT}/.obsidian/community-plugins.json\""
 
   [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): verifying auto-sync settings" >&2
 
