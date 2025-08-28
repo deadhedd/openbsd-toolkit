@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file following [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) principles.
 
 ---
+## v1.1.0 – TBD
+
+### Added
+
+* **Obsidian Git Client Module**:
+  * Initial implementation enabling workstations to pull and push Obsidian vaults over SSH.
+
 ## v1.0.2 – 2025-08-22
 
 ### Changed
