@@ -1,7 +1,9 @@
 # obsidian-git-client
 
 ## Purpose
-Checks that a workstation can pull and push an Obsidian vault over SSH.
+Installs Obsidian, side-loads the [obsidian-git](https://github.com/denolehov/obsidian-git)
+plugin, and wires up SSH/Git so a workstation can pull and push a vault over
+SSH.
 
 ## Prerequisites
 - Client with Git, ssh-agent and access to the remote server
@@ -17,6 +19,13 @@ Checks that a workstation can pull and push an Obsidian vault over SSH.
 | `CLIENT_VAULT_PATH` | Local vault directory path (optional) |
 | `CLIENT_VAULT` | Local vault directory name (used if `CLIENT_VAULT_PATH` unset) |
 | `GIT_SERVER` | Hostname or IP of the git server |
+
+## Features
+- Installs the Obsidian desktop app on Debian/Ubuntu systems.
+- Side-loads the obsidian-git plugin into the configured vault.
+- Configures SSH known_hosts, keys, and agent for the vault owner.
+- Sets the Git remote/branch and optionally seeds an initial commit.
+- Can auto-generate SSH keys and copy them to the remote server.
 
 ## Setup
 After populating the `Obsidian Git Client` and `SSH` sections in `config/secrets.env`, run:
@@ -43,9 +52,22 @@ still override any of these settings:
 | `--ssh-generate` | Generate key at the path if missing | `$CLIENT_SSH_GENERATE` or off |
 | `--ssh-copy-id` | Copy the public key to the remote | `$CLIENT_SSH_COPY_ID` or off |
 | `--push-initial` | Seed a first commit and push if repo is empty | `$CLIENT_PUSH_INITIAL` or off |
-| `--initial-sync MODE` | First sync policy: `remote-wins`, `local-wins`, `merge`, or `none` | `$CLIENT_INITIAL_SYNC` or `none` |
+| `--initial-sync MODE` | First sync policy: `remote-wins`, `local-wins`, `merge`, or `none` | `$CLIENT_INITIAL_SYNC` or `none` 
+
+#### Example
+```sh
+sudo bash setup.sh \
+  --vault "$HOME/SecondBrain" \
+  --owner "$USER" \
+  --remote-url git@example.com:/home/git/vaults/SecondBrain.git \
+  --ssh-generate --ssh-copy-id --push-initial --initial-sync remote-wins
+```
 ## Testing
 ```sh
 cd modules/obsidian-git-client
 sh test.sh [--log[=FILE]]
 ```
+
+The test suite performs TAP-style checks to confirm the plugin is installed,
+SSH keys/known_hosts are in place, and the vault's Git remote is configured
+correctly.
