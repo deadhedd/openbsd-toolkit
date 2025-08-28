@@ -1,7 +1,31 @@
 #!/usr/bin/env bash
-# obsidian-client-ubuntu-setup.sh
-# v0.5.0 — install Obsidian .deb, side-load obsidian-git, wire Git remote, SSH key “just works”
+#
+# modules/obsidian-git-client/setup.sh — Install Obsidian & configure client Git sync
 # Author: deadhedd
+# Version: 1.0.2
+# Updated: 2025-08-22
+#
+# Usage: sudo bash setup.sh --vault PATH --owner USER --remote-url URL [options]
+#
+# Description:
+#   Installs Obsidian, side-loads the obsidian-git plugin, and wires up SSH and
+#   Git remote so the client vault can sync automatically.
+#
+# Deployment considerations:
+#   Requires these variables (exported via config/load-secrets.sh):
+#     • CLIENT_OWNER, CLIENT_REMOTE_URL, and CLIENT_VAULT or CLIENT_VAULT_PATH
+#   Designed for Debian/Ubuntu with sudo privileges.
+#
+# Security note:
+#   Enabling the --debug flag will log all executed commands *and their expanded
+#   values* (via `set -vx`), which may include secrets. Use caution when
+#   sharing or retaining logs.
+#
+# See also:
+#   - modules/obsidian-git-client/test.sh
+#   - logs/logging.sh
+#   - config/load-secrets.sh
+#
 set -e
 [ -n "$BASH_VERSION" ] || { echo "Please run with bash: sudo bash $0 ..." >&2; exit 1; }
 
