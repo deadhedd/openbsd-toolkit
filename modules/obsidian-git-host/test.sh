@@ -287,7 +287,18 @@ check_entry() {
            "initial commit present" \
            "su - ${OBS_USER} -c \"git -C ${OBS_HOME}/vaults/${VAULT} log -1 --pretty=%B\""
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 final perms on bare repo" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 13 post-commit hook" >&2
+
+  run_test "[ -x ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit ]"         "post-commit hook executable" \
+           "ls -l ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit"
+  run_test "grep -q '^#!/bin/sh\$' ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit" \
+           "post-commit hook shebang correct" \
+           "head -n 1 ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit"
+  run_test "grep -q '^git push origin HEAD\$' ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit" \
+           "post-commit hook push command" \
+           "tail -n +2 ${OBS_HOME}/vaults/${VAULT}/.git/hooks/post-commit"
+
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 14 final perms on bare repo" >&2
 
   run_test "stat -f '%Su:%Sg' ${BARE_REPO} | grep -q '^${GIT_USER}:vault\$'"   "ownership of '${BARE_REPO}' is '${GIT_USER}:vault'" \
            "stat -f '%Su:%Sg' ${BARE_REPO}"
@@ -309,7 +320,7 @@ check_entry() {
   run_test "! find ${BARE_REPO} -type d -not -perm -g+s -print | grep -q ."  "all directories under '${BARE_REPO}' have the setgid bit set" \
            "find ${BARE_REPO} -type d -not -perm -g+s -print | head -n 20"
 
-  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 14 history settings" >&2
+  [ "$DEBUG_MODE" -eq 1 ] && echo "DEBUG(run_tests): Section 15 history settings" >&2
 
   run_test "grep -q '^export HISTFILE=/home/${OBS_USER}/.ksh_history\$' /home/${OBS_USER}/.profile" \
            "HISTFILE export in ${OBS_USER} .profile" \
