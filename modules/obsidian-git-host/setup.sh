@@ -461,7 +461,20 @@ chown -R "${OBS_USER}:${OBS_USER}" "$WORK_DIR"
       commit --allow-empty -m 'initial commit'
 
 ##############################################################################
-# 12) Final perms on bare repo
+# 12) Post-commit hook for auto-push
+##############################################################################
+
+HOOK_PC="$WORK_DIR/.git/hooks/post-commit"
+cat > "$HOOK_PC" <<'EOF'
+#!/bin/sh
+git push origin HEAD
+exit 0
+EOF
+chown "$OBS_USER:$OBS_USER" "$HOOK_PC"
+chmod +x "$HOOK_PC"
+
+##############################################################################
+# 13) Final perms on bare repo
 ##############################################################################
 
 # Idempotency: rollback handling and dry-run mode example
@@ -478,7 +491,7 @@ chmod -R g+rwX "$BARE_REPO"
 find "$BARE_REPO" -type d -exec chmod g+s {} +
 
 ##############################################################################
-# 13) History settings (.profile)
+# 14) History settings (.profile)
 ##############################################################################
 
 for u in "$OBS_USER" "$GIT_USER"; do
